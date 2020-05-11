@@ -49,20 +49,17 @@ if os.path.isdir('bin'):
     setup_keywords['scripts'] = [fname for fname in glob.glob(os.path.join('bin', '*'))
         if not os.path.basename(fname).endswith('.rst')]
 setup_keywords['provides'] = [setup_keywords['name']]
-setup_keywords['requires'] = ['Python (>2.7.0)']
+setup_keywords['requires'] = ['Python (>3.7.0)']
 # setup_keywords['install_requires'] = ['Python (>2.7.0)']
 setup_keywords['zip_safe'] = False
 #setup_keywords['use_2to3'] = True
 setup_keywords['packages'] = find_packages()
 #setup_keywords['package_dir'] = {'':'py'}
-#setup_keywords['cmdclass'] = {'version': DesiVersion, 'test': DesiTest, 'sdist': DistutilsSdist}
-#etup_keywords['test_suite']='{name}.tests.{name}_test_suite.{name}_test_suite'.format(**setup_keywords)
 setup_keywords['setup_requires']=['pytest-runner']
 setup_keywords['tests_require']=['pytest']
 
 # Autogenerate command-line scripts.
 #
-# setup_keywords['entry_points'] = {'console_scripts':['desiInstall = desiutil.install.main:main']}
 
 #
 # Add internal data directories.
