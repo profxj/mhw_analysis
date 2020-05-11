@@ -102,6 +102,7 @@ def build_me(outfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOA
     # Write
     iris.save(cubes, outfile, zlib=True)
 
+
 def dont_run_this():
     # Test from Ipython
     import glob
