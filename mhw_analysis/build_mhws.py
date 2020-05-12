@@ -2,7 +2,9 @@
 import glob
 import numpy as np
 
+import pandas
 import iris
+import sqlalchemy
 
 import marineHeatWaves as mhw
 
@@ -33,7 +35,7 @@ def grab_T(sst_list, i, j):
         allTs += sst.data[:,i,j].tolist()
     return np.array(allTs)
 
-def build_me(outfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/', cut=True,
+def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/', cut=True,
              all_sst=None):
     # Grab the list of SST V2 files
     all_sst_files = glob.glob(noaa_path + 'sst*nc')
@@ -51,19 +53,23 @@ def build_me(outfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOA
     # Coords
     lat_coord = all_sst[0].coord('latitude')
     lon_coord = all_sst[0].coord('longitude')
-    events_coord = iris.coords.DimCoord(np.arange(100), var_name='events')
+    #events_coord = iris.coords.DimCoord(np.arange(100), var_name='events')
 
     # Time
     t = grab_t(all_sst)
 
     # Setup for output
-    out_dict = {}
     # ints -- all are days
     int_keys = ['time_start', 'time_end', 'time_peak', 'duration', 'duration_moderate', 'duration_strong',
                 'duration_severe', 'duration_extreme']
-    units = ['day']*len(int_keys)
-    for key in int_keys:
-        out_dict[key] = np.ma.zeros((lat_coord.shape[0], lon_coord.shape[0], 100), dtype=np.int32, fill_value=-1)
+    #units = ['day']*len(int_keys)
+
+    #out_dict = {}
+    #for key in int_keys:
+    #    out_dict[key] = np.ma.zeros((lat_coord.shape[0], lon_coord.shape[0], 100), dtype=np.int32, fill_value=-1)
+
+    # Start the db
+    engine = sqlalchemy.create_engine('sqlite:///'+dbfile)
 
     # Main loop
     if cut:
@@ -80,10 +86,20 @@ def build_me(outfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOA
             mhws, clim = mhw.detect(t, SSTs, joinAcrossGaps=True)
             # Fill me in
             nevent = mhws['n_events']
-            #
-            for key in int_keys:
-                out_dict[key][ilat, jlon, 0:nevent] = mhws[key]
-                out_dict[key][ilat, jlon, nevent:] = np.ma.masked
+            if nevent > 0:
+                int_dict = {}
+                for key in int_keys:
+                    int_dict[key] = mhws[key]
+                # Sub table
+                # Ints first
+                sub_tbl = pandas.DataFrame.from_dict(int_dict)
+                # Recast
+                sub_tbl = sub_tbl.astype('int32')
+                # Lat, lon
+                sub_tbl['lat'] = lat_coord[ilat].points[0]
+                sub_tbl['lon'] = lon_coord[jlon].points[0]
+                # Add to DB
+                sub_tbl.to_sql('MHW_Events', con=engine, if_exists='append')
 
             # Print me
             print('lat={}, lon={}, nevent={}'.format(lat_coord[ilat].points[0], lon_coord[jlon].points[0],
@@ -91,6 +107,7 @@ def build_me(outfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOA
             # Save the dict
             all_mhw.append(mhws)
 
+    '''
     # Cubes
     cubes = iris.cube.CubeList()
     for ss, key in enumerate(out_dict.keys()):
@@ -101,10 +118,14 @@ def build_me(outfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOA
         cubes.append(cube)
     # Write
     iris.save(cubes, outfile, zlib=True)
+    '''
+
+    print("All done!!")
 
 
 def dont_run_this():
     # Test from Ipython
+    from importlib import reload
     import glob
     from mhw_analysis import build_mhws
     noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/'
@@ -117,5 +138,5 @@ def dont_run_this():
 # Command line execution
 if __name__ == '__main__':
     #
-    build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws.nc')
+    build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws.db', cut=True)
 
