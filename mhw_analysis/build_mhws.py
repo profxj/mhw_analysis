@@ -1,6 +1,7 @@
 """ Module to generate a *large* Cube of MHW events"""
 import glob
 import numpy as np
+import multiprocessing
 
 import pandas
 import iris
@@ -32,18 +33,37 @@ def grab_t(sst_list):
 def grab_T(sst_list, i, j):
     allTs = []
     for sst in sst_list:
-        allTs += sst.data[:,i,j].tolist()
-    return np.array(allTs)
+        allTs += [sst.data[:,i,j]]
+    return np.ma.concatenate(allTs)
 
-def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/', cut=True,
-             all_sst=None):
+def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/',
+             years=[1986,1990], cut_sky=True, all_sst=None, nproc=16, min_frac=0.9,
+             n_calc=None):
+    """
+    Build the grid
+
+    Args:
+        dbfile:
+        noaa_path:
+        cut_years:
+        cut_sky:
+        all_sst:
+        nproc:
+        min_frac:
+
+    Returns:
+
+    """
     # Grab the list of SST V2 files
     all_sst_files = glob.glob(noaa_path + 'sst*nc')
     all_sst_files.sort()
 
-    # Cut?
-    if cut:
-        all_sst_files = all_sst_files[5:10]
+    # Cut on years
+    if '1981' not in all_sst_files[0]:
+        raise ValueError("Years not in sync!!")
+    istart = years[0]-1981
+    iend = years[1]-1981+1
+    all_sst_files = all_sst_files[istart:iend]
 
     # Load the Cubes into memory
     if all_sst is None:
@@ -57,6 +77,7 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
 
     # Time
     t = grab_t(all_sst)
+    nmax = len(t)
 
     # Setup for output
     # ints -- all are days
@@ -72,18 +93,46 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     engine = sqlalchemy.create_engine('sqlite:///'+dbfile)
 
     # Main loop
-    if cut:
-        irange = range(355, 365)
-        jrange = range(715,725)
+    if cut_sky:
+        irange = np.arange(355, 365)
+        jrange = np.arange(715,725)
     else:
-        embed(header='72 of build')
-    all_mhw = []
-    for ilat in irange: #range(355, 365):  # range(lat_coord.shape[0])
-        for jlon in jrange: #(715, 725):
-            # Temperatures
-            SSTs = grab_T(all_sst, ilat, jlon)
-            # Detect
-            mhws, clim = mhw.detect(t, SSTs, joinAcrossGaps=True)
+        irange = np.arange(lat_coord.shape[0])
+        jrange = np.arange(lon_coord.shape[0])
+    ii_grid, jj_grid = np.meshgrid(irange, jrange)
+    ii_grid = ii_grid.flatten()
+    jj_grid = jj_grid.flatten()
+    if n_calc is None:
+        n_calc = len(irange) * len(jrange)
+
+    counter = 0
+    pool = multiprocessing.Pool(processes=nproc)
+    if len(all_sst_files) < 30:
+        climatologyPeriod=years
+    else:
+        climatologyPeriod=[1983,2012]
+    while (counter < n_calc):
+        # Load Temperatures
+        list_SSTs = []
+        for ss in range(nproc):
+            if counter == n_calc:
+                break
+            ilat = ii_grid[counter]
+            jlon = jj_grid[counter]
+            counter += 1
+            # Ice/land??
+            SST = grab_T(all_sst, ilat, jlon)
+            frac = np.sum(np.invert(SST.mask))/t.size
+            if SST.mask is np.bool_(False) or frac > min_frac:
+                list_SSTs.append(SST)
+            else:
+                continue
+        # Detect
+        #if len(list_SSTs) > 0:
+        #    import pdb; pdb.set_trace()
+        results = [pool.apply(mhw.detect, args=(t, SSTs, climatologyPeriod)) for SSTs in list_SSTs]
+        for result in results:
+            mhws = result[0]
             # Fill me in
             nevent = mhws['n_events']
             if nevent > 0:
@@ -101,11 +150,12 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
                 # Add to DB
                 sub_tbl.to_sql('MHW_Events', con=engine, if_exists='append')
 
-            # Print me
-            print('lat={}, lon={}, nevent={}'.format(lat_coord[ilat].points[0], lon_coord[jlon].points[0],
-                                                     mhws['n_events']))
-            # Save the dict
-            all_mhw.append(mhws)
+        # Count
+        print('count={} of {}'.format(counter, n_calc))
+        #print('lat={}, lon={}, nevent={}'.format(lat_coord[ilat].points[0], lon_coord[jlon].points[0],
+        #                                         mhws['n_events']))
+        # Save the dict
+        #all_mhw.append(mhws)
 
     '''
     # Cubes
@@ -133,10 +183,16 @@ def dont_run_this():
     all_sst_files.sort()
     all_sst_files = all_sst_files[5:10]
     all_sst = build_mhws.load_all_sst(all_sst_files)
-    build_mhws.build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws.nc', all_sst=all_sst, cut=True)
+    build_mhws.build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws_allsky.db', cut_years=True, cut_sky=False, all_sst=all_sst)
 
 # Command line execution
 if __name__ == '__main__':
     #
-    build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws.db', cut=True)
+    #build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws.db', cut_sky=True)
+    #build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws_allsky.db', cut_years=True, cut_sky=False)
+    build_me('/home/xavier/Projects/Oceanography/MHWs/test_allsky_1000.db', years=[1982,2016], cut_sky=False,
+             nproc=18, n_calc=1000)
+
+    # Default run to match Oliver
+#    build_me('/home/xavier/Projects/Oceanography/MHWs/mhws_allsky_defaults.db', years=[1982,2016], cut_sky=False, nproc=18)
 
