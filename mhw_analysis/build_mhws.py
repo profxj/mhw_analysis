@@ -10,6 +10,7 @@ import sqlalchemy
 import marineHeatWaves as mhw
 
 from IPython import embed
+import os
 
 def load_all_sst(sst_files):
     all_sst = []
@@ -37,14 +38,16 @@ def grab_T(sst_list, i, j):
     return np.ma.concatenate(allTs)
 
 def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/',
+             climate_db='/home/xavier/Projects/Oceanography/MHWs/db/climate_OI.db',
              years=[1986,1990], cut_sky=True, all_sst=None, nproc=16, min_frac=0.9,
-             n_calc=None):
+             n_calc=None, save_climate=False):
     """
     Build the grid
 
     Args:
         dbfile:
         noaa_path:
+        climate_db (str):
         cut_years:
         cut_sky:
         all_sst:
@@ -57,16 +60,16 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     # Grab the list of SST V2 files
     all_sst_files = glob.glob(noaa_path + 'sst*nc')
     all_sst_files.sort()
-
     # Cut on years
     if '1981' not in all_sst_files[0]:
         raise ValueError("Years not in sync!!")
-    istart = years[0]-1981
-    iend = years[1]-1981+1
-    all_sst_files = all_sst_files[istart:iend]
 
     # Load the Cubes into memory
     if all_sst is None:
+        istart = years[0] - 1981
+        iend = years[1] - 1981 + 1
+        all_sst_files = all_sst_files[istart:iend]
+
         print("Loading up the files. Be patient...")
         all_sst = load_all_sst(all_sst_files)
 
@@ -83,14 +86,26 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     # ints -- all are days
     int_keys = ['time_start', 'time_end', 'time_peak', 'duration', 'duration_moderate', 'duration_strong',
                 'duration_severe', 'duration_extreme']
+    float_keys = ['intensity_max', 'intensity_mean', 'intensity_var', 'intensity_cumulative']
+    str_keys = ['category']
+    for key in float_keys.copy():
+        float_keys += [key+'_relThresh', key+'_abs']
+    float_keys += ['rate_onset', 'rate_decline']
     #units = ['day']*len(int_keys)
 
     #out_dict = {}
     #for key in int_keys:
     #    out_dict[key] = np.ma.zeros((lat_coord.shape[0], lon_coord.shape[0], 100), dtype=np.int32, fill_value=-1)
 
-    # Start the db
+    # Start the db's
+    if os.path.isfile(dbfile):
+        os.remove(dbfile)
     engine = sqlalchemy.create_engine('sqlite:///'+dbfile)
+
+    if os.path.isfile(climate_db):
+        embed(header='101 of build')
+    elif save_climate:
+        engine_clim = sqlalchemy.create_engine('sqlite:///'+climate_db)
 
     # Main loop
     if cut_sky:
@@ -131,8 +146,9 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
         #if len(list_SSTs) > 0:
         #    import pdb; pdb.set_trace()
         results = [pool.apply(mhw.detect, args=(t, SSTs, climatologyPeriod)) for SSTs in list_SSTs]
+        final_tbl = None
         for result in results:
-            mhws = result[0]
+            mhws, clim = result
             # Fill me in
             nevent = mhws['n_events']
             if nevent > 0:
@@ -144,11 +160,36 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
                 sub_tbl = pandas.DataFrame.from_dict(int_dict)
                 # Recast
                 sub_tbl = sub_tbl.astype('int32')
+                # Add strings
+                for key in str_keys:
+                    sub_tbl[key] = mhws[key]
                 # Lat, lon
                 sub_tbl['lat'] = lat_coord[ilat].points[0]
                 sub_tbl['lon'] = lon_coord[jlon].points[0]
-                # Add to DB
-                sub_tbl.to_sql('MHW_Events', con=engine, if_exists='append')
+                # Floats
+                float_dict = {}
+                for key in float_keys:
+                    float_dict[key] = mhws[key]
+                sub_tbl2 = pandas.DataFrame.from_dict(float_dict)
+                sub_tbl2 = sub_tbl2.astype('float32')
+                # Final
+                cat = pandas.concat([sub_tbl, sub_tbl2], axis=1, join='inner')
+                if final_tbl is None:
+                    final_tbl = cat
+                else:
+                    final_tbl.append(cat)
+
+                if save_climate:
+                # Climate
+                    sub_clim = pandas.DataFrame.from_dict(clim)
+                    sub_clim['lat'] = lat_coord[ilat].points[0]
+                    sub_clim['lon'] = lon_coord[jlon].points[0]
+                    # Add to DB
+                    sub_clim.to_sql('Climatology', con=engine_clim, if_exists='append')
+
+        # Add to DB
+        if final_tbl is not None:
+            final_tbl.to_sql('MHW_Events', con=engine, if_exists='append')
 
         # Count
         print('count={} of {}'.format(counter, n_calc))
@@ -181,18 +222,20 @@ def dont_run_this():
     noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/'
     all_sst_files = glob.glob(noaa_path + 'sst*nc')
     all_sst_files.sort()
-    all_sst_files = all_sst_files[5:10]
+    years = [1982,2016]
+    istart = years[0]-1981
+    iend = years[1]-1981+1
+    all_sst_files = all_sst_files[istart:iend]
     all_sst = build_mhws.load_all_sst(all_sst_files)
-    build_mhws.build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws_allsky.db', cut_years=True, cut_sky=False, all_sst=all_sst)
+    build_mhws.build_me('/home/xavier/Projects/Oceanography/MHWs/db/test_mhws_allsky.db', cut_sky=False, all_sst=all_sst, nproc=50, n_calc=1000)
 
 # Command line execution
 if __name__ == '__main__':
     #
     #build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws.db', cut_sky=True)
     #build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws_allsky.db', cut_years=True, cut_sky=False)
-    build_me('/home/xavier/Projects/Oceanography/MHWs/test_allsky_1000.db', years=[1982,2016], cut_sky=False,
-             nproc=18, n_calc=1000)
+    #build_me('/home/xavier/Projects/Oceanography/MHWs/db/test_mhws_allsky.db', years=[1982,2016], cut_sky=False, nproc=50, n_calc=1000)
 
     # Default run to match Oliver
-#    build_me('/home/xavier/Projects/Oceanography/MHWs/mhws_allsky_defaults.db', years=[1982,2016], cut_sky=False, nproc=18)
+    build_me('/home/xavier/Projects/Oceanography/MHWs/mhws_allsky_defaults.db', years=[1982,2016], cut_sky=False, nproc=50)
 
