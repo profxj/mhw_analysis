@@ -6,6 +6,7 @@ import multiprocessing
 import pandas
 import iris
 import sqlalchemy
+from datetime import date
 
 import marineHeatWaves as mhw
 
@@ -121,14 +122,16 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
         n_calc = len(irange) * len(jrange)
 
     counter = 0
+    tot_events = 0
     pool = multiprocessing.Pool(processes=nproc)
-    if len(all_sst_files) < 30:
+    if len(all_sst) < 30:
         climatologyPeriod=years
     else:
         climatologyPeriod=[1983,2012]
     while (counter < n_calc):
         # Load Temperatures
-        list_SSTs = []
+        list_SSTs, ilats, jlons = [], [], []
+        nmask = 0
         for ss in range(nproc):
             if counter == n_calc:
                 break
@@ -140,17 +143,23 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
             frac = np.sum(np.invert(SST.mask))/t.size
             if SST.mask is np.bool_(False) or frac > min_frac:
                 list_SSTs.append(SST)
+                ilats.append(ilat)
+                jlons.append(jlon)
             else:
+                nmask += 1
                 continue
         # Detect
         #if len(list_SSTs) > 0:
         #    import pdb; pdb.set_trace()
         results = [pool.apply(mhw.detect, args=(t, SSTs, climatologyPeriod)) for SSTs in list_SSTs]
         final_tbl = None
-        for result in results:
+        sub_events = 0
+        for iilat, jjlon, result in zip(ilats, jlons, results):
             mhws, clim = result
             # Fill me in
             nevent = mhws['n_events']
+            tot_events += nevent
+            sub_events += nevent
             if nevent > 0:
                 int_dict = {}
                 for key in int_keys:
@@ -160,12 +169,16 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
                 sub_tbl = pandas.DataFrame.from_dict(int_dict)
                 # Recast
                 sub_tbl = sub_tbl.astype('int32')
+                # Event number
+                sub_tbl['ievent'] = np.arange(nevent)
+                # Time
+                sub_tbl['date'] = pandas.to_datetime([date.fromordinal(tt) for tt in sub_tbl['time_start']])
                 # Add strings
                 for key in str_keys:
                     sub_tbl[key] = mhws[key]
                 # Lat, lon
-                sub_tbl['lat'] = lat_coord[ilat].points[0]
-                sub_tbl['lon'] = lon_coord[jlon].points[0]
+                sub_tbl['lat'] = [lat_coord[iilat].points[0]]*nevent
+                sub_tbl['lon'] = [lon_coord[jjlon].points[0]]*nevent
                 # Floats
                 float_dict = {}
                 for key in float_keys:
@@ -177,13 +190,13 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
                 if final_tbl is None:
                     final_tbl = cat
                 else:
-                    final_tbl.append(cat)
+                    final_tbl = pandas.concat([final_tbl, cat], ignore_index=True)
 
                 if save_climate:
                 # Climate
                     sub_clim = pandas.DataFrame.from_dict(clim)
-                    sub_clim['lat'] = lat_coord[ilat].points[0]
-                    sub_clim['lon'] = lon_coord[jlon].points[0]
+                    sub_clim['lat'] = lat_coord[iilat].points[0]
+                    sub_clim['lon'] = lon_coord[jjlon].points[0]
                     # Add to DB
                     sub_clim.to_sql('Climatology', con=engine_clim, if_exists='append')
 
@@ -192,7 +205,8 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
             final_tbl.to_sql('MHW_Events', con=engine, if_exists='append')
 
         # Count
-        print('count={} of {}'.format(counter, n_calc))
+        print('count={} of {}. {} were masked. {} MHW sub-events. {} total'.format(
+            counter, n_calc, nmask, sub_events, tot_events))
         #print('lat={}, lon={}, nevent={}'.format(lat_coord[ilat].points[0], lon_coord[jlon].points[0],
         #                                         mhws['n_events']))
         # Save the dict
@@ -213,29 +227,4 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
 
     print("All done!!")
 
-
-def dont_run_this():
-    # Test from Ipython
-    from importlib import reload
-    import glob
-    from mhw_analysis import build_mhws
-    noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/'
-    all_sst_files = glob.glob(noaa_path + 'sst*nc')
-    all_sst_files.sort()
-    years = [1982,2016]
-    istart = years[0]-1981
-    iend = years[1]-1981+1
-    all_sst_files = all_sst_files[istart:iend]
-    all_sst = build_mhws.load_all_sst(all_sst_files)
-    build_mhws.build_me('/home/xavier/Projects/Oceanography/MHWs/db/test_mhws_allsky.db', cut_sky=False, all_sst=all_sst, nproc=50, n_calc=1000)
-
-# Command line execution
-if __name__ == '__main__':
-    #
-    #build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws.db', cut_sky=True)
-    #build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws_allsky.db', cut_years=True, cut_sky=False)
-    #build_me('/home/xavier/Projects/Oceanography/MHWs/db/test_mhws_allsky.db', years=[1982,2016], cut_sky=False, nproc=50, n_calc=1000)
-
-    # Default run to match Oliver
-    build_me('/home/xavier/Projects/Oceanography/MHWs/mhws_allsky_defaults.db', years=[1982,2016], cut_sky=False, nproc=50)
 
