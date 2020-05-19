@@ -8,35 +8,8 @@ import iris
 import sqlalchemy
 from datetime import date
 
-import marineHeatWaves as mhw
-
 from IPython import embed
 import os
-
-def load_all_sst(sst_files):
-    all_sst = []
-    for ifile in sst_files:
-        print(ifile)  # For progress
-        cubes = iris.load(ifile)
-        sst = cubes[0]
-        # Get out of lazy
-        _ = sst.data
-        # Append
-        all_sst.append(sst)
-    #
-    return all_sst
-
-def grab_t(sst_list):
-    allts = []
-    for sst in sst_list:
-        allts += (sst.coord('time').points + 657072).astype(int).tolist()  # 1880?
-    return np.array(allts)
-
-def grab_T(sst_list, i, j):
-    allTs = []
-    for sst in sst_list:
-        allTs += [sst.data[:,i,j]]
-    return np.ma.concatenate(allTs)
 
 def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/',
              climate_db='/home/xavier/Projects/Oceanography/MHWs/db/climate_OI.db',
