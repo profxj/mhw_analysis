@@ -6,8 +6,9 @@ from mhw_analysis.db import utils
 from mhw_analysis.db import build_climate
 from mhw import climate
 
-def first_try():
-    years = (1983,1993)
+from IPython import embed
+
+def load_me(years = (1983,1993)):
     # Grab the list of SST V2 files
     noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/'
     all_sst_files = glob.glob(noaa_path + 'sst*nc')
@@ -24,11 +25,16 @@ def first_try():
     print("Loading up the files. Be patient...")
     all_sst = utils.load_noaa_sst(all_sst_files)
 
-    # Time
-    t = utils.grab_t(all_sst)
-    time_dict = climate.build_time_dict(t)
+    return all_sst
 
+
+def first_try():
     #
+    # Time
+    all_sst = load_me()
+    t = utils.grab_t(all_sst)
+
+    time_dict = climate.build_time_dict(t)
     irange = np.arange(355, 365)
     jrange = np.arange(715, 725)
     ilat, jlon = irange[0], jrange[0]
@@ -43,8 +49,11 @@ if __name__ == '__main__':
     #build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws.db', cut_sky=True)
     #build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws_allsky.db', cut_years=True, cut_sky=False)
     #build_me('/home/xavier/Projects/Oceanography/MHWs/db/test_mhws_allsky.db', years=[1982,2016], cut_sky=False, nproc=50, n_calc=1000)
-
     # Default run to match Oliver (+ a few extra years)
-    build_climate.build_noaa('/home/xavier/Projects/Oceanography/MHWs/db/test_climate.cube',
-                             climatologyPeriod=[1983,1993], cut_sky=True, all_sst=all_sst)#, nproc=50)
+    climatologyPeriod = [1983, 1993]
+    all_sst = load_me(years=climatologyPeriod)
+    embed(header='55 of test')
+    build_climate.build_noaa('/home/xavier/Projects/Oceanography/MHWs/db/test_climate.nc',
+                             climatologyPeriod=climatologyPeriod,
+                             cut_sky=True, all_sst=all_sst)
 

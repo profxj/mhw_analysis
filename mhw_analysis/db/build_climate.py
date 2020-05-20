@@ -16,8 +16,8 @@ from mhw import climate
 
 
 def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/',
-               climatologyPeriod=(1983, 2012), cut_sky=True, all_sst=None, nproc=16, min_frac=0.9,
-             n_calc=None, save_climate=False):
+               climatologyPeriod=(1983, 2012), cut_sky=True, all_sst=None, nproc=16,
+               min_frac=0.9, n_calc=None):
     """
     Build the climate models for NOAA
 
@@ -53,7 +53,6 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
     # Coords
     lat_coord = all_sst[0].coord('latitude')
     lon_coord = all_sst[0].coord('longitude')
-    #events_coord = iris.coords.DimCoord(np.arange(100), var_name='events')
 
     # Time
     t = utils.grab_t(all_sst)
@@ -77,8 +76,9 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
         n_calc = len(irange) * len(jrange)
 
     # Init
-    out_seas = np.zeros((t.size, irange.size, jrange.size), dtype='float32')
-    out_thresh = np.zeros((t.size, irange.size, jrange.size), dtype='float32')
+    lenClimYear = 366  # This has to match what is in climate.py
+    out_seas = np.zeros((lenClimYear, lat_coord.shape[0], lon_coord.shape[0]), dtype='float32')
+    out_thresh = np.zeros((lenClimYear, lat_coord.shape[0], lon_coord.shape[0]), dtype='float32')
 
     counter = 0
     tot_events = 0
@@ -106,16 +106,13 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
         # Detect
         #if len(list_SSTs) > 0:
         #    import pdb; pdb.set_trace()
-        results = [pool.apply(climate.calc(), args=(time_dict, SSTs)) for SSTs in list_SSTs]
-        final_tbl = None
-        sub_events = 0
+        results = [pool.apply(climate.calc, args=(time_dict, SSTs)) for SSTs in list_SSTs]
         for iilat, jjlon, clim in zip(ilats, jlons, results):
             out_seas[:, iilat, jjlon] = clim['seas']
             out_thresh[:, iilat, jjlon] = clim['thresh']
 
         # Count
-        print('count={} of {}. {} were masked. {} MHW sub-events. {} total'.format(
-            counter, n_calc, nmask, sub_events, tot_events))
+        print('count={} of {}.'.format(counter, n_calc))
         #print('lat={}, lon={}, nevent={}'.format(lat_coord[ilat].points[0], lon_coord[jlon].points[0],
         #                                         mhws['n_events']))
         # Save the dict
@@ -124,14 +121,19 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
     # Cubes
     embed(header='131 of climate')
     cubes = iris.cube.CubeList()
-    for ss, key in enumerate(out_dict.keys()):
-        cube = iris.cube.Cube(out_dict[key], units=units[ss], var_name=key,
-                                     dim_coords_and_dims=[(lat_coord, 0),
-                                                          (lon_coord, 1),
-                                                          (events_coord, 2)])
-        cubes.append(cube)
+    time_coord = iris.coords.DimCoord(np.arange(lenClimYear), units='day', var_name='day')
+    cube_seas = iris.cube.Cube(out_seas, units='C', var_name='seasonalT',
+                                     dim_coords_and_dims=[(time_coord, 0),
+                                                          (lat_coord, 1),
+                                                          (lon_coord, 2)])
+    cube_thresh = iris.cube.Cube(out_thresh, units='C', var_name='threshT',
+                               dim_coords_and_dims=[(time_coord, 0),
+                                                    (lat_coord, 1),
+                                                    (lon_coord, 2)])
+    cubes.append(cube_seas)
+    cubes.append(cube_thresh)
     # Write
-    iris.save(cubes, outfile, zlib=True)
+    iris.save(cubes, climate_db_file, zlib=True)
 
     print("All done!!")
 
