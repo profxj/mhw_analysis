@@ -103,6 +103,7 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
             else:
                 nmask += 1
                 continue
+        embed(header='106 of build climate')
         # Detect
         #if len(list_SSTs) > 0:
         #    import pdb; pdb.set_trace()
@@ -113,27 +114,24 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
 
         # Count
         print('count={} of {}.'.format(counter, n_calc))
-        #print('lat={}, lon={}, nevent={}'.format(lat_coord[ilat].points[0], lon_coord[jlon].points[0],
-        #                                         mhws['n_events']))
-        # Save the dict
-        #all_mhw.append(mhws)
 
-    # Cubes
-    embed(header='131 of climate')
-    cubes = iris.cube.CubeList()
-    time_coord = iris.coords.DimCoord(np.arange(lenClimYear), units='day', var_name='day')
-    cube_seas = iris.cube.Cube(out_seas, units='C', var_name='seasonalT',
-                                     dim_coords_and_dims=[(time_coord, 0),
-                                                          (lat_coord, 1),
-                                                          (lon_coord, 2)])
-    cube_thresh = iris.cube.Cube(out_thresh, units='C', var_name='threshT',
-                               dim_coords_and_dims=[(time_coord, 0),
-                                                    (lat_coord, 1),
-                                                    (lon_coord, 2)])
-    cubes.append(cube_seas)
-    cubes.append(cube_thresh)
-    # Write
-    iris.save(cubes, climate_db_file, zlib=True)
+        # Cubes
+        if (counter == 100000) or (counter == n_calc):
+            print("Saving...")
+            cubes = iris.cube.CubeList()
+            time_coord = iris.coords.DimCoord(np.arange(lenClimYear), units='day', var_name='day')
+            cube_seas = iris.cube.Cube(out_seas, units='C', var_name='seasonalT',
+                                             dim_coords_and_dims=[(time_coord, 0),
+                                                                  (lat_coord, 1),
+                                                                  (lon_coord, 2)])
+            cube_thresh = iris.cube.Cube(out_thresh, units='C', var_name='threshT',
+                                       dim_coords_and_dims=[(time_coord, 0),
+                                                            (lat_coord, 1),
+                                                            (lon_coord, 2)])
+            cubes.append(cube_seas)
+            cubes.append(cube_thresh)
+            # Write
+            iris.save(cubes, climate_db_file, zlib=True)
 
     print("All done!!")
 
