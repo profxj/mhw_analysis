@@ -143,7 +143,7 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
         print('count={} of {}.'.format(counter, n_calc))
 
         # Cubes
-        if (counter == 100000) or (counter == n_calc):
+        if (counter % 100000 == 0) or (counter == n_calc):
             print("Saving...")
             cubes = iris.cube.CubeList()
             time_coord = iris.coords.DimCoord(np.arange(lenClimYear), units='day', var_name='day')
