@@ -12,6 +12,5 @@ if __name__ == '__main__':
 
     # Climate
     if True:
-        build_climate.build_noaa('/home/xavier/Projects/Oceanography/MHWs/db/full_climate.nc',
-                                 cut_sky=True, all_sst=all_sst)
+        build_climate.build_noaa('/home/xavier/Projects/Oceanography/MHWs/db/full_climate.nc')
 
