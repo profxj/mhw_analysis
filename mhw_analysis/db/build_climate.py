@@ -83,13 +83,15 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
     counter = 0
     tot_events = 0
 
-    # Init climate
+    # Init climate items
 
     # Length of climatological year
     lenClimYear = 366
     feb29 = 60
+    # Window
     windowHalfWidth=5
     wHW_array = np.outer(np.ones(1000, dtype='int'), np.arange(-windowHalfWidth, windowHalfWidth + 1))
+
     # Inialize arrays
     thresh_climYear = np.NaN * np.zeros(lenClimYear, dtype='float32')
     seas_climYear = np.NaN * np.zeros(lenClimYear, dtype='float32')
@@ -101,16 +103,16 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
     clim_end = len(doyClim)
     nwHW = wHW_array.shape[1]
 
+    # Smoothing
     smoothPercentile = True
     smoothPercentileWidth = 31
     pctile = 90
 
+    # Main loop
     while (counter < n_calc):
-        # Load Temperatures
-        #list_SSTs, ilats, jlons = [], [], []
+        # Init
         thresh_climYear[:] = np.nan
         seas_climYear[:] = np.nan
-        nmask = 0
 
         ilat = ii_grid[counter]
         jlon = jj_grid[counter]
@@ -121,7 +123,6 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
         if SST.mask is np.bool_(False) or frac > min_frac:
             pass
         else:
-            nmask += 1
             continue
         # Work it
         climate.doit(lenClimYear, feb29, doyClim, clim_start, clim_end, wHW_array, nwHW,
