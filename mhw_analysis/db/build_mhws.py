@@ -1,20 +1,22 @@
 """ Module to generate a *large* Cube of MHW events"""
 import glob
+import os
 import numpy as np
 import multiprocessing
 
-import pandas
-import iris
 import sqlalchemy
 from datetime import date
 
+from mhw_analysis.db import utils
+from mhw import marineHeatWaves
+import iris
+
 from IPython import embed
-import os
 
 def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/',
-             climate_db='/home/xavier/Projects/Oceanography/MHWs/db/climate_OI.db',
+             climate_db='/home/xavier/Projects/Oceanography/MHWs/db/NOAA_OI_climate_1983-2012.nc',
              years=[1986,1990], cut_sky=True, all_sst=None, nproc=16, min_frac=0.9,
-             n_calc=None, save_climate=False):
+             n_calc=None, save_climate=False, append=True):
     """
     Build the grid
 
@@ -31,6 +33,16 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     Returns:
 
     """
+    # Load climate
+    if climate_db is not None:
+        print("Loading the climate: {}".format(climate_db))
+        climate = iris.load(climate_db)
+        clim_seas = climate[0]
+        clim_thresh = climate[1]
+        # No lazy
+        _ = clim_seas.data[:]
+        _ = clim_thresh.data[:]
+
     # Grab the list of SST V2 files
     all_sst_files = glob.glob(noaa_path + 'sst*nc')
     all_sst_files.sort()
@@ -45,7 +57,7 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
         all_sst_files = all_sst_files[istart:iend]
 
         print("Loading up the files. Be patient...")
-        all_sst = load_all_sst(all_sst_files)
+        all_sst = utils.load_noaa_sst(all_sst_files)
 
     # Coords
     lat_coord = all_sst[0].coord('latitude')
@@ -53,7 +65,7 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     #events_coord = iris.coords.DimCoord(np.arange(100), var_name='events')
 
     # Time
-    t = grab_t(all_sst)
+    t = utils.grab_t(all_sst)
     nmax = len(t)
 
     # Setup for output
@@ -72,14 +84,26 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     #    out_dict[key] = np.ma.zeros((lat_coord.shape[0], lon_coord.shape[0], 100), dtype=np.int32, fill_value=-1)
 
     # Start the db's
-    if os.path.isfile(dbfile):
+    if os.path.isfile(dbfile) and not append:
         os.remove(dbfile)
-    engine = sqlalchemy.create_engine('sqlite:///'+dbfile)
 
-    if os.path.isfile(climate_db):
-        embed(header='101 of build')
-    elif save_climate:
-        engine_clim = sqlalchemy.create_engine('sqlite:///'+climate_db)
+    engine = sqlalchemy.create_engine('sqlite:///'+dbfile)
+    if append:
+        connection = engine.connect()
+        metadata = sqlalchemy.MetaData()
+        mhw_tbl = sqlalchemy.Table('MHW_Events', metadata, autoload=True, autoload_with=engine)
+        query = sqlalchemy.select([mhw_tbl]).where(sqlalchemy.and_(
+            mhw_tbl.columns.ievent == 108, mhw_tbl.columns.time_start == 737341, mhw_tbl.columns.duration == 14))
+        result = connection.execute(query).fetchall()[-1]
+        last_lat, last_lon = result[12:14]
+        # Indices
+        last_ilat = np.where(lat_coord.points == last_lat)[0][0]
+        last_jlon = np.where(lon_coord.points == last_lon)[0][0]
+
+    #if os.path.isfile(climate_db):
+    #    embed(header='101 of build')
+    #elif save_climate:
+    #    engine_clim = sqlalchemy.create_engine('sqlite:///'+climate_db)
 
     # Main loop
     if cut_sky:
@@ -94,39 +118,47 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     if n_calc is None:
         n_calc = len(irange) * len(jrange)
 
-    counter = 0
+    # Last
+    if append:
+        counter = np.where((ii_grid == last_ilat) & (jj_grid == last_jlon))[0][0]
+    else:
+        counter = 0
     tot_events = 0
-    pool = multiprocessing.Pool(processes=nproc)
     if len(all_sst) < 30:
         climatologyPeriod=years
     else:
         climatologyPeriod=[1983,2012]
+
+    # Main loop
     while (counter < n_calc):
         # Load Temperatures
-        list_SSTs, ilats, jlons = [], [], []
         nmask = 0
-        for ss in range(nproc):
-            if counter == n_calc:
-                break
-            ilat = ii_grid[counter]
-            jlon = jj_grid[counter]
-            counter += 1
-            # Ice/land??
-            SST = grab_T(all_sst, ilat, jlon)
-            frac = np.sum(np.invert(SST.mask))/t.size
-            if SST.mask is np.bool_(False) or frac > min_frac:
-                list_SSTs.append(SST)
-                ilats.append(ilat)
-                jlons.append(jlon)
-            else:
-                nmask += 1
-                continue
+
+        # Slurp
+        ilat = ii_grid[counter]
+        jlon = jj_grid[counter]
+        counter += 1
+        # Ice/land??
+        SST = utils.grab_T(all_sst, ilat, jlon)
+        frac = np.sum(np.invert(SST.mask))/t.size
+        if SST.mask is np.bool_(False) or frac > min_frac:
+            pass
+        else:
+            nmask += 1
+            continue
         # Detect
         #if len(list_SSTs) > 0:
         #    import pdb; pdb.set_trace()
-        results = [pool.apply(mhw.detect, args=(t, SSTs, climatologyPeriod)) for SSTs in list_SSTs]
+        #results = [pool.apply(marineHeatWaves.detect, args=(t, SSTs, climatologyPeriod)) for SSTs in list_SSTs]
         final_tbl = None
         sub_events = 0
+        embed(header='136 of build')
+        test = marineHeatWaves.detect(t, SST.flatten(), climatologyPeriod=climatologyPeriod)
+        test2 = marineHeatWaves.detect_without_climate(t, SST.flatten(),
+                                                       clim_seas.data[:, ilat, jlon].flatten(),
+                                                       clim_thresh.data[:, ilat, jlon].flatten())
+        embed(header='150 of build')
+        '''
         for iilat, jjlon, result in zip(ilats, jlons, results):
             mhws, clim = result
             # Fill me in
@@ -172,6 +204,7 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
                     sub_clim['lon'] = lon_coord[jjlon].points[0]
                     # Add to DB
                     sub_clim.to_sql('Climatology', con=engine_clim, if_exists='append')
+        '''
 
         # Add to DB
         if final_tbl is not None:
