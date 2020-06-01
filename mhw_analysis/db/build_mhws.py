@@ -9,6 +9,7 @@ from datetime import date
 
 from mhw_analysis.db import utils
 from mhw import marineHeatWaves
+from mhw import utils as mhw_utils
 import iris
 
 from IPython import embed
@@ -37,11 +38,11 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     if climate_db is not None:
         print("Loading the climate: {}".format(climate_db))
         climate = iris.load(climate_db)
-        clim_seas = climate[0]
-        clim_thresh = climate[1]
+        seas_climYear = climate[0]
+        thresh_climYear = climate[1]
         # No lazy
-        _ = clim_seas.data[:]
-        _ = clim_thresh.data[:]
+        _ = seas_climYear.data[:]
+        _ = thresh_climYear.data[:]
 
     # Grab the list of SST V2 files
     all_sst_files = glob.glob(noaa_path + 'sst*nc')
@@ -67,6 +68,7 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     # Time
     t = utils.grab_t(all_sst)
     nmax = len(t)
+    doy = mhw_utils.calc_doy(t)
 
     # Setup for output
     # ints -- all are days
@@ -152,11 +154,10 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
         #results = [pool.apply(marineHeatWaves.detect, args=(t, SSTs, climatologyPeriod)) for SSTs in list_SSTs]
         final_tbl = None
         sub_events = 0
-        embed(header='136 of build')
-        test = marineHeatWaves.detect(t, SST.flatten(), climatologyPeriod=climatologyPeriod)
-        test2 = marineHeatWaves.detect_without_climate(t, SST.flatten(),
-                                                       clim_seas.data[:, ilat, jlon].flatten(),
-                                                       clim_thresh.data[:, ilat, jlon].flatten())
+        mhw1, clim1 = marineHeatWaves.detect(t, SST.flatten(), climatologyPeriod=climatologyPeriod)
+        mhw2 = marineHeatWaves.detect_without_climate(t, doy, SST.flatten(),
+                                                       seas_climYear.data[:, ilat, jlon].flatten(),
+                                                       thresh_climYear.data[:, ilat, jlon].flatten())
         embed(header='150 of build')
         '''
         for iilat, jjlon, result in zip(ilats, jlons, results):
@@ -204,7 +205,6 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
                     sub_clim['lon'] = lon_coord[jjlon].points[0]
                     # Add to DB
                     sub_clim.to_sql('Climatology', con=engine_clim, if_exists='append')
-        '''
 
         # Add to DB
         if final_tbl is not None:
@@ -217,6 +217,7 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
         #                                         mhws['n_events']))
         # Save the dict
         #all_mhw.append(mhws)
+        '''
 
     '''
     # Cubes

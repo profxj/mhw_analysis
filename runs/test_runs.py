@@ -10,7 +10,8 @@ def dont_run_this():
     all_sst_files = glob.glob(noaa_path + 'sst*nc')
     all_sst_files.sort()
     #years = [1982,2016]
-    years = [1986,1990]
+    #years = [1986,1990]
+    years = [1983,2012]
     istart = years[0]-1981
     iend = years[1]-1981+1
     all_sst_files = all_sst_files[istart:iend]
