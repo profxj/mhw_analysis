@@ -37,9 +37,9 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     # Load climate
     if climate_db is not None:
         print("Loading the climate: {}".format(climate_db))
-        climate = iris.load(climate_db)
-        seas_climYear = climate[0]
-        thresh_climYear = climate[1]
+        #climate = iris.load(climate_db)
+        seas_climYear = iris.load(climate_db, 'seasonalT')[0]
+        thresh_climYear = iris.load(climate_db, 'threshT')[0]
         # No lazy
         _ = seas_climYear.data[:]
         _ = thresh_climYear.data[:]

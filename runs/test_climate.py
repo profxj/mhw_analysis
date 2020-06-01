@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
     # Default run to match Oliver (+ a few extra years)
     if True:
-        climatologyPeriod = [1983, 1993]
+        climatologyPeriod = [1983, 2012]
         all_sst = load_me(years=climatologyPeriod)
         embed(header='97 of test')
         build_climate.build_noaa('/home/xavier/Projects/Oceanography/MHWs/db/test_climate.nc',
