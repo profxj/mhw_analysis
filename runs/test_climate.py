@@ -43,8 +43,11 @@ def first_try():
     clim = climate.calc(time_dict, SST)
 
 def test_jit():
-    sst = np.load('ex_SST.npy')
-    t = np.load('t.npy')
+    #sst = np.load('ex_SST.npy')
+    #t = np.load('t.npy')
+
+    sst = np.load('tempClim.np.npy')
+    t = np.load('t2.np.npy')
     times = climate.build_time_dict(t)
     #
 
@@ -87,11 +90,11 @@ if __name__ == '__main__':
     #build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws_allsky.db', cut_years=True, cut_sky=False)
     #build_me('/home/xavier/Projects/Oceanography/MHWs/db/test_mhws_allsky.db', years=[1982,2016], cut_sky=False, nproc=50, n_calc=1000)
 
-    if False:
+    if True:
         test_jit()
 
     # Default run to match Oliver (+ a few extra years)
-    if True:
+    if False:
         climatologyPeriod = [1983, 2012]
         all_sst = load_me(years=climatologyPeriod)
         embed(header='97 of test')
