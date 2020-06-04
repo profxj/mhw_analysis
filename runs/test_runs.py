@@ -19,7 +19,7 @@ def dont_run_this():
     #
     reload(build_mhws)
     build_mhws.build_me('/home/xavier/Projects/Oceanography/MHWs/db/mhws_allsky_defaults.db', years=years,
-                        cut_sky=False, all_sst=all_sst)#, n_calc=1000)
+                        cut_sky=True, all_sst=all_sst, append=False)#, n_calc=1000)
     #build_mhws.build_me('/home/xavier/Projects/Oceanography/MHWs/db/test_mhws_allsky.db', years=years,
     #                    cut_sky=False, all_sst=all_sst, nproc=50, n_calc=1000)
 

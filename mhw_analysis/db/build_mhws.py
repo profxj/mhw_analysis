@@ -2,7 +2,7 @@
 import glob
 import os
 import numpy as np
-import multiprocessing
+from importlib import reload
 
 import sqlalchemy
 from datetime import date
