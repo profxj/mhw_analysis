@@ -87,6 +87,7 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
 
     # Start the db's
     if os.path.isfile(dbfile) and not append:
+        import pdb; pdb.set_trace()
         os.remove(dbfile)
 
     engine = sqlalchemy.create_engine('sqlite:///'+dbfile)

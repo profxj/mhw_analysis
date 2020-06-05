@@ -90,11 +90,11 @@ if __name__ == '__main__':
     #build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws_allsky.db', cut_years=True, cut_sky=False)
     #build_me('/home/xavier/Projects/Oceanography/MHWs/db/test_mhws_allsky.db', years=[1982,2016], cut_sky=False, nproc=50, n_calc=1000)
 
-    if True:
+    if False:
         test_jit()
 
     # Default run to match Oliver (+ a few extra years)
-    if False:
+    if True:
         climatologyPeriod = [1983, 2012]
         all_sst = load_me(years=climatologyPeriod)
         embed(header='97 of test')

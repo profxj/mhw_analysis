@@ -132,9 +132,10 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
         seas_climYear[feb29 - 1] = 0.5 * seas_climYear[feb29 - 2] + 0.5 * seas_climYear[feb29]
 
         # Test
+        debug=True
         if debug:
             _, clim = marineHeatWaves.detect(t, SST.flatten(), climatologyPeriod=climatologyPeriod)
-            embed(header='136 of build_climate')
+            import pdb; pdb.set_trace()
 
 
         # Smooth if desired
@@ -154,11 +155,11 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
             print("Saving...")
             cubes = iris.cube.CubeList()
             time_coord = iris.coords.DimCoord(np.arange(lenClimYear), units='day', var_name='day')
-            cube_seas = iris.cube.Cube(out_seas, units='C', var_name='seasonalT',
+            cube_seas = iris.cube.Cube(out_seas, units='degC', var_name='seasonalT',
                                              dim_coords_and_dims=[(time_coord, 0),
                                                                   (lat_coord, 1),
                                                                   (lon_coord, 2)])
-            cube_thresh = iris.cube.Cube(out_thresh, units='C', var_name='threshT',
+            cube_thresh = iris.cube.Cube(out_thresh, units='degC', var_name='threshT',
                                        dim_coords_and_dims=[(time_coord, 0),
                                                             (lat_coord, 1),
                                                             (lon_coord, 2)])
