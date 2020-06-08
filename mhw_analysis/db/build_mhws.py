@@ -12,12 +12,15 @@ from mhw import marineHeatWaves
 from mhw import utils as mhw_utils
 import iris
 
+reload(mhw_utils)
+reload(marineHeatWaves)
+
 from IPython import embed
 
 def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/',
-             climate_db='/home/xavier/Projects/Oceanography/MHWs/db/NOAA_OI_climate_1983-2012.nc',
-             years=[1986,1990], cut_sky=True, all_sst=None, nproc=16, min_frac=0.9,
-             n_calc=None, save_climate=False, append=True):
+             climate_db='/home/xavier/Projects/Oceanography/MHW/db/NOAA_OI_climate_1983-2012.nc',
+             years=[1986,1990], cut_sky=True, all_sst=None, min_frac=0.9,
+             n_calc=None, append=True, seas_climYear=None, thresh_climYear=None):
     """
     Build the grid
 
@@ -35,14 +38,16 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
 
     """
     # Load climate
-    if climate_db is not None:
-        print("Loading the climate: {}".format(climate_db))
-        #climate = iris.load(climate_db)
-        seas_climYear = iris.load(climate_db, 'seasonalT')[0]
-        thresh_climYear = iris.load(climate_db, 'threshT')[0]
-        # No lazy
-        _ = seas_climYear.data[:]
-        _ = thresh_climYear.data[:]
+    if seas_climYear is None or thresh_climYear is None:
+        if climate_db is not None:
+            print("Loading the climate: {}".format(climate_db))
+            seas_climYear = iris.load(climate_db, 'seasonalT')[0]
+            thresh_climYear = iris.load(climate_db, 'threshT')[0]
+            # No lazy
+            _ = seas_climYear.data[:]
+            _ = thresh_climYear.data[:]
+        else:
+            import pdb; pdb.set_trace()  # No longer an option
 
     # Grab the list of SST V2 files
     all_sst_files = glob.glob(noaa_path + 'sst*nc')
@@ -111,7 +116,7 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     # Main loop
     if cut_sky:
         irange = np.arange(355, 365)
-        jrange = np.arange(715,725)
+        jrange = np.arange(715, 725)
     else:
         irange = np.arange(lat_coord.shape[0])
         jrange = np.arange(lon_coord.shape[0])
@@ -155,11 +160,15 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
         #results = [pool.apply(marineHeatWaves.detect, args=(t, SSTs, climatologyPeriod)) for SSTs in list_SSTs]
         final_tbl = None
         sub_events = 0
-        mhw1, clim1 = marineHeatWaves.detect(t, SST.flatten(), climatologyPeriod=climatologyPeriod)
+        #mhw1, clim1 = marineHeatWaves.detect(t, SST.flatten(), climatologyPeriod=climatologyPeriod)
         mhw2 = marineHeatWaves.detect_without_climate(t, doy, SST.flatten(),
                                                        seas_climYear.data[:, ilat, jlon].flatten(),
                                                        thresh_climYear.data[:, ilat, jlon].flatten())
-        embed(header='150 of build')
+        mhw3 = marineHeatWaves.detect_without_climate(t, doy, SST.flatten(),
+                                                      seas_climYear.data[:, ilat, jlon].flatten(),
+                                                      thresh_climYear.data[:, ilat, jlon].flatten(),
+                                                      parallel=False)
+        import pdb; pdb.set_trace()
         '''
         for iilat, jjlon, result in zip(ilats, jlons, results):
             mhws, clim = result
@@ -220,18 +229,6 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
         #all_mhw.append(mhws)
         '''
 
-    '''
-    # Cubes
-    cubes = iris.cube.CubeList()
-    for ss, key in enumerate(out_dict.keys()):
-        cube = iris.cube.Cube(out_dict[key], units=units[ss], var_name=key,
-                                     dim_coords_and_dims=[(lat_coord, 0),
-                                                          (lon_coord, 1),
-                                                          (events_coord, 2)])
-        cubes.append(cube)
-    # Write
-    iris.save(cubes, outfile, zlib=True)
-    '''
 
     print("All done!!")
 
