@@ -132,7 +132,6 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
         seas_climYear[feb29 - 1] = 0.5 * seas_climYear[feb29 - 2] + 0.5 * seas_climYear[feb29]
 
         # Test
-        debug=True
         if debug:
             _, clim = marineHeatWaves.detect(t, SST.flatten(), climatologyPeriod=climatologyPeriod)
             import pdb; pdb.set_trace()
