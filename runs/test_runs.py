@@ -1,4 +1,5 @@
 from mhw_analysis.db import build_mhws
+from IPython import embed
 
 def dont_run_this():
     # Test from Ipython
@@ -30,6 +31,7 @@ def dont_run_this():
     build_mhws.build_me('/home/xavier/Projects/Oceanography/MHWs/db/tst_mhws_allsky_defaults.db',
                         years=years, cut_sky=True, all_sst=all_sst, append=False,
                         seas_climYear=seas_climYear, thresh_climYear=thresh_climYear)
+    embed(header='34 of test')
     #build_mhws.build_me('/home/xavier/Projects/Oceanography/MHWs/db/test_mhws_allsky.db', years=years,
     #                    cut_sky=False, all_sst=all_sst, nproc=50, n_calc=1000)
 
@@ -40,7 +42,10 @@ if __name__ == '__main__':
     #build_me('/home/xavier/Projects/Oceanography/MHWs/test_mhws_allsky.db', cut_years=True, cut_sky=False)
     #build_me('/home/xavier/Projects/Oceanography/MHWs/db/test_mhws_allsky.db', years=[1982,2016], cut_sky=False, nproc=50, n_calc=1000)
 
+    if True:
+        dont_run_this()
+
     # Default run to match Oliver (+ a few extra years)
-    build_mhws.build_me('/home/xavier/Projects/Oceanography/MHWs/db/tst_mhws_allsky_defaults.db',
-                        years=[1982,2019], cut_sky=False, nproc=50)
+    #build_mhws.build_me('/home/xavier/Projects/Oceanography/MHWs/db/tst_mhws_allsky_defaults.db',
+    #                    years=[1982,2019], cut_sky=False, nproc=50)
 

@@ -78,13 +78,27 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     # Setup for output
     # ints -- all are days
     int_keys = ['time_start', 'time_end', 'time_peak', 'duration', 'duration_moderate', 'duration_strong',
-                'duration_severe', 'duration_extreme']
+                'duration_severe', 'duration_extreme', 'category']
     float_keys = ['intensity_max', 'intensity_mean', 'intensity_var', 'intensity_cumulative']
-    str_keys = ['category']
+    #str_keys = ['category']
     for key in float_keys.copy():
         float_keys += [key+'_relThresh', key+'_abs']
     float_keys += ['rate_onset', 'rate_decline']
     #units = ['day']*len(int_keys)
+
+
+    # Init the array
+    dtypes = []
+
+    max_events = 1000
+    for key in int_keys:
+        #mhw[key] = np.zeros(mhw['n_events'], dtype='int')
+        dtypes += [(key, 'int32', (max_events))]
+    for key in float_keys:
+        #mhw[key] = np.zeros(mhw['n_events'])
+        dtypes += [(key, 'float32', (max_events))]
+    data = np.empty((1,), dtype=dtypes)
+
 
     #out_dict = {}
     #for key in int_keys:
@@ -163,12 +177,16 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
         #mhw1, clim1 = marineHeatWaves.detect(t, SST.flatten(), climatologyPeriod=climatologyPeriod)
         mhw2 = marineHeatWaves.detect_without_climate(t, doy, SST.flatten(),
                                                        seas_climYear.data[:, ilat, jlon].flatten(),
-                                                       thresh_climYear.data[:, ilat, jlon].flatten())
-        mhw3 = marineHeatWaves.detect_without_climate(t, doy, SST.flatten(),
-                                                      seas_climYear.data[:, ilat, jlon].flatten(),
-                                                      thresh_climYear.data[:, ilat, jlon].flatten(),
-                                                      parallel=False)
-        import pdb; pdb.set_trace()
+                                                       thresh_climYear.data[:, ilat, jlon].flatten(),
+                                                      data)
+        #mhw3 = marineHeatWaves.detect_without_climate(t, doy, SST.flatten(),
+        #                                              seas_climYear.data[:, ilat, jlon].flatten(),
+        #                                              thresh_climYear.data[:, ilat, jlon].flatten(),
+        #                                              parallel=False)
+        #import pdb; pdb.set_trace()
+        # Count
+        print('count={} of {}. {} were masked. {} MHW sub-events. {} total'.format(
+            counter, n_calc, nmask, sub_events, tot_events))
         '''
         for iilat, jjlon, result in zip(ilats, jlons, results):
             mhws, clim = result
