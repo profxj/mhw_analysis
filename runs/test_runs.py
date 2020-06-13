@@ -12,8 +12,8 @@ def dont_run_this():
     all_sst_files = glob.glob(noaa_path + 'sst*nc')
     all_sst_files.sort()
     #years = [1982,2016]
-    #years = [1986,1990]
-    years = [1983,2012]
+    years = [1986,1990]
+    #years = [1983,2012]
     istart = years[0]-1981
     iend = years[1]-1981+1
     all_sst_files = all_sst_files[istart:iend]
@@ -28,7 +28,7 @@ def dont_run_this():
     print('Climate loaded')
     #
     reload(build_mhws)
-    build_mhws.build_me('/home/xavier/Projects/Oceanography/MHWs/db/tst_mhws_allsky_defaults.db',
+    build_mhws.build_me('/home/xavier/Projects/Oceanography/MHW/db/tst_mhws_allsky_defaults.db',
                         years=years, cut_sky=True, all_sst=all_sst, append=False,
                         seas_climYear=seas_climYear, thresh_climYear=thresh_climYear)
     embed(header='34 of test')

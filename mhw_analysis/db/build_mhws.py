@@ -6,6 +6,7 @@ from importlib import reload
 
 import sqlalchemy
 from datetime import date
+import pandas
 
 from mhw_analysis.db import utils
 from mhw import marineHeatWaves
@@ -78,7 +79,7 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     # Setup for output
     # ints -- all are days
     int_keys = ['time_start', 'time_end', 'time_peak', 'duration', 'duration_moderate', 'duration_strong',
-                'duration_severe', 'duration_extreme', 'category']
+                'duration_severe', 'duration_extreme', 'category', 'n_events']
     float_keys = ['intensity_max', 'intensity_mean', 'intensity_var', 'intensity_cumulative']
     #str_keys = ['category']
     for key in float_keys.copy():
@@ -97,8 +98,15 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
     for key in float_keys:
         #mhw[key] = np.zeros(mhw['n_events'])
         dtypes += [(key, 'float32', (max_events))]
-    data = np.empty((1,), dtype=dtypes)
+    data = np.empty((1000,), dtype=dtypes)
 
+    def init_data(idata):
+        for key in int_keys:
+            idata[key][:][:] = 0
+        for key in float_keys:
+            idata[key][:][:] = 0.
+
+    init_data(data)
 
     #out_dict = {}
     #for key in int_keys:
@@ -129,8 +137,8 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
 
     # Main loop
     if cut_sky:
-        irange = np.arange(355, 365)
-        jrange = np.arange(715, 725)
+        irange = np.arange(335, 365)
+        jrange = np.arange(715, 755)
     else:
         irange = np.arange(lat_coord.shape[0])
         jrange = np.arange(lon_coord.shape[0])
@@ -145,13 +153,12 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
         counter = np.where((ii_grid == last_ilat) & (jj_grid == last_jlon))[0][0]
     else:
         counter = 0
-    tot_events = 0
-    if len(all_sst) < 30:
-        climatologyPeriod=years
-    else:
-        climatologyPeriod=[1983,2012]
 
     # Main loop
+    sub_count = 0
+    tot_events = 0
+    ilats = []
+    jlons = []
     while (counter < n_calc):
         # Load Temperatures
         nmask = 0
@@ -159,94 +166,70 @@ def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA
         # Slurp
         ilat = ii_grid[counter]
         jlon = jj_grid[counter]
+        ilats += [ilat]
+        jlons += [jlon]
         counter += 1
+
+
         # Ice/land??
         SST = utils.grab_T(all_sst, ilat, jlon)
         frac = np.sum(np.invert(SST.mask))/t.size
         if SST.mask is np.bool_(False) or frac > min_frac:
-            pass
+            marineHeatWaves.detect_without_climate(t, doy, SST.flatten(),
+                                                   seas_climYear.data[:, ilat, jlon].flatten(),
+                                                   thresh_climYear.data[:, ilat, jlon].flatten(),
+                                                   sub_count, data)
         else:
             nmask += 1
-            continue
-        # Detect
-        #if len(list_SSTs) > 0:
-        #    import pdb; pdb.set_trace()
-        #results = [pool.apply(marineHeatWaves.detect, args=(t, SSTs, climatologyPeriod)) for SSTs in list_SSTs]
-        final_tbl = None
-        sub_events = 0
-        #mhw1, clim1 = marineHeatWaves.detect(t, SST.flatten(), climatologyPeriod=climatologyPeriod)
-        mhw2 = marineHeatWaves.detect_without_climate(t, doy, SST.flatten(),
-                                                       seas_climYear.data[:, ilat, jlon].flatten(),
-                                                       thresh_climYear.data[:, ilat, jlon].flatten(),
-                                                      data)
-        #mhw3 = marineHeatWaves.detect_without_climate(t, doy, SST.flatten(),
-        #                                              seas_climYear.data[:, ilat, jlon].flatten(),
-        #                                              thresh_climYear.data[:, ilat, jlon].flatten(),
-        #                                              parallel=False)
-        #import pdb; pdb.set_trace()
-        # Count
-        print('count={} of {}. {} were masked. {} MHW sub-events. {} total'.format(
-            counter, n_calc, nmask, sub_events, tot_events))
-        '''
-        for iilat, jjlon, result in zip(ilats, jlons, results):
-            mhws, clim = result
-            # Fill me in
-            nevent = mhws['n_events']
-            tot_events += nevent
-            sub_events += nevent
-            if nevent > 0:
-                int_dict = {}
-                for key in int_keys:
-                    int_dict[key] = mhws[key]
-                # Sub table
-                # Ints first
-                sub_tbl = pandas.DataFrame.from_dict(int_dict)
-                # Recast
-                sub_tbl = sub_tbl.astype('int32')
-                # Event number
-                sub_tbl['ievent'] = np.arange(nevent)
-                # Time
-                sub_tbl['date'] = pandas.to_datetime([date.fromordinal(tt) for tt in sub_tbl['time_start']])
-                # Add strings
-                for key in str_keys:
-                    sub_tbl[key] = mhws[key]
-                # Lat, lon
-                sub_tbl['lat'] = [lat_coord[iilat].points[0]]*nevent
-                sub_tbl['lon'] = [lon_coord[jjlon].points[0]]*nevent
-                # Floats
-                float_dict = {}
-                for key in float_keys:
-                    float_dict[key] = mhws[key]
-                sub_tbl2 = pandas.DataFrame.from_dict(float_dict)
-                sub_tbl2 = sub_tbl2.astype('float32')
-                # Final
-                cat = pandas.concat([sub_tbl, sub_tbl2], axis=1, join='inner')
-                if final_tbl is None:
-                    final_tbl = cat
-                else:
-                    final_tbl = pandas.concat([final_tbl, cat], ignore_index=True)
 
-                if save_climate:
-                # Climate
-                    sub_clim = pandas.DataFrame.from_dict(clim)
-                    sub_clim['lat'] = lat_coord[iilat].points[0]
-                    sub_clim['lon'] = lon_coord[jjlon].points[0]
-                    # Add to DB
-                    sub_clim.to_sql('Climatology', con=engine_clim, if_exists='append')
+        if (sub_count == 999) or (counter == n_calc):
+            # Write
+            final_tbl = None
+            for kk, iilat, jjlon in zip(range(sub_count), ilats, jlons):
+                # Fill me in
+                nevent = data['n_events'][kk][0]
+                tot_events += nevent
+                if nevent > 0:
+                    int_dict = {}
+                    for key in int_keys:
+                        int_dict[key] = data[key][kk][0:nevent]
+                    # Ints first
+                    sub_tbl = pandas.DataFrame.from_dict(int_dict)
+                    # Event number
+                    sub_tbl['ievent'] = np.arange(nevent)
+                    # Time
+                    sub_tbl['date'] = pandas.to_datetime([date.fromordinal(tt) for tt in sub_tbl['time_start']])
+                    # Lat, lon
+                    sub_tbl['lat'] = [lat_coord[iilat].points[0]] * nevent
+                    sub_tbl['lon'] = [lon_coord[jjlon].points[0]] * nevent
+                    # Floats
+                    float_dict = {}
+                    for key in float_keys:
+                        float_dict[key] = data[key][kk][0:nevent]
+                    sub_tbl2 = pandas.DataFrame.from_dict(float_dict)
+                    #sub_tbl2 = sub_tbl2.astype('float32')
+                    # Final
+                    cat = pandas.concat([sub_tbl, sub_tbl2], axis=1, join='inner')
+                    if final_tbl is None:
+                        final_tbl = cat
+                    else:
+                        final_tbl = pandas.concat([final_tbl, cat], ignore_index=True)
 
-        # Add to DB
-        if final_tbl is not None:
-            final_tbl.to_sql('MHW_Events', con=engine, if_exists='append')
+            # Add to DB
+            if final_tbl is not None:
+                final_tbl.to_sql('MHW_Events', con=engine, if_exists='append')
+
+            # Reset
+            init_data(data)
+            sub_count = 0
+            ilats = []
+            jlons = []
+        else:
+            sub_count += 1
 
         # Count
-        print('count={} of {}. {} were masked. {} MHW sub-events. {} total'.format(
-            counter, n_calc, nmask, sub_events, tot_events))
-        #print('lat={}, lon={}, nevent={}'.format(lat_coord[ilat].points[0], lon_coord[jlon].points[0],
-        #                                         mhws['n_events']))
-        # Save the dict
-        #all_mhw.append(mhws)
-        '''
-
+        print('count={} of {}. {} were masked. {} total'.format(
+            counter, n_calc, nmask, tot_events))
 
     print("All done!!")
 
