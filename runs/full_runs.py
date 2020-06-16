@@ -7,8 +7,8 @@ if __name__ == '__main__':
 
     # Default run to match Oliver (+ a few extra years)
     if True:
-        build_mhws.build_me('/home/xavier/Projects/Oceanography/MHWs/db/mhws_allsky_defaults.db',
-                        years=[1982,2019], cut_sky=False)
+        build_mhws.build_me('/home/xavier/Projects/Oceanography/MHW/db/mhws_allsky_defaults.db',
+                        years=[1982,2019], cut_sky=False, append=False)
 
     # Climate
     if False:
