@@ -124,7 +124,6 @@ def make_labels(cube, verbose=True, MinNSpax=0):
         print('Nobj Detected =', ndet)
 
     # Finish
-
     # Return
     return mask, parent
 
