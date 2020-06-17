@@ -30,7 +30,7 @@ import numpy as np
 
 from IPython import embed
 
-def make_labels(cube):
+def make_labels(cube, verbose=True, MinNSpax=0):
 
     #!..make sure that undefined variance pixels that are defined in the datacube have a dummy high value
     #WHERE(Cube/=UNDEF.and.(Var==UNDEF.or.Var==0.)) Var=1.e30
@@ -40,6 +40,7 @@ def make_labels(cube):
     label = 0
     mask = np.zeros_like(cube, dtype='int')
     parent = np.zeros(10000000, dtype='int')
+    NSpax = np.zeros_like(parent)
     maxnlabels = parent.size
 
     DimX, DimY, DimZ = cube.shape
@@ -64,8 +65,6 @@ def make_labels(cube):
                     if label > maxnlabels: # STOP "Increase stack size (maxnlabels)!"
                        raise ValueError("Increase stack size for labels!")
                     mask[i,j,k] = label
-                    embed(header='67 of build')
-                    import pdb; pdb.set_trace()
                 #ELSE !..this spaxel is connected to another one
                 else: # !..this spaxel is connected to another one
                     #this_label = MINVAL(prior_labels, MASK=prior_labels /= 0)
@@ -77,6 +76,55 @@ def make_labels(cube):
                         if prior_labels[p] != 0 and prior_labels[p] != this_label:
                             #CALL union(this_label, prior_labels(p))
                             union(parent, this_label, prior_labels[p])
+
+    #nlabels = MAXVAL(Mask)
+    nlabels = np.max(mask)
+
+    # !..second pass:
+    # !... replace labels using the parent tree
+    # !... get NSpax for each individual connected component
+    #  DO k=1,DimZ
+    #     DO j=1,DimY
+    #        DO i=1,DimX
+    for i in range(DimX):
+        for j in range(DimY):
+            for k in range(DimZ):
+                this_label=mask[i,j,k]
+                if this_label != 0:
+                    #!..assign value from parent tree
+                    p = this_label
+                    while parent[p] != 0:
+                       p = parent[p]
+
+                    mask[i,j,k] = p
+    #               !..update NSpax counter associated with this label
+                    NSpax[p] = NSpax[p]+1
+
+    # !..this is the number of individual connected components found in the cube:
+    nobj=np.sum(parent[1:nlabels]==0)
+    if verbose:
+        print("NObj Extracted=",nobj)
+
+    # Allocate
+    LabelToId = np.zeros(nlabels, dtype='int')
+    IdToLabel = np.zeros(nobj, dtype='int')
+
+    #!----- DETECTION (using NSpax) -------------
+    # !..build auxiliary arrays and count detections
+    ndet=0
+    for i in range(nlabels):
+        if parent[i] == 0:
+            this_label = i
+            this_NSpax = NSpax[this_label]
+            if this_NSpax > MinNSpax:
+                IdToLabel[ndet] = this_label
+                LabelToId[this_label] = ndet
+                ndet = ndet + 1  # ! update ndet
+    if verbose:
+        print('Nobj Detected =', ndet)
+
+    # Finish
+
     # Return
     return mask, parent
 
