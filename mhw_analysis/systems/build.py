@@ -28,6 +28,9 @@ This is a non-public software:
 
 import numpy as np
 
+import sqlalchemy
+import pandas as pd
+
 from IPython import embed
 
 def make_labels(cube, verbose=True, MinNSpax=0):
@@ -69,6 +72,8 @@ def make_labels(cube, verbose=True, MinNSpax=0):
                 else: # !..this spaxel is connected to another one
                     #this_label = MINVAL(prior_labels, MASK=prior_labels /= 0)
                     this_label = np.min(prior_labels[prior_labels > 0])
+                    if this_label == 0:
+                        embed(header='bug on 73')
                     mask[i,j,k] = this_label
                     #!..update parent tree
                     #DO p = 1, SIZE(prior_labels)
@@ -101,21 +106,21 @@ def make_labels(cube, verbose=True, MinNSpax=0):
                     NSpax[p] = NSpax[p]+1
 
     # !..this is the number of individual connected components found in the cube:
-    nobj=np.sum(parent[1:nlabels]==0)
+    nobj=np.sum(parent[1:nlabels+1]==0)
     if verbose:
         print("NObj Extracted=",nobj)
 
     # Allocate
-    LabelToId = np.zeros(nlabels, dtype='int')
+    LabelToId = np.zeros(nlabels+1, dtype='int') -1
     IdToLabel = np.zeros(nobj, dtype='int')
 
     #!----- DETECTION (using NSpax) -------------
     # !..build auxiliary arrays and count detections
     ndet=0
-    for i in range(nlabels):
+    for i in range(1,nlabels+1):
         if parent[i] == 0:
             this_label = i
-            this_NSpax = NSpax[this_label]
+            this_NSpax = NSpax[this_label] # 0-indexing
             if this_NSpax > MinNSpax:
                 IdToLabel[ndet] = this_label
                 LabelToId[this_label] = ndet
@@ -123,9 +128,50 @@ def make_labels(cube, verbose=True, MinNSpax=0):
     if verbose:
         print('Nobj Detected =', ndet)
 
+    # Objects
+    obj_dict = dict(Id=[0]*ndet, Assoc=[0]*ndet, NSpax=[0]*ndet,
+                    xcen=[0.]*ndet, xboxmin=[1e5]*ndet, xboxmax=[-1]*ndet,
+                    ycen=[0.]*ndet, yboxmin=[1e5]*ndet, yboxmax=[-1]*ndet,
+                    zcen=[0.]*ndet, zboxmin=[1e5]*ndet, zboxmax=[-1]*ndet)
+
+    # Init
+    for ii in range(ndet):
+        obj_dict['Id'][ii] = ii+1
+        obj_dict['NSpax'][ii] = NSpax[IdToLabel[ii]]
+
+    # Fill !..find bounding boxes and centroid for each objects
+    for i in range(DimX):
+        for j in range(DimY):
+            for k in range(DimZ):
+
+                this_label = mask[i, j, k]
+                if this_label != 0:
+                    id = LabelToId[this_label]  #!..get object associated with pixel  (0-based)
+                    if id != -1:
+                        obj_dict['xcen'][id] += i - 0.5
+                        obj_dict['ycen'][id] += j - 0.5
+                        obj_dict['zcen'][id] += k - 0.5
+
+                        obj_dict['xboxmin'][id] = min(obj_dict['xboxmin'][id], i)
+                        obj_dict['yboxmin'][id] = min(obj_dict['yboxmin'][id], j)
+                        obj_dict['zboxmin'][id] = min(obj_dict['zboxmin'][id], k)
+
+                        obj_dict['xboxmax'][id] = max(obj_dict['xboxmax'][id], i)
+                        obj_dict['yboxmax'][id] = max(obj_dict['yboxmax'][id], j)
+                        obj_dict['zboxmax'][id] = max(obj_dict['zboxmax'][id], k)
+                    else: # Cleanup mask
+                        mask[i, j, k] = 0
+
+
+    # !..finalize geometrical centroid calculation
+    for id in range(ndet):
+        obj_dict['xcen'][id] /= obj_dict['NSpax'][id]
+        obj_dict['ycen'][id] /= obj_dict['NSpax'][id]
+        obj_dict['zcen'][id] /= obj_dict['NSpax'][id]
+
     # Finish
     # Return
-    return mask, parent
+    return mask, obj_dict
 
 def union(parent, x, y):
     """
@@ -154,4 +200,14 @@ def union(parent, x, y):
 # Testing
 if __name__ == '__main__':
     cube = np.load('../../doc/nb/tst_cube.npy')
-    make_labels(cube.astype(bool))
+    mask, obj_dict = make_labels(cube.astype(bool))
+    #
+    embed(header='203 of build')
+    # Write
+    np.save('tst_mask', mask)
+    # Pandas
+    df = pd.DataFrame(obj_dict)
+    # SQL
+    dbfile = '/home/xavier/Projects/Oceanography/MHW/db/tst_mhw_systems.db'
+    engine = sqlalchemy.create_engine('sqlite:///'+dbfile)
+    df.to_sql('MHW_Systems', con=engine)#, if_exists='append')
