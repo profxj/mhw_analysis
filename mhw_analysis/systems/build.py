@@ -151,6 +151,7 @@ def union(parent, x, y):
        parent[x] = y
 
 
+# Testing
 if __name__ == '__main__':
     cube = np.load('../../doc/nb/tst_cube.npy')
     make_labels(cube.astype(bool))
