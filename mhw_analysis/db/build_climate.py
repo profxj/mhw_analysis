@@ -130,7 +130,6 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
         thresh_climYear[feb29 - 1] = 0.5 * thresh_climYear[feb29 - 2] + 0.5 * thresh_climYear[feb29]
         seas_climYear[feb29 - 1] = 0.5 * seas_climYear[feb29 - 2] + 0.5 * seas_climYear[feb29]
 
-
         # Smooth if desired
         if smoothPercentile:
             thresh_climYear = mhw_utils.runavg(thresh_climYear, smoothPercentileWidth)
