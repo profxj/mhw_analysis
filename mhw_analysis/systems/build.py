@@ -1,5 +1,6 @@
 """ Module to generate MHW systems
-This code follows the routine “Extract.f90” in CubEx by S. Cantalupo.
+
+Some of the code that follows is from the routine “Extract.f90” in CubEx by S. Cantalupo.
 That’s the core of the code. The inputs are the Datacube, another cube for the
 flagging criteria (the Variance for astronomical cubes) and the output is a 3D segmentation map
 or mask (called “Mask” or “mask”). The routine WriteCheckCubes.f90 is where this 3D Mask is used
@@ -33,7 +34,22 @@ import pandas as pd
 
 from IPython import embed
 
-def make_labels(cube, verbose=True, MinNSpax=0):
+def cutout(db_file):
+    engine = sqlalchemy.create_engine('sqlite:///' + db_file)
+
+
+def define_systems(cube, verbose=True, MinNSpax=0):
+    """
+
+
+    Args:
+        cube:
+        verbose:
+        MinNSpax:
+
+    Returns:
+
+    """
 
     #!..make sure that undefined variance pixels that are defined in the datacube have a dummy high value
     #WHERE(Cube/=UNDEF.and.(Var==UNDEF.or.Var==0.)) Var=1.e30
@@ -200,7 +216,7 @@ def union(parent, x, y):
 # Testing
 if __name__ == '__main__':
     cube = np.load('../../doc/nb/tst_cube.npy')
-    mask, obj_dict = make_labels(cube.astype(bool))
+    mask, obj_dict = define_systems(cube.astype(bool))
     #
     embed(header='203 of build')
     # Write
