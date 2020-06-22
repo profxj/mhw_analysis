@@ -136,7 +136,6 @@ def build_noaa(climate_db_file, noaa_path='/home/xavier/Projects/Oceanography/da
             _, clim = marineHeatWaves.detect(t, SST.flatten(), climatologyPeriod=climatologyPeriod)
             import pdb; pdb.set_trace()
 
-
         # Smooth if desired
         if smoothPercentile:
             thresh_climYear = mhw_utils.runavg(thresh_climYear, smoothPercentileWidth)
