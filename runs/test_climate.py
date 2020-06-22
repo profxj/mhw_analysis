@@ -43,8 +43,11 @@ def first_try():
     clim = climate.calc(time_dict, SST)
 
 def test_jit():
-    sst = np.load('ex_SST.npy')
-    t = np.load('t.npy')
+    #sst = np.load('ex_SST.npy')
+    #t = np.load('t.npy')
+
+    sst = np.load('tempClim.np.npy')
+    t = np.load('t2.np.npy')
     times = climate.build_time_dict(t)
     #
 
@@ -92,7 +95,7 @@ if __name__ == '__main__':
 
     # Default run to match Oliver (+ a few extra years)
     if True:
-        climatologyPeriod = [1983, 1993]
+        climatologyPeriod = [1983, 2012]
         all_sst = load_me(years=climatologyPeriod)
         embed(header='97 of test')
         build_climate.build_noaa('/home/xavier/Projects/Oceanography/MHWs/db/test_climate.nc',
