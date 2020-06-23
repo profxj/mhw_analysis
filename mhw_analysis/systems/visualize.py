@@ -28,6 +28,7 @@ def test_mayavi(cube, scale=0.25, volume=False):
 # Testing
 if __name__ == '__main__':
     #tst_file = '../../doc/nb/tst_cube.npy'
-    tst_file = './tst_mask.npy'
+    #tst_file = './tst_mask.npy'
+    tst_file = './pacific_mask.npy'
     cube = np.load(tst_file)
     test_mayavi(cube)

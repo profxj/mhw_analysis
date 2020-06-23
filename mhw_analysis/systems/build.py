@@ -215,15 +215,16 @@ def union(parent, x, y):
 
 # Testing
 if __name__ == '__main__':
-    cube = np.load('../../doc/nb/tst_cube.npy')
+    #cube = np.load('../../doc/nb/tst_cube.npy')
+    cube = np.load('../../doc/nb/tst_cube_pacific.npy')
     mask, obj_dict = define_systems(cube.astype(bool))
-    #
-    embed(header='203 of build')
     # Write
-    np.save('tst_mask', mask)
+    #np.save('tst_mask', mask)
+    np.save('pacific_mask', mask)
     # Pandas
     df = pd.DataFrame(obj_dict)
     # SQL
-    dbfile = '/home/xavier/Projects/Oceanography/MHW/db/tst_mhw_systems.db'
+    #dbfile = '/home/xavier/Projects/Oceanography/MHW/db/tst_mhw_systems.db'
+    dbfile = '/home/xavier/Projects/Oceanography/MHW/db/pacific_mhw_system.db'
     engine = sqlalchemy.create_engine('sqlite:///'+dbfile)
     df.to_sql('MHW_Systems', con=engine)#, if_exists='append')
