@@ -20,13 +20,17 @@ def load_z500(yyyymmdd, cubes, dmy_name='current date (YYYYMMDD)',
     z500_dmy : iris.Cube
 
     """
-
-
-    # Grab the day
+    # Load day
     names = [cube.name() for cube in cubes]
     didx = names.index(dmy_name)
     day_cube = cubes[didx]
-    dmyidx = np.where(yyyymmdd == day_cube.date[:])[0][0]
+
+    # Checking
+    if yyyymmdd > np.max(day_cube.data[:]):
+        raise IOError("Your yyyymmdd exceeds the range of the models")
+
+    # Grab
+    dmyidx = np.where(yyyymmdd == day_cube.data[:])[0][0]
 
     # Grab the cube
     zidx = names.index(z500_name)
