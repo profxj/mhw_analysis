@@ -5,6 +5,22 @@ import numpy as np
 
 def load_z500(yyyymmdd, cubes, dmy_name='current date (YYYYMMDD)',
               z500_name='Geopotential Z at 500 mbar pressure surface'):
+    """
+    Load a Z500 cube from a CEMS-LENS Cubes list
+
+    Parameters
+    ----------
+    yyyymmdd : int
+    cubes : iris.Cubes
+    dmy_name : str, optional
+    z500_name : str, optional
+
+    Returns
+    -------
+    z500_dmy : iris.Cube
+
+    """
+
 
     # Grab the day
     names = [cube.name() for cube in cubes]
