@@ -26,17 +26,33 @@ This is a non-public software:
 
 4) downloading, opening, installing and/or using the package is equivalent to accepting points 1, 2 and 3 above.
 """
-
+import os
 import numpy as np
+
+import ctypes
 
 import sqlalchemy
 import pandas as pd
 
 from IPython import embed
 
-def cutout(db_file):
-    engine = sqlalchemy.create_engine('sqlite:///' + db_file)
+# Mimics astropy convention
+LIBRARY_PATH = os.path.dirname(__file__)
+try:
+    _build = np.ctypeslib.load_library("_build", LIBRARY_PATH)
+except Exception:
+    raise ImportError('Unable to load build C extension.  Try rebuilding pypeit.')
 
+
+#-----------------------------------------------------------------------
+define_c = _build.define
+define_c.restype = None
+define_c.argtypes = [ctypes.c_int, np.ctypeslib.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),
+                    ctypes.c_int, np.ctypeslib.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),
+                    ctypes.c_int, np.ctypeslib.ndpointer(ctypes.c_long, flags="C_CONTIGUOUS")]
+
+def c_define_systems(cube, MinNSpax=0):
+    pass
 
 def define_systems(cube, verbose=True, MinNSpax=0):
     """
