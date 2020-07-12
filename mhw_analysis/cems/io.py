@@ -1,15 +1,10 @@
 """ Module to deal with I/O of CEMS-LENS files"""
 
-import os
 import numpy as np
 
-def load_z500(yyyymmdd, cubes=None, cems_path=None,
-              dmy_name='current date (YYYYMMDD)',
+
+def load_z500(yyyymmdd, cubes, dmy_name='current date (YYYYMMDD)',
               z500_name='Geopotential Z at 500 mbar pressure surface'):
-    # Load cubes?
-    if cubes is None:
-        if cems_path is None:
-            cems_path = os.getenv('CEMS_PATH')
 
     # Grab the day
     names = [cube.name() for cube in cubes]
