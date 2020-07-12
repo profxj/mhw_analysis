@@ -36,6 +36,7 @@ int* first_pass(bool *cube, int *shape, bool upper_left) {
 
     // Init
     int label = 0;
+    // Should probably allocate this outside the routine
     int (*mask)[shape[1]][shape[2]] = malloc( sizeof(int[shape[0]][shape[1]][shape[2]]));
 
     int DimX = shape[0];
