@@ -34,7 +34,7 @@ void lunion(int *parent, int x, int y) {
 
 
 
-int first_pass(bool ***cube, int *shape, bool upper_left) {
+int* first_pass(bool ***cube, int *shape, bool upper_left) {
     /*
     Returns:
         Returns the pointer to the integer array with the indices.
@@ -44,7 +44,8 @@ int first_pass(bool ***cube, int *shape, bool upper_left) {
     int label = 0;
     // Should probably allocate this outside the routine
     // int (*mask)[shape[1]][shape[2]] = malloc( sizeof(int[shape[0]][shape[1]][shape[2]]));
-    int mask[shape[0]][shape[1]][shape[2]];
+    // int mask[shape[0]][shape[1]][shape[2]];
+    int *mask = (int*) malloc (shape[0]*shape[1]*shape[2] * sizeof(int));
 
     int DimX = shape[0];
     int DimY = shape[1];
@@ -60,6 +61,7 @@ int first_pass(bool ***cube, int *shape, bool upper_left) {
     for (i = 0; i<DimX; i++)
         for (j = 0; i<DimY; j++)
             for (k = 0; i<DimZ; k++)
+                DO INDEXING HERE!!
                 mask[i][j][k] = 0;
 
     // Labels
@@ -68,14 +70,14 @@ int first_pass(bool ***cube, int *shape, bool upper_left) {
     int minlabel;
     int this_label;
     int *parent = (int*) malloc (maxnlabels * sizeof(int));
-    int *NSpax = (int*) malloc (maxnlabels * sizeof(int));
+    // int *NSpax = (int*) malloc (maxnlabels * sizeof(int));
 
     // Loop me!
     for (i = 1; i<DimX-1; i++)
         for (j = 1; i<DimY-1; j++)
             for (k = 1; i<DimZ-1; k++) {
 
-                if (cube[i][j][k] == false)
+                if (!cube[i][j][k])
                     continue;
 
                 // prior_labels = mask[i-1:i+2,j-1:j+2,k-1:k+2].flatten()

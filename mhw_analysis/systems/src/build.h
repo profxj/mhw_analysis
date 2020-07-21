@@ -4,7 +4,7 @@
 
 #include <stdbool.h>
 
-int first_pass(bool ***cube, int *shape, bool upper_left);
+int* first_pass(bool ***cube, int *shape, bool upper_left);
 void lunion(int *parent, int x, int y);
 
 #endif // _BUILD_H_
