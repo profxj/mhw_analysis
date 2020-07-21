@@ -28,7 +28,8 @@ import pandas
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 
-import seaborn	
+# import seaborn	
+import pickle
 
 def select_range(connection, table, lat_start=30.0, lat_end=35.0, lon_start=30.0, lon_end=35.0, date_start='Jun 1 2005', date_end='Jun 1 2006'):
   """
@@ -106,59 +107,112 @@ def select_range(connection, table, lat_start=30.0, lat_end=35.0, lon_start=30.0
   # return df
   return range_df
 
+# used to save the tuples 
+# could include folder path as a param
+def save_obj(obj, name):
+	# save object to folder
+    with open('mhw_data/'+ name + '.pkl', 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
-def main():
+def load_obj(name):
+    # load object from folder
+    with open('mhw_data/' + name + '.pkl', 'rb') as f:
+        return pickle.load(f)
 
-	# prepare sql stuff 
-	mhw_file = '../../Downloads/mhws_allsky_defaults.db'
-
+def get_mhw_tbl(mhw_file):
+	# create engine and check if it has the table we need
 	engine = sqlalchemy.create_engine('sqlite:///'+mhw_file)
 	engine.has_table("MHW_Events")
 
+	# connect to engine
 	connection = engine.connect()
 
+	# load table from metadata
 	metadata = sqlalchemy.MetaData()
 	mhw_tbl = sqlalchemy.Table('MHW_Events', metadata, autoload=True, autoload_with=engine)
+	
+	# return connection and table
+	return connection, mhw_tbl
 
-	path = '../Z500'
+def load_z500_noaa(path, date, any_sst):
+	# convert date to proper format
+	ymd = date.year*10000 + date.month*100 + date.day
+
+	# create filepath
 	zfile = os.path.join(path, 'b.e11.B20TRC5CNBDRD.f09_g16.001.cam.h1.Z500.18500101-20051231-043.nc')
 
 	# This is slow, so hold in memory
 	cubes = iris.load(zfile)
 
-	date = datetime(2000,1,1)
-	last = datetime(2000,1,2)
+	# get cube at ymd date
+	reload(cems_io)
+	z500_cube = cems_io.load_z500(ymd, cubes)
 
+	# get z500 regridded data
+	z500_noaa = z500_cube.regrid(any_sst, iris.analysis.Linear())
+
+	return z500_noaa
+
+def show_segmentation_map(lats,lons):
+	# ---MAKE PLOTS---
+
+	plt.clf()
+	ax = plt.gca()
+	fig = plt.figure()
+	ax1 = fig.add_subplot(111)
+
+	a = np.stack([np.arange(35.125, 44.875, 0.25) for _ in range(40)])
+	it = np.arange(35.125, 44.875, 0.25).tolist()
+	print(it)
+	a = []
+	for i, num in enumerate(it):
+		for j in range(40):
+			a.append(num)
+
+	b = np.stack([np.arange(195.125, 204.875, 0.25) for _ in range(40)])
+
+	ax1.scatter(a, b, s=10, c='b', marker="s", label='first')
+	ax1.scatter(lats, lons, s=10, c='r', marker="o", label='second')
+	plt.legend(loc='upper left')
+	# plt.xlim(lat_start, lat_end)
+	# plt.ylim(lon_start, lon_end)
+
+	plt.show()
+
+	# ---MAKE PLOTS---
+
+	# ^ re-write this code
+
+def main():
+
+	z500_path = '../Z500'
+	dataset = []
+
+	date = datetime(2000,1,1) # compute programatically eventually?
+	last = datetime(2000,1,2) # for creating dataset
+
+	# start loop 
 	dmy = (date.day, date.month, date.year)
 
 	any_sst = sst_io.load_noaa(dmy) # This can be any day
 
-	ymd = date.year*10000 + date.month*100 + date.day
-	print(ymd)
+	z500_noaa = load_z500_noaa(z500_path, date, any_sst)
 
-	reload(cems_io)
-	z500_cube = cems_io.load_z500(ymd, cubes)
-
-	z500_noaa = z500_cube.regrid(any_sst, iris.analysis.Linear())
-
-	print(z500_noaa)
-
-	lat = 40.
+	
+	# arbitrary, these will need to be modified and iterated somehow
+	lat = 40. 
 	lon = 200.
-	width = 10.
+
+	width = 10. # modify this to get bigger window
 
 	lat_start = (lat-width/2)
 	lat_end = (lat+width/2)
 	lon_start = (lon-width/2)
 	lon_end = (lon+width/2)
 
+	# make a method?
 	constraint = iris.Constraint(latitude=lambda cell: lat_start < cell < lat_end,
 	                            longitude = lambda cell: lon_start <= cell <= lon_end)
-
-	print(lat_start)
-	print(lat_end)
-	print(lon_start)
-	print(lon_end)
 
 	# # get z500 data:
 	z500_noaa_extract = z500_noaa.extract(constraint)
@@ -166,62 +220,57 @@ def main():
 	z500_lons = z500_noaa_extract.coord('longitude').points
 	z500_data = z500_noaa_extract.data[:]
 
-	print(z500_lats)
-	print(z500_lons)
-
 	# get MHW data:
+
+	# prepare sql stuff 
+	mhw_file = '../../Downloads/mhws_allsky_defaults.db'
+	connection, mhw_tbl = get_mhw_tbl(mhw_file)
 	range_df = select_range(connection, mhw_tbl, lat_start, lat_end, lon_start, lon_end, date.strftime("%b %d %Y"), date.strftime("%b %d %Y"))
 	# # date (12), lat (13), lon (14)
-	# print(range_df)
 
-	lats = list(range_df[13])
-	lons = list(range_df[14])
+	# ---CONVERT LATS/LONS TO ROWS/COLS---
 
-	print(lats)
-	print(lons)
-
-	print(z500_data.shape)
-
-	plt.clf()
-	ax = plt.gca()
-	fig = plt.figure()
-	ax1 = fig.add_subplot(111)
-
-	# fill_lons = [np.arange(11, 17, 0.5).tolist()]
+	# get number of rows & cols 
+	frame_rows = lat_end - lat_start
+	frame_cols = lon_end - lon_start
 	
-	# a = np.stack([np.arange(35.125, 44.875, 0.25) for _ in range(40)])
-	# it = np.arange(35.125, 44.875, 0.25).tolist()
-	# print(it)
-	# a = []
-	# for i, num in enumerate(it):
-	# 	for j in range(40):
-	# 		a.append(num)
+	frame_size = .25 # might need to find way to get this programatically
 
-	# b = np.stack([np.arange(195.125, 204.875, 0.25) for _ in range(40)])
+	# create new segmentation map
+	seg_map = np.zeros((int(frame_rows/frame_size),int(frame_cols/frame_size))) # might need to make these + 1
 
-	# ax1.scatter(a, b, s=10, c='b', marker="s", label='first')
-	ax1.scatter(lats, lons, s=10, c='r', marker="o", label='second')
-	plt.legend(loc='upper left')
-	plt.xlim(lat_start, lat_end)
-	plt.ylim(lon_start, lon_end)
-	plt.show()
+	if range_df is not None:
+		lats = list(range_df[13])
+		lons = list(range_df[14])
+		data = np.ones(len(lats)) # data = list(range_df[??])
 
-	# img = ax.pcolormesh(z500_data)
-	# # colorbar
-	# cb = plt.colorbar(img, fraction=0.030, pad=0.04)
+		# --- OPTIMIZE THIS CODE ---
+		# iterate through entries
+		for lat, lon in zip(lats, lons):
+			for datum in data:
+				# get row
+				r = (lat - lat_start) / (frame_size)
+				c = (lon - lon_start) / (frame_size)
 
-	# seaborn.set(style='ticks')
+				# add heatwave point
+				if r < seg_map.shape[0] and c < seg_map.shape[1]:
+					seg_map[int(r),int(c)] = datum
+		# --- OPTIMIZE THIS CODE ---
 
-	# _genders= ['Heatwave']
-	# df = pandas.DataFrame({
-	#     'latitude': lats,
-	#     'longitude': lons,
-	#     'type': _genders[0]
-	# })
+	# ---CONVERT LATS/LONS TO ROWS/COLS---
 
-	# fg = seaborn.FacetGrid(data=df, hue='type', hue_order=_genders, aspect=1.61)
-	# fg.map(plt.scatter, 'latitude', 'longitude').add_legend()
 
-	# plt.show()
+	# ---APPEND TO AND PICKLE DATASET---
+	dataset.append((z500_data, seg_map))
+
+	save_obj(dataset, 'test')
+	a = load_obj('test')
+
+	# show_segmentation_map()
 
 main()
+
+# save_obj(tup, 'test')
+# a = load_obj('test')
+# print("Done")
+# print(a)
