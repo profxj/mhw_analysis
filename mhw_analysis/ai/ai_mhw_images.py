@@ -20,7 +20,8 @@ sys.path.append(OCEANPY_PATH)
 from mhw_analysis.cems import io as cems_io
 from oceanpy.sst import io as sst_io
 
-from datetime import date
+from datetime import timedelta
+# from datetime import date
 from datetime import datetime
 from pandas import DataFrame
 
@@ -153,7 +154,23 @@ def load_z500_noaa(path, date, any_sst):
 
 	return z500_noaa
 
-def show_segmentation_map(lats,lons):
+def get_noaa_extract(z500_noaa, lat, lon, width):
+	# create boundaries, make separate method when u start iterating over different frames
+	lat_start = (lat-width/2)
+	lat_end = (lat+width/2)
+	lon_start = (lon-width/2)
+	lon_end = (lon+width/2)
+
+	# set boundaries
+	constraint = iris.Constraint(latitude=lambda cell: lat_start < cell < lat_end,
+	                            longitude = lambda cell: lon_start <= cell <= lon_end)
+
+	# get portion of z500 reframe within these boundaries
+	z500_noaa_extract = z500_noaa.extract(constraint)
+
+	return z500_noaa_extract, lat_start, lat_end, lon_start, lon_end
+
+def show_segmentation_map(lats, lons):
 	# ---MAKE PLOTS---
 
 	plt.clf()
@@ -183,94 +200,96 @@ def show_segmentation_map(lats,lons):
 
 	# ^ re-write this code
 
+def get_cube_lats(cube):
+	return cube.coord('latitude').points
+
+def get_cube_lons(cube):
+	return cube.coord('longitude').points
+	
+def get_cube_data(cube):
+	return cube.data[:]
+
+# TODO: modularize lat/lon => row/col conversion, iterate lat/lon, speed up segmap stuff with spatial locality, re-write plots, multithreading(?)
 def main():
 
+	# prepare sql stuff, could make it a command line arg
+	mhw_file = '../../Downloads/mhws_allsky_defaults.db'
+	connection, mhw_tbl = get_mhw_tbl(mhw_file)
+
+	# prep z500 path
 	z500_path = '../Z500'
-	dataset = []
 
+	# set start, seg, and end dates
 	date = datetime(2000,1,1) # compute programatically eventually?
-	last = datetime(2000,1,2) # for creating dataset
-
-	# start loop 
-	dmy = (date.day, date.month, date.year)
-
-	any_sst = sst_io.load_noaa(dmy) # This can be any day
-
-	z500_noaa = load_z500_noaa(z500_path, date, any_sst)
-
-	
-	# arbitrary, these will need to be modified and iterated somehow
-	lat = 40. 
-	lon = 200.
+	seg_date = date + timedelta(days=5) # variables
+	last = seg_date + timedelta(days=2) # variables
 
 	width = 10. # modify this to get bigger window
 
-	lat_start = (lat-width/2)
-	lat_end = (lat+width/2)
-	lon_start = (lon-width/2)
-	lon_end = (lon+width/2)
+	any_sst = sst_io.load_noaa((date.day, date.month, date.year)) # This can be any day
 
-	# make a method?
-	constraint = iris.Constraint(latitude=lambda cell: lat_start < cell < lat_end,
-	                            longitude = lambda cell: lon_start <= cell <= lon_end)
+	# initialize dataset
+	dataset = []
 
-	# # get z500 data:
-	z500_noaa_extract = z500_noaa.extract(constraint)
-	z500_lats = z500_noaa_extract.coord('latitude').points
-	z500_lons = z500_noaa_extract.coord('longitude').points
-	z500_data = z500_noaa_extract.data[:]
+	while seg_date < last:
 
-	# get MHW data:
+		# start loop 
+		dmy = (date.day, date.month, date.year)
 
-	# prepare sql stuff 
-	mhw_file = '../../Downloads/mhws_allsky_defaults.db'
-	connection, mhw_tbl = get_mhw_tbl(mhw_file)
-	range_df = select_range(connection, mhw_tbl, lat_start, lat_end, lon_start, lon_end, date.strftime("%b %d %Y"), date.strftime("%b %d %Y"))
-	# # date (12), lat (13), lon (14)
+		# arbitrary, these will need to be modified and iterated somehow
+		lat = 40. 
+		lon = 200.
 
-	# ---CONVERT LATS/LONS TO ROWS/COLS---
+		# get z500 data for a particular date=date
+		z500_noaa = load_z500_noaa(z500_path, date, any_sst)
+		z500_noaa_extract, lat_start, lat_end, lon_start, lon_end = get_noaa_extract(z500_noaa, lat, lon, width)
+		z500_data = z500_noaa_extract.data[:]
 
-	# get number of rows & cols 
-	frame_rows = lat_end - lat_start
-	frame_cols = lon_end - lon_start
-	
-	frame_size = .25 # might need to find way to get this programatically
+		# get MHW data, MIGHT NEED TO SPEED THIS UP (CALL METHOD EVERY 6 MONTHS, AND ADD MORE CODE TO FILTER DF BY DATE)
+		range_df = select_range(connection, mhw_tbl, lat_start, lat_end, lon_start, lon_end, seg_date.strftime("%b %d %Y"), seg_date.strftime("%b %d %Y"))
+		# # date (12), lat (13), lon (14)
 
-	# create new segmentation map
-	seg_map = np.zeros((int(frame_rows/frame_size),int(frame_cols/frame_size))) # might need to make these + 1
+		# ---CONVERT LATS/LONS TO ROWS/COLS---
+		
+		# amount of lat/lon that increments each "pixel"
+		frame_size = .25 # might need to find way to get this programatically
 
-	if range_df is not None:
-		lats = list(range_df[13])
-		lons = list(range_df[14])
-		data = np.ones(len(lats)) # data = list(range_df[??])
+		# create new segmentation map
+		seg_map = np.zeros((int(width/frame_size),int(width/frame_size))) # might need to make these + 1
 
-		# --- OPTIMIZE THIS CODE ---
-		# iterate through entries
-		for lat, lon in zip(lats, lons):
-			for datum in data:
-				# get row
-				r = (lat - lat_start) / (frame_size)
-				c = (lon - lon_start) / (frame_size)
+		if range_df is not None:
+			lats = np.array(range_df[13])
+			lons = np.array(range_df[14])
+			# data = np.ones(len(lats)) # data = list(range_df[??])
 
-				# add heatwave point
-				if r < seg_map.shape[0] and c < seg_map.shape[1]:
-					seg_map[int(r),int(c)] = datum
-		# --- OPTIMIZE THIS CODE ---
-
-	# ---CONVERT LATS/LONS TO ROWS/COLS---
+			lats = ((lats - lat_start)/(frame_size)).astype(int)
+			lons = ((lons - lon_start)/(frame_size)).astype(int)
+			
+			# add heatwave points
+			seg_map[lats[:], lons[:]] = 1
 
 
-	# ---APPEND TO AND PICKLE DATASET---
-	dataset.append((z500_data, seg_map))
+		# add entry to dataset
+		dataset.append((z500_data, seg_map))
 
+		# iterate
+		date += timedelta(days=1)
+		seg_date += timedelta(days=1)
+
+	# pickle dataset
 	save_obj(dataset, 'test')
-	a = load_obj('test')
-
-	# show_segmentation_map()
 
 main()
+print(load_obj('test'))
 
-# save_obj(tup, 'test')
-# a = load_obj('test')
-# print("Done")
-# print(a)
+# make method to modularize getting the z500 data DONE
+# set the start of the 5 days in advance DONE
+# make method for lat_start, lat_end ... DONE
+# optimize conversion to rows/cols with numpy operations, convert to method? DONE
+# test on one day DONE
+# write code to introduce the seg map for the 5 days in advance DONE
+# test on one day DONE
+# write code to loop it DONE
+# test on one week DONE
+# write code to loop lat and lon frames
+# create 1 year dataset
