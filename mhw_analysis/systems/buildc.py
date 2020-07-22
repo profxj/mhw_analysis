@@ -43,14 +43,19 @@ except Exception:
 
 
 #-----------------------------------------------------------------------
-define_c = _build.define
-define_c.restype = None
-define_c.argtypes = [ctypes.c_int, np.ctypeslib.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),
-                    ctypes.c_int, np.ctypeslib.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),
-                    ctypes.c_int, np.ctypeslib.ndpointer(ctypes.c_long, flags="C_CONTIGUOUS")]
+first_pass_c = _build.first_pass
+first_pass_c.restype = None
+first_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_bool, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                         ctypes.c_int, ctypes.c_int, ctypes.c_int]
 
-def c_define_systems(cube, MinNSpax=0):
-    pass
+def first_pass(cube):
+    # Init
+    mask = np.zeros_like(cube, dtype=np.int32)
+    # C
+    first_pass_c(cube, mask, cube.shape[0], cube.shape[1], cube.shape[2])
+    # Return
+    return mask
 
 def define_systems(cube, verbose=True, MinNSpax=0):
     """
@@ -64,166 +69,4 @@ def define_systems(cube, verbose=True, MinNSpax=0):
     Returns:
 
     """
-
-    #!..make sure that undefined variance pixels that are defined in the datacube have a dummy high value
-    #WHERE(Cube/=UNDEF.and.(Var==UNDEF.or.Var==0.)) Var=1.e30
-    #bad = np.where(Cube != np.nan  and (Var==np.nan | Var==0.))[0]
-    #Var[bad] = 1.e30
-
-    label = 0
-    mask = np.zeros_like(cube, dtype='int')
-    parent = np.zeros(10000000, dtype='int')
-    NSpax = np.zeros_like(parent)
-    maxnlabels = parent.size
-
-    DimX, DimY, DimZ = cube.shape
-    # Loop me!
-    for i in range(1, DimX - 1):
-        for j in range(1,DimY-1):
-            for k in range(1, DimZ - 1):
-
-                #print(i,j,k)
-                #IF(Cube(i, j, k) == UNDEF) CYCLE
-                if not cube[i,j,k]:
-                    continue
-
-                #!..check (prior) neighbors of this spaxel, for simplicity we actually check ALL neighbors here
-                #prior_labels = RESHAPE(mask(i-1:i+1,j-1:j+1,k-1:k+1),(/27/))
-                prior_labels = mask[i-1:i+2,j-1:j+2,k-1:k+2].flatten()
-                #import pdb; pdb.set_trace()
-
-                #IF(ALL(prior_labels==0)) THEN   !..new component --> new label
-                if np.all(prior_labels == 0):
-                    label=label+1
-                    if label > maxnlabels: # STOP "Increase stack size (maxnlabels)!"
-                       raise ValueError("Increase stack size for labels!")
-                    mask[i,j,k] = label
-                #ELSE !..this spaxel is connected to another one
-                else: # !..this spaxel is connected to another one
-                    #this_label = MINVAL(prior_labels, MASK=prior_labels /= 0)
-                    this_label = np.min(prior_labels[prior_labels > 0])
-                    if this_label == 0:
-                        embed(header='bug on 73')
-                    mask[i,j,k] = this_label
-                    #!..update parent tree
-                    #DO p = 1, SIZE(prior_labels)
-                    for p in range(prior_labels.size):
-                        if prior_labels[p] != 0 and prior_labels[p] != this_label:
-                            #CALL union(this_label, prior_labels(p))
-                            union(parent, this_label, prior_labels[p])
-
-    #nlabels = MAXVAL(Mask)
-    nlabels = np.max(mask)
-
-    # !..second pass:
-    # !... replace labels using the parent tree
-    # !... get NSpax for each individual connected component
-    #  DO k=1,DimZ
-    #     DO j=1,DimY
-    #        DO i=1,DimX
-    for i in range(DimX):
-        for j in range(DimY):
-            for k in range(DimZ):
-                this_label=mask[i,j,k]
-                if this_label != 0:
-                    #!..assign value from parent tree
-                    p = this_label
-                    while parent[p] != 0:
-                       p = parent[p]
-
-                    mask[i,j,k] = p
-    #               !..update NSpax counter associated with this label
-                    NSpax[p] = NSpax[p]+1
-
-    # !..this is the number of individual connected components found in the cube:
-    nobj=np.sum(parent[1:nlabels+1]==0)
-    if verbose:
-        print("NObj Extracted=",nobj)
-
-    # Allocate
-    LabelToId = np.zeros(nlabels+1, dtype='int') -1
-    IdToLabel = np.zeros(nobj, dtype='int')
-
-    #!----- DETECTION (using NSpax) -------------
-    # !..build auxiliary arrays and count detections
-    ndet=0
-    for i in range(1,nlabels+1):
-        if parent[i] == 0:
-            this_label = i
-            this_NSpax = NSpax[this_label] # 0-indexing
-            if this_NSpax > MinNSpax:
-                IdToLabel[ndet] = this_label
-                LabelToId[this_label] = ndet
-                ndet = ndet + 1  # ! update ndet
-    if verbose:
-        print('Nobj Detected =', ndet)
-
-    # Objects
-    obj_dict = dict(Id=[0]*ndet, Assoc=[0]*ndet, NSpax=[0]*ndet,
-                    xcen=[0.]*ndet, xboxmin=[1e5]*ndet, xboxmax=[-1]*ndet,
-                    ycen=[0.]*ndet, yboxmin=[1e5]*ndet, yboxmax=[-1]*ndet,
-                    zcen=[0.]*ndet, zboxmin=[1e5]*ndet, zboxmax=[-1]*ndet)
-
-    # Init
-    for ii in range(ndet):
-        obj_dict['Id'][ii] = ii+1
-        obj_dict['NSpax'][ii] = NSpax[IdToLabel[ii]]
-
-    # Fill !..find bounding boxes and centroid for each objects
-    for i in range(DimX):
-        for j in range(DimY):
-            for k in range(DimZ):
-
-                this_label = mask[i, j, k]
-                if this_label != 0:
-                    id = LabelToId[this_label]  #!..get object associated with pixel  (0-based)
-                    if id != -1:
-                        obj_dict['xcen'][id] += i - 0.5
-                        obj_dict['ycen'][id] += j - 0.5
-                        obj_dict['zcen'][id] += k - 0.5
-
-                        obj_dict['xboxmin'][id] = min(obj_dict['xboxmin'][id], i)
-                        obj_dict['yboxmin'][id] = min(obj_dict['yboxmin'][id], j)
-                        obj_dict['zboxmin'][id] = min(obj_dict['zboxmin'][id], k)
-
-                        obj_dict['xboxmax'][id] = max(obj_dict['xboxmax'][id], i)
-                        obj_dict['yboxmax'][id] = max(obj_dict['yboxmax'][id], j)
-                        obj_dict['zboxmax'][id] = max(obj_dict['zboxmax'][id], k)
-                    else: # Cleanup mask
-                        mask[i, j, k] = 0
-
-
-    # !..finalize geometrical centroid calculation
-    for id in range(ndet):
-        obj_dict['xcen'][id] /= obj_dict['NSpax'][id]
-        obj_dict['ycen'][id] /= obj_dict['NSpax'][id]
-        obj_dict['zcen'][id] /= obj_dict['NSpax'][id]
-
-    # Finish
-    # Return
-    return mask, obj_dict
-
-def union(parent, x, y):
-    """
-
-    Args:
-       parent:
-       x:
-       y:
-
-    Returns:
-
-    """
-    #!..find root labels
-    while parent[x] != 0:
-       x = parent[x]
-
-    while parent[y] != 0:
-       y = parent[y]
-
-    if x < y:
-       parent[y] = x
-    elif x > y:
-       parent[x] = y
-
-
+    pass

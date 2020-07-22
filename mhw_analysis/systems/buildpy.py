@@ -33,7 +33,7 @@ import numpy as np
 from IPython import embed
 
 
-def define_systems(cube, verbose=True, MinNSpax=0):
+def define_systems(cube, verbose=True, MinNSpax=0, return_first=False):
     """
 
 
@@ -52,7 +52,7 @@ def define_systems(cube, verbose=True, MinNSpax=0):
     #Var[bad] = 1.e30
 
     label = 0
-    mask = np.zeros_like(cube, dtype='int')
+    mask = np.zeros_like(cube, dtype=np.int32)
     parent = np.zeros(10000000, dtype='int')
     NSpax = np.zeros_like(parent)
     maxnlabels = parent.size
@@ -73,7 +73,6 @@ def define_systems(cube, verbose=True, MinNSpax=0):
                 prior_labels = mask[i-1:i+2,j-1:j+2,k-1:k+2].flatten()
                 #import pdb; pdb.set_trace()
 
-                #IF(ALL(prior_labels==0)) THEN   !..new component --> new label
                 if np.all(prior_labels == 0):
                     label=label+1
                     if label > maxnlabels: # STOP "Increase stack size (maxnlabels)!"
@@ -92,6 +91,9 @@ def define_systems(cube, verbose=True, MinNSpax=0):
                         if prior_labels[p] != 0 and prior_labels[p] != this_label:
                             #CALL union(this_label, prior_labels(p))
                             union(parent, this_label, prior_labels[p])
+
+    if return_first:
+        return mask
 
     #nlabels = MAXVAL(Mask)
     nlabels = np.max(mask)

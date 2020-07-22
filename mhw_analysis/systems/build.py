@@ -6,6 +6,9 @@ import sqlalchemy
 import pandas as pd
 
 from mhw_analysis.systems import buildpy
+from mhw_analysis.systems import buildc
+
+from IPython import embed
 
 try:
     from mhw_analysis.systems.buildc import define_systems
@@ -14,8 +17,22 @@ except:
                   'meantime, falling back to pure python code.')
     from mhw_analysis.systems.buildpy import define_systems
 
-# Testing
-if __name__ == '__main__':
+def first_pass():
+
+    # Load
+    cube = np.load('../../doc/nb/tst_cube_pacific.npy')
+
+    # C
+    maskC = buildc.first_pass(cube.astype(bool))
+    #embed(header='25 of build')
+
+    # Python
+    mask = buildpy.define_systems(cube.astype(bool), return_first=True)
+    # 2,5,3 should be 1
+    embed(header='32 of build')
+
+
+def full_test():
     """
     Python
     """
@@ -32,3 +49,11 @@ if __name__ == '__main__':
     dbfile = '/home/xavier/Projects/Oceanography/MHW/db/pacific_mhw_system.db'
     engine = sqlalchemy.create_engine('sqlite:///'+dbfile)
     df.to_sql('MHW_Systems', con=engine)#, if_exists='append')
+
+# Testing
+if __name__ == '__main__':
+    #full_test()
+
+    # C testing
+    first_pass()
+
