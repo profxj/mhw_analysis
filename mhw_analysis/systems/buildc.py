@@ -45,24 +45,46 @@ except Exception:
 #-----------------------------------------------------------------------
 first_pass_c = _build.first_pass
 first_pass_c.restype = None
-#first_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_bool, flags="C_CONTIGUOUS"),
-#                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-#                         ctypes.c_int, ctypes.c_int, ctypes.c_int]
 first_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_bool, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
+
+second_pass_c = _build.second_pass
+second_pass_c.restype = None
+second_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
+
+maxnlabels = 10000000
 
 def first_pass(cube):
     # Init
     mask = np.zeros_like(cube, dtype=np.int32)
     # C
     #first_pass_c(cube, mask, cube.shape[0], cube.shape[1], cube.shape[2])
-    maxnlabels = 10000000
     parent = np.zeros(maxnlabels, dtype=np.int32)
     first_pass_c(cube, mask, np.array(cube.shape, dtype=np.int32), parent)
     # Return
     return mask, parent
+
+def second_pass(mask, parent):
+    """
+
+    Args:
+        mask: np.ndarray of int32
+            Modified in place
+        parent:
+
+    Returns:
+        np.ndarray: NSpax (int32)
+
+    """
+    NSpax = np.zeros(maxnlabels, dtype=np.int32)
+    second_pass_c(mask, parent, np.array(mask.shape, dtype=np.int32), NSpax)
+
+    return NSpax
 
 def define_systems(cube, verbose=True, MinNSpax=0):
     """

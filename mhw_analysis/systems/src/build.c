@@ -47,7 +47,7 @@ void first_pass(bool *cube, int *mask, int *shape, int *parent) {
     int DimY = shape[1];
     int DimZ = shape[2];
 
-    printf("%d, %d, %d\n", DimX, DimY, DimZ);
+    // printf("%d, %d, %d\n", DimX, DimY, DimZ);
 
     int idx, idx2;
     int i,j,k;
@@ -129,3 +129,47 @@ void first_pass(bool *cube, int *mask, int *shape, int *parent) {
              }
 }
 
+void second_pass(int *mask, int *parent, int *shape, int *NSpax) {
+
+    // Init
+    int DimX = shape[0];
+    int DimY = shape[1];
+    int DimZ = shape[2];
+
+    int i,j,k;
+    int idx;
+    int this_label;
+    int p;
+
+    // !..second pass:
+    // !... replace labels using the parent tree
+    // !... get NSpax for each individual connected component
+    // for i in range(DimX):
+    //    for j in range(DimY):
+    //        for k in range(DimZ):
+    for (i = 1; i<DimX-1; i++)
+        for (j = 1; j<DimY-1; j++)
+            for (k = 1; k<DimZ-1; k++) {
+                idx = convert_indices(i,j,k, DimY, DimZ);
+                this_label=mask[idx];
+                if (this_label != 0) {
+                    // #!..assign value from parent tree
+                    p = this_label;
+                    while (parent[p] != 0)
+                       p = parent[p];
+
+                    mask[idx] = p;
+                    // !..update NSpax counter associated with this label
+                    NSpax[p] = NSpax[p]+1;
+                }
+            }
+}
+
+void final_pass(int *mask, int *parent, int *shape, int *NSpax) {
+
+    // Init
+    int DimX = shape[0];
+    int DimY = shape[1];
+    int DimZ = shape[2];
+
+}

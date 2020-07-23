@@ -33,7 +33,8 @@ import numpy as np
 from IPython import embed
 
 
-def define_systems(cube, verbose=True, MinNSpax=0, return_first=False):
+def define_systems(cube, verbose=True, MinNSpax=0, return_first=False,
+                   return_second=False):
     """
 
 
@@ -122,6 +123,9 @@ def define_systems(cube, verbose=True, MinNSpax=0, return_first=False):
     nobj=np.sum(parent[1:nlabels+1]==0)
     if verbose:
         print("NObj Extracted=",nobj)
+
+    if return_second:
+        return mask, parent, NSpax
 
     # Allocate
     LabelToId = np.zeros(nlabels+1, dtype='int') -1

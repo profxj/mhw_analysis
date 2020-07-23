@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 void first_pass(bool *cube, int *mask, int *shape, int *parent);
+void second_pass(int *mask, int *parent, int *shape, int *NSpax);
 void lunion(int *parent, int x, int y);
 int convert_indices(int i, int j, int k, int DimY, int DimZ);
 

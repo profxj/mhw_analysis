@@ -26,10 +26,13 @@ def first_pass():
     maskC, parentC = buildc.first_pass(cube.astype(bool))
     #embed(header='25 of build')
 
+    NSpaxC = buildc.second_pass(maskC, parentC)
+
     print("Done with C")
 
     # Python
-    mask, parent = buildpy.define_systems(cube.astype(bool), return_first=True)
+    #mask, parent = buildpy.define_systems(cube.astype(bool), return_first=True)
+    mask, parent, NSpax = buildpy.define_systems(cube.astype(bool), return_second=True, verbose=True)
 
     embed(header='32 of build')
 
