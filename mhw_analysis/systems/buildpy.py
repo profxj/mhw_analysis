@@ -29,6 +29,8 @@ This is a non-public software:
 import os
 import numpy as np
 
+from mhw_analysis.systems import utils
+
 
 from IPython import embed
 
@@ -96,9 +98,6 @@ def define_systems(cube, verbose=True, MinNSpax=0, return_first=False,
     if return_first:
         return mask, parent
 
-    #nlabels = MAXVAL(Mask)
-    nlabels = np.max(mask)
-
     # !..second pass:
     # !... replace labels using the parent tree
     # !... get NSpax for each individual connected component
@@ -119,17 +118,20 @@ def define_systems(cube, verbose=True, MinNSpax=0, return_first=False,
     #               !..update NSpax counter associated with this label
                     NSpax[p] = NSpax[p]+1
 
+    if return_second:
+        return mask, parent, NSpax
+
+    '''
+    nlabels = np.max(mask)
     # !..this is the number of individual connected components found in the cube:
     nobj=np.sum(parent[1:nlabels+1]==0)
     if verbose:
         print("NObj Extracted=",nobj)
 
-    if return_second:
-        return mask, parent, NSpax
-
     # Allocate
     LabelToId = np.zeros(nlabels+1, dtype='int') -1
     IdToLabel = np.zeros(nobj, dtype='int')
+    
 
     #!----- DETECTION (using NSpax) -------------
     # !..build auxiliary arrays and count detections
@@ -144,12 +146,14 @@ def define_systems(cube, verbose=True, MinNSpax=0, return_first=False,
                 ndet = ndet + 1  # ! update ndet
     if verbose:
         print('Nobj Detected =', ndet)
+    '''
 
+    IdToLabel, LabelToId, ndet = utils.prep_labels(mask, parent, NSpax, MinNSpax=MinNSpax, verbose=verbose)
     # Objects
-    obj_dict = dict(Id=[0]*ndet, Assoc=[0]*ndet, NSpax=[0]*ndet,
-                    xcen=[0.]*ndet, xboxmin=[1e5]*ndet, xboxmax=[-1]*ndet,
-                    ycen=[0.]*ndet, yboxmin=[1e5]*ndet, yboxmax=[-1]*ndet,
-                    zcen=[0.]*ndet, zboxmin=[1e5]*ndet, zboxmax=[-1]*ndet)
+    obj_dict = dict(Id=np.zeros(ndet, dtype=np.int32), NSpax=np.zeros(ndet, dtype=np.int32), # Assoc=[0]*ndet,
+                    xcen=np.zeros(ndet, dtype=np.float32), xboxmin=np.ones(ndet, dtype=np.int32)*1e5, xboxmax=np.ones(ndet, dtype=np.int32)*-1,
+                    ycen=np.zeros(ndet, dtype=np.float32), yboxmin=np.ones(ndet, dtype=np.int32)*1e5, yboxmax=np.ones(ndet, dtype=np.int32)*-1,
+                    zcen=np.zeros(ndet, dtype=np.float32), zboxmin=np.ones(ndet, dtype=np.int32)*1e5, zboxmax=np.ones(ndet, dtype=np.int32)*-1)
 
     # Init
     for ii in range(ndet):

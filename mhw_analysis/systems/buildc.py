@@ -50,12 +50,6 @@ first_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_bool, flags="C_CONTIGUO
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
 
-second_pass_c = _build.second_pass
-second_pass_c.restype = None
-second_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
 
 maxnlabels = 10000000
 
@@ -68,6 +62,13 @@ def first_pass(cube):
     first_pass_c(cube, mask, np.array(cube.shape, dtype=np.int32), parent)
     # Return
     return mask, parent
+
+second_pass_c = _build.second_pass
+second_pass_c.restype = None
+second_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
 
 def second_pass(mask, parent):
     """
@@ -85,6 +86,46 @@ def second_pass(mask, parent):
     second_pass_c(mask, parent, np.array(mask.shape, dtype=np.int32), NSpax)
 
     return NSpax
+
+
+final_pass_c = _build.final_pass
+final_pass_c.restype = None
+final_pass_c.argtypes = [ctypes.c_int,
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                          np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+                          np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
+
+
+def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId):
+    # Objects
+    obj_dict = dict(Id=np.zeros(ndet, dtype=np.int32), NSpax=np.zeros(ndet, dtype=np.int32), # Assoc=[0]*ndet,
+                    xcen=np.zeros(ndet, dtype=np.float32), xboxmin=np.ones(ndet, dtype=np.int32)*100000, xboxmax=np.ones(ndet, dtype=np.int32)*-1,
+                    ycen=np.zeros(ndet, dtype=np.float32), yboxmin=np.ones(ndet, dtype=np.int32)*100000, yboxmax=np.ones(ndet, dtype=np.int32)*-1,
+                    zcen=np.zeros(ndet, dtype=np.float32), zboxmin=np.ones(ndet, dtype=np.int32)*100000, zboxmax=np.ones(ndet, dtype=np.int32)*-1)
+    # Init
+    for ii in range(ndet):
+        obj_dict['Id'][ii] = ii+1
+        obj_dict['NSpax'][ii] = NSpax[IdToLabel[ii]]
+
+    final_pass_c(ndet, mask, np.array(mask.shape, dtype=np.int32),
+                 obj_dict['xcen'], obj_dict['ycen'], obj_dict['zcen'],
+                 obj_dict['xboxmin'], obj_dict['xboxmax'],
+                 obj_dict['yboxmin'], obj_dict['yboxmax'],
+                 obj_dict['zboxmin'], obj_dict['zboxmax'],
+                 obj_dict['NSpax'], LabelToId,
+                 )
+    return obj_dict
+
 
 def define_systems(cube, verbose=True, MinNSpax=0):
     """

@@ -147,9 +147,9 @@ void second_pass(int *mask, int *parent, int *shape, int *NSpax) {
     // for i in range(DimX):
     //    for j in range(DimY):
     //        for k in range(DimZ):
-    for (i = 1; i<DimX-1; i++)
-        for (j = 1; j<DimY-1; j++)
-            for (k = 1; k<DimZ-1; k++) {
+    for (i = 0; i<DimX; i++)
+        for (j = 0; j<DimY; j++)
+            for (k = 0; k<DimZ; k++) {
                 idx = convert_indices(i,j,k, DimY, DimZ);
                 this_label=mask[idx];
                 if (this_label != 0) {
@@ -165,11 +165,52 @@ void second_pass(int *mask, int *parent, int *shape, int *NSpax) {
             }
 }
 
-void final_pass(int *mask, int *parent, int *shape, int *NSpax) {
+void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float *zcen, int *xboxmin, int *xboxmax,
+                int *yboxmin, int *yboxmax, int *zboxmin, int *zboxmax, int *NSpax, int *LabelToId) {
 
     // Init
     int DimX = shape[0];
     int DimY = shape[1];
     int DimZ = shape[2];
+
+    int i,j,k;
+    int idx;
+    int id;
+    int this_label;
+
+    // # Fill !..find bounding boxes and centroid for each objects
+    for (i = 0; i<DimX; i++)
+        for (j = 0; j<DimY; j++)
+            for (k = 0; k<DimZ; k++) {
+                idx = convert_indices(i,j,k, DimY, DimZ);
+                this_label = mask[idx];
+                if (this_label != 0) {
+                    id = LabelToId[this_label]; //  #!..get object associated with pixel  (0-based)
+                    if (id != -1) {
+                        xcen[id] += i - 0.5;
+                        ycen[id] += j - 0.5;
+                        zcen[id] += k - 0.5;
+
+                        xboxmin[id] = fmin(xboxmin[id], i);
+                        yboxmin[id] = fmin(yboxmin[id], j);
+                        zboxmin[id] = fmin(zboxmin[id], k);
+
+                        xboxmax[id] = fmax(xboxmax[id], i);
+                        yboxmax[id] = fmax(yboxmax[id], j);
+                        zboxmax[id] = fmax(zboxmax[id], k);
+                    } else { // # Cleanup mask
+                        mask[idx] = 0;
+                    }
+                }
+            }
+
+
+    // # !..finalize geometrical centroid calculation
+    for (i = 0; i<ndet; i++) {
+        xcen[i] = xcen[i] / NSpax[i];
+        ycen[i] = ycen[i] / NSpax[i];
+        zcen[i] = zcen[i] / NSpax[i];
+    }
+
 
 }

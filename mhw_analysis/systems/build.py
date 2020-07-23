@@ -7,6 +7,7 @@ import pandas as pd
 
 from mhw_analysis.systems import buildpy
 from mhw_analysis.systems import buildc
+from mhw_analysis.systems import utils
 
 from IPython import embed
 
@@ -17,24 +18,25 @@ except:
                   'meantime, falling back to pure python code.')
     from mhw_analysis.systems.buildpy import define_systems
 
-def first_pass():
+def test_c():
 
     # Load
     cube = np.load('../../doc/nb/tst_cube_pacific.npy')
 
     # C
     maskC, parentC = buildc.first_pass(cube.astype(bool))
-    #embed(header='25 of build')
-
     NSpaxC = buildc.second_pass(maskC, parentC)
+    IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
+    obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId)
 
     print("Done with C")
 
     # Python
     #mask, parent = buildpy.define_systems(cube.astype(bool), return_first=True)
-    mask, parent, NSpax = buildpy.define_systems(cube.astype(bool), return_second=True, verbose=True)
+    #mask, parent, NSpax = buildpy.define_systems(cube.astype(bool), return_second=True, verbose=True)
+    mask, obj_dict = buildpy.define_systems(cube.astype(bool), verbose=True)
 
-    embed(header='32 of build')
+    assert np.array_equal(obj_dictC['zcen'], obj_dict['zcen'])
 
 
 def full_test():
@@ -60,5 +62,5 @@ if __name__ == '__main__':
     #full_test()
 
     # C testing
-    first_pass()
+    test_c()
 
