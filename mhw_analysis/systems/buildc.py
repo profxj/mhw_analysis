@@ -51,7 +51,7 @@ first_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_bool, flags="C_CONTIGUO
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
 
 
-maxnlabels = 10000000
+maxnlabels = 100000000
 
 def first_pass(cube):
     # Init

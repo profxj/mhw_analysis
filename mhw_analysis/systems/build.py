@@ -57,10 +57,37 @@ def full_test():
     engine = sqlalchemy.create_engine('sqlite:///'+dbfile)
     df.to_sql('MHW_Systems', con=engine)#, if_exists='append')
 
+def main(sub=None, mhwsys_file = '/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.npz'):
+    # Load cube -- See MHW_Cube Notebook
+    cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.npz'
+    cube = np.load(cubefile)['cube']
+    print("Cube is loaded")
+
+    # Sub?
+    if sub is not None:
+        cube = cube[:,:,0:sub].astype(bool)
+        print("Sub")
+
+    # C
+    maskC, parentC = buildc.first_pass(cube)
+    print("First pass complete")
+    NSpaxC = buildc.second_pass(maskC, parentC)
+    print("Second pass complete")
+    IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
+    obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId)
+
+    # Write
+    np.savez(mhwsys_file, **obj_dictC)
+    print("Wrote: {}".format(mhwsys_file))
+
 # Testing
 if __name__ == '__main__':
     #full_test()
 
     # C testing
-    test_c()
+    #test_c()
+
+    # Real deal
+    main(sub=2000, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_2000.npz')
+    #main()
 

@@ -68,7 +68,7 @@ void first_pass(bool *cube, int *mask, int *shape, int *parent) {
     // Labels
     int prior_labels[27];
     int minlabel;
-    int maxnlabels = 10000000;
+    int maxnlabels = 100000000;
     int this_label;
     // int *parent = (int*) malloc (maxnlabels * sizeof(int));
     // int *NSpax = (int*) malloc (maxnlabels * sizeof(int));
