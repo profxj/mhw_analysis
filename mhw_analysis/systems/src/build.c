@@ -36,22 +36,18 @@ int convert_indices(int i, int j, int k, int DimY, int DimZ) {
     return i*DimY*DimZ + j*DimZ + k;
 }
 
-// void first_pass(bool *cube, int *mask, int *shape) {
-void first_pass(bool *cube, int *mask, int DimX, int DimY, int DimZ) {
+void first_pass(bool *cube, int *mask, int *shape, int *parent) {
     /*
-    Returns:
-        Returns the pointer to the integer array with the indices.
     */
 
     // Init
     int label = 0;
 
-    /*
     int DimX = shape[0];
     int DimY = shape[1];
     int DimZ = shape[2];
-    */
 
+    printf("%d, %d, %d\n", DimX, DimY, DimZ);
 
     int idx, idx2;
     int i,j,k;
@@ -71,10 +67,10 @@ void first_pass(bool *cube, int *mask, int DimX, int DimY, int DimZ) {
 
     // Labels
     int prior_labels[27];
-    int maxnlabels = 10000000;
     int minlabel;
+    int maxnlabels = 10000000;
     int this_label;
-    int *parent = (int*) malloc (maxnlabels * sizeof(int));
+    // int *parent = (int*) malloc (maxnlabels * sizeof(int));
     // int *NSpax = (int*) malloc (maxnlabels * sizeof(int));
 
     // Loop me!

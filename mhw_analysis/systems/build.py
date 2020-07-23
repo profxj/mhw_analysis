@@ -23,12 +23,14 @@ def first_pass():
     cube = np.load('../../doc/nb/tst_cube_pacific.npy')
 
     # C
-    maskC = buildc.first_pass(cube.astype(bool))
+    maskC, parentC = buildc.first_pass(cube.astype(bool))
     #embed(header='25 of build')
 
+    print("Done with C")
+
     # Python
-    mask = buildpy.define_systems(cube.astype(bool), return_first=True)
-    # 2,5,3 should be 1
+    mask, parent = buildpy.define_systems(cube.astype(bool), return_first=True)
+
     embed(header='32 of build')
 
 

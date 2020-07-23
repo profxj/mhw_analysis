@@ -45,17 +45,24 @@ except Exception:
 #-----------------------------------------------------------------------
 first_pass_c = _build.first_pass
 first_pass_c.restype = None
+#first_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_bool, flags="C_CONTIGUOUS"),
+#                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+#                         ctypes.c_int, ctypes.c_int, ctypes.c_int]
 first_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_bool, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                         ctypes.c_int, ctypes.c_int, ctypes.c_int]
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
 
 def first_pass(cube):
     # Init
     mask = np.zeros_like(cube, dtype=np.int32)
     # C
-    first_pass_c(cube, mask, cube.shape[0], cube.shape[1], cube.shape[2])
+    #first_pass_c(cube, mask, cube.shape[0], cube.shape[1], cube.shape[2])
+    maxnlabels = 10000000
+    parent = np.zeros(maxnlabels, dtype=np.int32)
+    first_pass_c(cube, mask, np.array(cube.shape, dtype=np.int32), parent)
     # Return
-    return mask
+    return mask, parent
 
 def define_systems(cube, verbose=True, MinNSpax=0):
     """

@@ -53,7 +53,7 @@ def define_systems(cube, verbose=True, MinNSpax=0, return_first=False):
 
     label = 0
     mask = np.zeros_like(cube, dtype=np.int32)
-    parent = np.zeros(10000000, dtype='int')
+    parent = np.zeros(10000000, dtype=np.int32)
     NSpax = np.zeros_like(parent)
     maxnlabels = parent.size
 
@@ -93,7 +93,7 @@ def define_systems(cube, verbose=True, MinNSpax=0, return_first=False):
                             union(parent, this_label, prior_labels[p])
 
     if return_first:
-        return mask
+        return mask, parent
 
     #nlabels = MAXVAL(Mask)
     nlabels = np.max(mask)
