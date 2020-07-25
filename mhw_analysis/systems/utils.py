@@ -1,4 +1,53 @@
+""" Utility routines related to MHW Systems"""
 import numpy as np
+import pandas
+from datetime import date
+
+from scipy.interpolate import interp1d
+
+from oceanpy.sst import io as sst_io
+
+def dict_to_pandas(sys_dict, add_latlon=False, add_date=True):
+    """
+
+    Parameters
+    ----------
+    sys_dict : dict
+    add_latlon : bool, optional
+        If True, load an NOAA OI and add lat, lon values to Table for convenience
+    add_date : bool, optional
+        If True, add dates and use as index
+
+    Returns
+    -------
+    mhw_sys : pandas.DataFrame
+
+    """
+    mhw_sys = pandas.DataFrame()
+    for key in sys_dict.keys():
+        s = pandas.Series(sys_dict[key])
+        mhw_sys[key] = s
+    # Date?
+    if add_date:
+        date_max = [date.fromordinal(723546 + int(zcen)) for zcen in mhw_sys['zcen'].values]
+        mhw_sys['date'] = pandas.DatetimeIndex(date_max)
+
+    # Lon/Lat
+    if add_latlon:
+        # Could hard code this
+        noaa = sst_io.load_noaa((1, 1, 2003))
+        lat_coord = noaa.coord('latitude')
+        lon_coord = noaa.coord('longitude')
+        f_lat = interp1d(np.arange(lat_coord.points.size), lat_coord.points)
+        f_lon = interp1d(np.arange(lon_coord.points.size), lon_coord.points)
+        # Evaluate
+        mhw_sys['lat'] = f_lat(np.minimum(mhw_sys['xcen'].values, 719.))
+        mhw_sys['lon'] = f_lon(mhw_sys['ycen'].values)
+
+    # Index
+    mhw_sys = mhw_sys.set_index('Id')
+    # Return
+    return mhw_sys
 
 def prep_labels(mask, parent, NSpax, MinNSpax=0, verbose=False):
     # !..this is the number of individual connected components found in the cube:
