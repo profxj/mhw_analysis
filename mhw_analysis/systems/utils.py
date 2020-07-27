@@ -30,7 +30,7 @@ def dict_to_pandas(sys_dict, add_latlon=False, add_date=True):
     # Date?
     if add_date:
         date_max = [date.fromordinal(723546 + int(zcen)) for zcen in mhw_sys['zcen'].values]
-        mhw_sys['date'] = pandas.DatetimeIndex(date_max)
+        mhw_sys['date'] = date_max
 
     # Lon/Lat
     if add_latlon:
