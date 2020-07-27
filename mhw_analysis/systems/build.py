@@ -88,7 +88,7 @@ def main(sub=None, mhwsys_file = '/home/xavier/Projects/Oceanography/MHW/db/MHW_
     np.savez(mhwsys_file, **obj_dictC)
     print("Wrote: {}".format(mhwsys_file))
     mask_file = mhwsys_file.replace('systems', 'mask')
-    np.savez(mask_file, maskC)
+    np.savez_compressed(mask_file, mask=maskC)
     print("Wrote: {}".format(mask_file))
 
 # Testing
