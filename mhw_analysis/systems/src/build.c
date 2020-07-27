@@ -32,11 +32,11 @@ void lunion(int *parent, int x, int y) {
     }
 }
 
-int convert_indices(int i, int j, int k, int DimY, int DimZ) {
+long convert_indices(long i, long j, long k, int DimY, int DimZ) {
     return i*DimY*DimZ + j*DimZ + k;
 }
 
-void first_pass(bool *cube, int *mask, int *shape, int *parent) {
+void first_pass(char *cube, int *mask, int *shape, int *parent, int *category) {
     /*
     */
 
@@ -49,9 +49,9 @@ void first_pass(bool *cube, int *mask, int *shape, int *parent) {
 
     // printf("%d, %d, %d\n", DimX, DimY, DimZ);
 
-    int idx, idx2;
-    int i,j,k;
-    int ii,jj,kk;
+    long idx, idx2;
+    long i,j,k;
+    long ii,jj,kk;
     int p;
     int count;
 
@@ -70,17 +70,17 @@ void first_pass(bool *cube, int *mask, int *shape, int *parent) {
     int minlabel;
     int maxnlabels = 100000000;
     int this_label;
-    // int *parent = (int*) malloc (maxnlabels * sizeof(int));
-    // int *NSpax = (int*) malloc (maxnlabels * sizeof(int));
 
     // Loop me!
     for (i = 1; i<DimX-1; i++)
         for (j = 1; j<DimY-1; j++)
             for (k = 1; k<DimZ-1; k++) {
                 idx = convert_indices(i,j,k, DimY, DimZ);
+                // Debuggin
+                //if (j == 1 && k == 1)
+                //    printf("idx = %ld\n", idx);
 
-                //if (!cube[i][j][k])
-                if (!cube[idx])
+                if (cube[idx] == 0)
                     continue;
 
                 // prior_labels = mask[i-1:i+2,j-1:j+2,k-1:k+2].flatten()
@@ -117,6 +117,7 @@ void first_pass(bool *cube, int *mask, int *shape, int *parent) {
                         printf("Exception happened here\n");
                     // mask[i][j][k] = label;
                     mask[idx] = label;
+                    category[label] = cube[idx];
                 } else { // # !..this spaxel is connected to another one
                     this_label = minlabel; // np.min(prior_labels[prior_labels > 0])
                     mask[idx] = this_label;
@@ -125,19 +126,20 @@ void first_pass(bool *cube, int *mask, int *shape, int *parent) {
                         if (prior_labels[p] != 0  &&  prior_labels[p] != this_label)
                             lunion(parent, this_label, prior_labels[p]);
                     }
+                    category[minlabel] = fmax(category[minlabel], cube[idx]);
                 }
              }
 }
 
-void second_pass(int *mask, int *parent, int *shape, int *NSpax) {
+void second_pass(int *mask, int *parent, int *shape, int *NSpax, int *category) {
 
     // Init
     int DimX = shape[0];
     int DimY = shape[1];
     int DimZ = shape[2];
 
-    int i,j,k;
-    int idx;
+    long i,j,k;
+    long idx;
     int this_label;
     int p;
 
@@ -159,6 +161,7 @@ void second_pass(int *mask, int *parent, int *shape, int *NSpax) {
                        p = parent[p];
 
                     mask[idx] = p;
+                    category[p] = category[this_label];  // This may be superfluous
                     // !..update NSpax counter associated with this label
                     NSpax[p] = NSpax[p]+1;
                 }
@@ -166,15 +169,15 @@ void second_pass(int *mask, int *parent, int *shape, int *NSpax) {
 }
 
 void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float *zcen, int *xboxmin, int *xboxmax,
-                int *yboxmin, int *yboxmax, int *zboxmin, int *zboxmax, int *NSpax, int *LabelToId) {
+                int *yboxmin, int *yboxmax, int *zboxmin, int *zboxmax, int *NSpax, int *dcat, int *LabelToId, int *category) {
 
     // Init
     int DimX = shape[0];
     int DimY = shape[1];
     int DimZ = shape[2];
 
-    int i,j,k;
-    int idx;
+    long i,j,k;
+    long idx;
     int id;
     int this_label;
 
@@ -198,6 +201,8 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
                         xboxmax[id] = fmax(xboxmax[id], i);
                         yboxmax[id] = fmax(yboxmax[id], j);
                         zboxmax[id] = fmax(zboxmax[id], k);
+
+                        dcat[id] = category[this_label];
                     } else { // # Cleanup mask
                         mask[idx] = 0;
                     }

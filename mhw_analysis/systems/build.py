@@ -23,20 +23,27 @@ def test_c():
     # Load
     cube = np.load('../../doc/nb/tst_cube_pacific.npy')
 
+    # Muck around
+    good = cube == 1
+    ngood = np.sum(good)
+    cube[good] = np.random.randint(4, size=ngood)+1
+
     # C
-    maskC, parentC = buildc.first_pass(cube.astype(bool))
-    NSpaxC = buildc.second_pass(maskC, parentC)
+    maskC, parentC, catC = buildc.first_pass(cube.astype(np.int8))
+    NSpaxC = buildc.second_pass(maskC, parentC, catC)
     IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
-    obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId)
+    obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
+
+    embed(header='37 of build')
 
     print("Done with C")
 
     # Python
     #mask, parent = buildpy.define_systems(cube.astype(bool), return_first=True)
     #mask, parent, NSpax = buildpy.define_systems(cube.astype(bool), return_second=True, verbose=True)
-    mask, obj_dict = buildpy.define_systems(cube.astype(bool), verbose=True)
+    #mask, obj_dict = buildpy.define_systems(cube.astype(bool), verbose=True)
 
-    assert np.array_equal(obj_dictC['zcen'], obj_dict['zcen'])
+    #assert np.array_equal(obj_dictC['zcen'], obj_dict['zcen'])
 
 
 def full_test():
@@ -59,26 +66,30 @@ def full_test():
 
 def main(sub=None, mhwsys_file = '/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.npz'):
     # Load cube -- See MHW_Cube Notebook
+    print("Loading cube")
     cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.npz'
-    cube = np.load(cubefile)['cube']
+    cube = np.load(cubefile)['cube'].astype(np.int8)
     print("Cube is loaded")
 
     # Sub?
     if sub is not None:
-        cube = cube[:,:,0:sub].astype(bool)
+        cube = cube[:,:,0:sub].astype(np.int8)
         print("Sub")
 
     # C
-    maskC, parentC = buildc.first_pass(cube)
+    maskC, parentC, catC = buildc.first_pass(cube)
     print("First pass complete")
-    NSpaxC = buildc.second_pass(maskC, parentC)
+    NSpaxC = buildc.second_pass(maskC, parentC, catC)
     print("Second pass complete")
     IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
-    obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId)
+    obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
 
     # Write
     np.savez(mhwsys_file, **obj_dictC)
     print("Wrote: {}".format(mhwsys_file))
+    mask_file = mhwsys_file.replace('systems', 'mask')
+    np.savez(mask_file, maskC)
+    print("Wrote: {}".format(mask_file))
 
 # Testing
 if __name__ == '__main__':
@@ -88,6 +99,6 @@ if __name__ == '__main__':
     #test_c()
 
     # Real deal
-    main(sub=2000, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_2000.npz')
-    #main()
+    #main(sub=2500, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_2000.npz')
+    main()
 

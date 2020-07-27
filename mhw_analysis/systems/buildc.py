@@ -45,10 +45,13 @@ except Exception:
 #-----------------------------------------------------------------------
 first_pass_c = _build.first_pass
 first_pass_c.restype = None
-first_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_bool, flags="C_CONTIGUOUS"),
-                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
+first_pass_c.argtypes = [
+    #np.ctypeslib.ndpointer(ctypes.c_bool, flags="C_CONTIGUOUS"),
+    np.ctypeslib.ndpointer(ctypes.c_int8, flags="C_CONTIGUOUS"),
+    np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+    np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+    np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+    np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
 
 
 maxnlabels = 100000000
@@ -59,18 +62,21 @@ def first_pass(cube):
     # C
     #first_pass_c(cube, mask, cube.shape[0], cube.shape[1], cube.shape[2])
     parent = np.zeros(maxnlabels, dtype=np.int32)
-    first_pass_c(cube, mask, np.array(cube.shape, dtype=np.int32), parent)
+    category = np.zeros(maxnlabels, dtype=np.int32)
+    print("Entering first_pass_c")
+    first_pass_c(cube, mask, np.array(cube.shape, dtype=np.int32), parent, category)
     # Return
-    return mask, parent
+    return mask, parent, category
 
 second_pass_c = _build.second_pass
 second_pass_c.restype = None
 second_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                           np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                           np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                           np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
 
-def second_pass(mask, parent):
+def second_pass(mask, parent, category):
     """
 
     Args:
@@ -83,7 +89,7 @@ def second_pass(mask, parent):
 
     """
     NSpax = np.zeros(maxnlabels, dtype=np.int32)
-    second_pass_c(mask, parent, np.array(mask.shape, dtype=np.int32), NSpax)
+    second_pass_c(mask, parent, np.array(mask.shape, dtype=np.int32), NSpax, category)
 
     return NSpax
 
@@ -103,12 +109,14 @@ final_pass_c.argtypes = [ctypes.c_int,
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
 
 
-def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId):
+def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId, category):
     # Objects
-    obj_dict = dict(Id=np.zeros(ndet, dtype=np.int32), NSpax=np.zeros(ndet, dtype=np.int32), # Assoc=[0]*ndet,
+    obj_dict = dict(Id=np.zeros(ndet, dtype=np.int32), NSpax=np.zeros(ndet, dtype=np.int32), category=np.zeros(ndet, dtype=np.int32), # Assoc=[0]*ndet,
                     xcen=np.zeros(ndet, dtype=np.float32), xboxmin=np.ones(ndet, dtype=np.int32)*100000, xboxmax=np.ones(ndet, dtype=np.int32)*-1,
                     ycen=np.zeros(ndet, dtype=np.float32), yboxmin=np.ones(ndet, dtype=np.int32)*100000, yboxmax=np.ones(ndet, dtype=np.int32)*-1,
                     zcen=np.zeros(ndet, dtype=np.float32), zboxmin=np.ones(ndet, dtype=np.int32)*100000, zboxmax=np.ones(ndet, dtype=np.int32)*-1)
@@ -122,7 +130,7 @@ def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId):
                  obj_dict['xboxmin'], obj_dict['xboxmax'],
                  obj_dict['yboxmin'], obj_dict['yboxmax'],
                  obj_dict['zboxmin'], obj_dict['zboxmax'],
-                 obj_dict['NSpax'], LabelToId,
+                 obj_dict['NSpax'], obj_dict['category'], LabelToId, category,
                  )
     return obj_dict
 
