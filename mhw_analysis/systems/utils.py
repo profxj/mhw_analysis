@@ -2,10 +2,13 @@
 import numpy as np
 import pandas
 from datetime import date
+from collections import Counter
 
 from scipy.interpolate import interp1d
 
 from oceanpy.sst import io as sst_io
+
+from IPython import embed
 
 def dict_to_pandas(sys_dict, add_latlon=False, add_date=True):
     """
@@ -48,6 +51,23 @@ def dict_to_pandas(sys_dict, add_latlon=False, add_date=True):
     mhw_sys = mhw_sys.set_index('Id')
     # Return
     return mhw_sys
+
+def max_area(mask, obj_dict):
+
+    obj_id = np.unique(mask[mask > 0])
+
+    # Confirm the time axis is the 3rd
+    embed(header='60 of utils')
+
+    areas = np.zeros_like(obj_id)
+    for kk, id in enumerate(obj_id):
+        idx = np.where(mask == id)
+        areas[kk] = Counter(idx[2]).most_common(1)[0][1]
+
+    #
+    obj_dict['max_area'] = areas
+    # Return
+    return
 
 def prep_labels(mask, parent, NSpax, MinNSpax=0, verbose=False):
     # !..this is the number of individual connected components found in the cube:

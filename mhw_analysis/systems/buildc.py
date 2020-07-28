@@ -98,9 +98,9 @@ final_pass_c = _build.final_pass
 final_pass_c.restype = None
 final_pass_c.argtypes = [ctypes.c_int,
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                          np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
-                          np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
@@ -117,6 +117,7 @@ final_pass_c.argtypes = [ctypes.c_int,
 def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId, category):
     # Objects
     obj_dict = dict(Id=np.zeros(ndet, dtype=np.int32), NSpax=np.zeros(ndet, dtype=np.int32), category=np.zeros(ndet, dtype=np.int32), # Assoc=[0]*ndet,
+                    max_area=np.zeros(ndet, dtype=np.int32),
                     xcen=np.zeros(ndet, dtype=np.float32), xboxmin=np.ones(ndet, dtype=np.int32)*100000, xboxmax=np.ones(ndet, dtype=np.int32)*-1,
                     ycen=np.zeros(ndet, dtype=np.float32), yboxmin=np.ones(ndet, dtype=np.int32)*100000, yboxmax=np.ones(ndet, dtype=np.int32)*-1,
                     zcen=np.zeros(ndet, dtype=np.float32), zboxmin=np.ones(ndet, dtype=np.int32)*100000, zboxmax=np.ones(ndet, dtype=np.int32)*-1)
@@ -130,7 +131,8 @@ def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId, category):
                  obj_dict['xboxmin'], obj_dict['xboxmax'],
                  obj_dict['yboxmin'], obj_dict['yboxmax'],
                  obj_dict['zboxmin'], obj_dict['zboxmax'],
-                 obj_dict['NSpax'], obj_dict['category'], LabelToId, category,
+                 obj_dict['NSpax'], obj_dict['category'],
+                 LabelToId, category,
                  )
     return obj_dict
 

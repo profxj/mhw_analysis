@@ -34,7 +34,13 @@ def test_c():
     IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
     obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
 
-    embed(header='37 of build')
+    # Area
+    utils.max_area(maskC, obj_dictC)
+
+    # pandas
+    tbl = utils.dict_to_pandas(obj_dictC, add_latlon=True)
+    tbl.to_hdf('tst.hdf', 'mhw_sys', mode='w')
+    print("Wrote tst.hdf")
 
     print("Done with C")
 
@@ -96,9 +102,9 @@ if __name__ == '__main__':
     #full_test()
 
     # C testing
-    #test_c()
+    test_c()
 
     # Real deal
     #main(sub=2500, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_2000.npz')
-    main()
+    #main()
 
