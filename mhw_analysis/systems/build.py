@@ -109,9 +109,9 @@ if __name__ == '__main__':
     #full_test()
 
     # C testing
-    test_c()
+    #test_c()
 
     # Real deal
-    #main(sub=2500, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_2000.npz')
+    main(sub=2500, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_2000.hdf')
     #main()
 
