@@ -117,6 +117,7 @@ final_pass_c.argtypes = [ctypes.c_int,
 def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId, category):
     # Objects
     obj_dict = dict(Id=np.zeros(ndet, dtype=np.int32), NSpax=np.zeros(ndet, dtype=np.int32), category=np.zeros(ndet, dtype=np.int32), # Assoc=[0]*ndet,
+                    mask_Id=np.zeros(ndet, dtype=np.int32),
                     max_area=np.zeros(ndet, dtype=np.int32),
                     xcen=np.zeros(ndet, dtype=np.float32), xboxmin=np.ones(ndet, dtype=np.int32)*100000, xboxmax=np.ones(ndet, dtype=np.int32)*-1,
                     ycen=np.zeros(ndet, dtype=np.float32), yboxmin=np.ones(ndet, dtype=np.int32)*100000, yboxmax=np.ones(ndet, dtype=np.int32)*-1,
@@ -125,6 +126,7 @@ def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId, category):
     for ii in range(ndet):
         obj_dict['Id'][ii] = ii+1
         obj_dict['NSpax'][ii] = NSpax[IdToLabel[ii]]
+        obj_dict['mask_Id'][ii] = IdToLabel[ii]
 
     final_pass_c(ndet, mask, np.array(mask.shape, dtype=np.int32),
                  obj_dict['xcen'], obj_dict['ycen'], obj_dict['zcen'],
@@ -136,17 +138,20 @@ def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId, category):
                  )
     return obj_dict
 
+max_areas_c = _build.max_areas
+max_areas_c.restype = None
+max_areas_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                        np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                        ctypes.c_int,
+                        np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
 
-def define_systems(cube, verbose=True, MinNSpax=0):
-    """
 
+def max_areas(mask, obj_dict):
+    max_label = np.max(obj_dict['mask_Id'])
+    areas = np.zeros(max_label+1, dtype=np.int32)
 
-    Args:
-        cube:
-        verbose:
-        MinNSpax:
+    max_areas_c(mask, areas, max_label, np.array(mask.shape, dtype=np.int32))
+    # Fill
+    for kk, label in enumerate(obj_dict['mask_Id']):
+        obj_dict['max_area'][kk] = areas[label]
 
-    Returns:
-
-    """
-    pass

@@ -219,3 +219,36 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
 
 
 }
+
+void max_areas(int *mask, int *areas, int max_label, int *shape) {
+
+    // Init
+    int DimX = shape[0];
+    int DimY = shape[1];
+    int DimZ = shape[2];
+
+    long i,j,k, ii;
+    long idx;
+
+    int sub_areas[max_label+1];
+
+    // # Fill !..find bounding boxes and centroid for each objects
+    for (k = 0; k<DimZ; k++) {
+        for (i = 0; i<DimX; i++)
+            for (j = 0; j<DimY; j++) {
+                if (i == 0 && j == 0) {
+                    // Reset to 0
+                    for (ii = 0; ii <= max_label; ii++)
+                        sub_areas[ii] = 0;
+                }
+                idx = convert_indices(i,j,k, DimY, DimZ);
+                if (mask[idx] == 0)
+                    continue;
+                // Increment
+                sub_areas[mask[idx]]++;
+            }
+        // Update
+        for (ii = 0; ii <= max_label; ii++)
+            areas[ii] = fmax(areas[ii], sub_areas[ii]);
+    }
+}

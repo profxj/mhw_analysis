@@ -12,11 +12,11 @@ from mhw_analysis.systems import utils
 from IPython import embed
 
 try:
-    from mhw_analysis.systems.buildc import define_systems
+    from mhw_analysis.systems.buildc import final_pass
 except:
     warnings.warn('Unable to load build C extension.  Try rebuilding mhw_analysis.  In the '
                   'meantime, falling back to pure python code.')
-    from mhw_analysis.systems.buildpy import define_systems
+    from mhw_analysis.systems.buildpy import final_pass
 
 def test_c():
 
@@ -34,10 +34,17 @@ def test_c():
     IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
     obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
 
+
+    # C
+    buildc.max_areas(maskC, obj_dictC)
+
     # Area
     obj_id = np.unique(maskC[maskC > 0])
     areas = np.zeros_like(obj_id)
     utils.max_area(maskC, obj_id, areas)
+
+    embed(header='45 of build')
+
     obj_dictC['max_area'] = areas
 
     # pandas
