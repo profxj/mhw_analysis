@@ -3,6 +3,7 @@ import numpy as np
 import pandas
 from datetime import date
 from collections import Counter
+from numba import njit, prange
 
 from scipy.interpolate import interp1d
 
@@ -52,22 +53,27 @@ def dict_to_pandas(sys_dict, add_latlon=False, add_date=True):
     # Return
     return mhw_sys
 
-def max_area(mask, obj_dict):
-
+'''
+def tmp_max_area(mask):
     obj_id = np.unique(mask[mask > 0])
-
-    # Confirm the time axis is the 3rd
-    embed(header='60 of utils')
-
     areas = np.zeros_like(obj_id)
     for kk, id in enumerate(obj_id):
         idx = np.where(mask == id)
         areas[kk] = Counter(idx[2]).most_common(1)[0][1]
+    return areas
+'''
 
-    #
-    obj_dict['max_area'] = areas
-    # Return
-    return
+@njit(parallel=True)
+def max_area(mask, obj_id, areas):
+
+    for kk, id in enumerate(obj_id):
+        idx = np.where(mask == id)
+        unique = np.unique(idx[2])
+        counts = 0
+        for jj in unique:
+            counts = max(counts, np.sum(idx[2]==jj))
+        areas[kk] = counts
+
 
 def prep_labels(mask, parent, NSpax, MinNSpax=0, verbose=False):
     # !..this is the number of individual connected components found in the cube:
