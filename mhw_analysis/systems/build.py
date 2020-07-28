@@ -35,7 +35,11 @@ def test_c():
     obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
 
     # Area
-    utils.max_area(maskC, obj_dictC)
+    obj_id = np.unique(maskC[maskC > 0])
+    areas = np.zeros_like(obj_id)
+    utils.max_area(maskC, obj_id, areas)
+
+    obj_dictC['max_area'] = areas
 
     # pandas
     tbl = utils.dict_to_pandas(obj_dictC, add_latlon=True)
