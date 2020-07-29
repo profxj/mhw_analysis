@@ -42,9 +42,6 @@ def test_c():
     obj_id = np.unique(maskC[maskC > 0])
     areas = np.zeros_like(obj_id)
     utils.max_area(maskC, obj_id, areas)
-
-    embed(header='45 of build')
-
     obj_dictC['max_area'] = areas
 
     # pandas
@@ -80,6 +77,7 @@ def full_test():
     engine = sqlalchemy.create_engine('sqlite:///'+dbfile)
     df.to_sql('MHW_Systems', con=engine)#, if_exists='append')
 
+
 def main(sub=None, mhwsys_file = '/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.hdf'):
     # Load cube -- See MHW_Cube Notebook
     print("Loading cube")
@@ -101,11 +99,7 @@ def main(sub=None, mhwsys_file = '/home/xavier/Projects/Oceanography/MHW/db/MHW_
     obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
 
     # Area
-    print("Calculating area")
-    obj_id = np.unique(maskC[maskC > 0])
-    areas = np.zeros_like(obj_id)
-    utils.max_area(maskC, obj_id, areas)
-    obj_dictC['max_area'] = areas
+    buildc.max_areas(maskC, obj_dictC)
     print("area done")
 
     # pandas
@@ -119,6 +113,7 @@ def main(sub=None, mhwsys_file = '/home/xavier/Projects/Oceanography/MHW/db/MHW_
     np.savez_compressed(mask_file, mask=maskC)
     print("Wrote: {}".format(mask_file))
 
+
 # Testing
 if __name__ == '__main__':
     #full_test()
@@ -127,6 +122,6 @@ if __name__ == '__main__':
     #test_c()
 
     # Real deal
-    main(sub=2500, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_2000.hdf')
-    #main()
+    #main(sub=2500, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_2000.hdf')
+    main()
 
