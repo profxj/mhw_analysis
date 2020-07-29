@@ -97,6 +97,7 @@ def main(sub=None, mhwsys_file = '/home/xavier/Projects/Oceanography/MHW/db/MHW_
     print("Second pass complete")
     IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
     obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
+    print("Objects nearly done")
 
     # Area
     buildc.max_areas(maskC, obj_dictC)
@@ -110,6 +111,7 @@ def main(sub=None, mhwsys_file = '/home/xavier/Projects/Oceanography/MHW/db/MHW_
     # Write
     #np.savez(mhwsys_file, **obj_dictC)
     mask_file = mhwsys_file.replace('systems', 'mask')
+    mask_file = mask_file.replace('hdf', 'npz')
     np.savez_compressed(mask_file, mask=maskC)
     print("Wrote: {}".format(mask_file))
 

@@ -230,7 +230,9 @@ void max_areas(int *mask, int *areas, int max_label, int *shape) {
     long i,j,k, ii;
     long idx;
 
-    int sub_areas[max_label+1];
+    //printf("Define sub_areas with max_label=%d\n", max_label);
+    int* sub_areas = (int*) malloc (max_label * sizeof(int));
+    //printf("Entering the main loops\n");
 
     // # Fill !..find bounding boxes and centroid for each objects
     for (k = 0; k<DimZ; k++) {
@@ -247,6 +249,8 @@ void max_areas(int *mask, int *areas, int max_label, int *shape) {
                 // Increment
                 sub_areas[mask[idx]]++;
             }
+        //if (k % 1000 == 0)
+        //    printf("k = %ld\n", k);
         // Update
         for (ii = 0; ii <= max_label; ii++)
             areas[ii] = fmax(areas[ii], sub_areas[ii]);
