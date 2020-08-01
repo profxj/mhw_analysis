@@ -19,7 +19,7 @@ def build_cube(outfile, mhw_events=None, dmy_end=(2019,12,31),
 
     # Load event table
     if mhw_events is None:
-        engine = sqlalchemy.create_engine('sqlite:///'+mhw_file)
+        engine = sqlalchemy.create_engine('sqlite:///'+mhw_db_file)
         mhw_events = pandas.read_sql_table('MHW_Events', con=engine,
                                        columns=['date', 'lon', 'lat', 'duration', 'time_peak',
                                                 'ievent', 'time_start', 'index', 'category'])
@@ -72,6 +72,5 @@ if __name__ == '__main__':
     #                                            'ievent', 'time_start', 'index', 'category'])
 
     mhw_events = pandas.read_hdf(mhw_hdf_file, 'MHW_Events')
-
-    embed(header='67 of cube')
-    build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.npz', mhw_events=mhw_events)
+    build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.npz',
+               mhw_events=mhw_events)
