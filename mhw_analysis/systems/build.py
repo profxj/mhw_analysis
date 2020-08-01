@@ -80,12 +80,14 @@ def full_test():
     engine = sqlalchemy.create_engine('sqlite:///'+dbfile)
     df.to_sql('MHW_Systems', con=engine)#, if_exists='append')
 
-def main(sub=None, mhwsys_file = '/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.hdf'):
+def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.hdf',
+         cube=None):
     # Load cube -- See MHW_Cube Notebook
-    print("Loading cube")
-    cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.npz'
-    cube = np.load(cubefile)['cube'].astype(np.int8)
-    print("Cube is loaded")
+    if cube is None:
+        print("Loading cube")
+        cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.npz'
+        cube = np.load(cubefile)['cube'].astype(np.int8)
+        print("Cube is loaded")
 
     # Sub?
     if sub is not None:
@@ -118,6 +120,9 @@ def main(sub=None, mhwsys_file = '/home/xavier/Projects/Oceanography/MHW/db/MHW_
     mask_file = mhwsys_file.replace('systems', 'mask')
     np.savez_compressed(mask_file, mask=maskC)
     print("Wrote: {}".format(mask_file))
+
+    # Return
+    return tbl, maskC
 
 # Testing
 if __name__ == '__main__':

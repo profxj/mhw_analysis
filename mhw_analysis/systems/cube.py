@@ -13,7 +13,8 @@ from IPython import embed
 
 mhw_file = '/home/xavier/Projects/Oceanography/MHW/db/mhws_allsky_defaults.db'
 
-def build_cube(outfile, mhw_events=None):
+def build_cube(outfile, mhw_events=None, dmy_end=(2019,12,31),
+               dmy_start=(1982,1,1)):
 
     # Load event table
     if mhw_events is None:
@@ -29,12 +30,13 @@ def build_cube(outfile, mhw_events=None):
     jlat = ((mhw_events['lat'].values + 89.975) / 0.25).astype(np.int32)
 
     # Times
-    min_time = np.min(mhw_events['time_start'])
-    #max_time = np.max(mhw_events['time_start'] + mhw_events['duration'])
-    ntimes = date(2019, 12, 31).toordinal() - date(1982, 1, 1).toordinal() + 1
+    ntimes = date(dmy_end[0], dmy_end[1], dmy_end[2]).toordinal() - date(
+        dmy_start[0], dmy_start[1], dmy_start[2]).toordinal() + 1
+
+    t0 = date(dmy_start[0], dmy_start[1], dmy_start[2]).toordinal()
 
     # Categories
-    categories = mhw_events['category']
+    categories = mhw_events['category'].values
 
     # Cube me
     cube = np.zeros((720, 1440, ntimes), dtype=np.int8)
@@ -50,11 +52,18 @@ def build_cube(outfile, mhw_events=None):
         #
         if kk % 1000000 == 0:
             print('kk = {}'.format(kk))
-        cube[jlat[kk], ilon[kk], tstart[kk]-min_time:tstart[kk]-min_time+durs[kk]] = categories[kk]+1
+        #cube[jlat[kk], ilon[kk], tstart[kk] - min_time:tstart[kk] - min_time + durs[kk]] = categories[kk] + 1
+        try:
+            cube[jlat[kk], ilon[kk], tstart[kk]-t0:tstart[kk]-t0+durs[kk]+1] = categories[kk]+1
+        except:
+            import pdb; pdb.set_trace()
 
     # Save
     np.savez_compressed(outfile, cube=cube)
     print("Wrote: {}".format(outfile))
+
+    # Return
+    return cube
 
 # Testing
 if __name__ == '__main__':
