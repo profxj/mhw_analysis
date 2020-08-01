@@ -11,7 +11,8 @@ import sqlalchemy
 
 from IPython import embed
 
-mhw_file = '/home/xavier/Projects/Oceanography/MHW/db/mhws_allsky_defaults.db'
+mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhws_allsky_defaults.db'
+mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhws_allsky_defaults.hdf'
 
 def build_cube(outfile, mhw_events=None, dmy_end=(2019,12,31),
                dmy_start=(1982,1,1)):
@@ -65,10 +66,12 @@ def build_cube(outfile, mhw_events=None, dmy_end=(2019,12,31),
 # Testing
 if __name__ == '__main__':
     print("Loading the events")
-    engine = sqlalchemy.create_engine('sqlite:///' + mhw_file)
-    mhw_events = pandas.read_sql_table('MHW_Events', con=engine,
-                                       columns=['date', 'lon', 'lat', 'duration', 'time_peak',
-                                                'ievent', 'time_start', 'index', 'category'])
+    #engine = sqlalchemy.create_engine('sqlite:///' + mhw_file)
+    #mhw_events = pandas.read_sql_table('MHW_Events', con=engine,
+    #                                   columns=['date', 'lon', 'lat', 'duration', 'time_peak',
+    #                                            'ievent', 'time_start', 'index', 'category'])
+
+    mhw_events = pandas.read_hdf(mhw_hdf_file, 'MHW_Events')
 
     embed(header='67 of cube')
     build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.npz', mhw_events=mhw_events)
