@@ -12,7 +12,7 @@ import sqlalchemy
 from IPython import embed
 
 mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhws_allsky_defaults.db'
-mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhws_allsky_defaults.hdf'
+mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.hdf'
 
 def build_cube(outfile, mhw_events=None, dmy_end=(2019,12,31),
                dmy_start=(1982,1,1)):
