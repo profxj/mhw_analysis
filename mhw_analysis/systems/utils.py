@@ -11,7 +11,7 @@ from oceanpy.sst import io as sst_io
 
 from IPython import embed
 
-def dict_to_pandas(sys_dict, add_latlon=False, add_date=True):
+def dict_to_pandas(sys_dict, add_latlon=False, start_date=None):
     """
 
     Parameters
@@ -19,8 +19,9 @@ def dict_to_pandas(sys_dict, add_latlon=False, add_date=True):
     sys_dict : dict
     add_latlon : bool, optional
         If True, load an NOAA OI and add lat, lon values to Table for convenience
-    add_date : bool, optional
-        If True, add dates and use as index
+    start_date : int, optional
+        date.tooordinal value for the starting date of the cube
+        If provided, add dates to the table
 
     Returns
     -------
@@ -32,8 +33,8 @@ def dict_to_pandas(sys_dict, add_latlon=False, add_date=True):
         s = pandas.Series(sys_dict[key])
         mhw_sys[key] = s
     # Date?
-    if add_date:
-        date_max = [date.fromordinal(723546 + int(zcen)) for zcen in mhw_sys['zcen'].values]
+    if start_date is not None:
+        date_max = [date.fromordinal(start_date + int(zcen)) for zcen in mhw_sys['zcen'].values]
         mhw_sys['date'] = date_max
 
     # Lon/Lat

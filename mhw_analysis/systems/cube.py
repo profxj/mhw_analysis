@@ -53,10 +53,7 @@ def build_cube(outfile, mhw_events=None, dmy_end=(2019,12,31),
         if kk % 1000000 == 0:
             print('kk = {}'.format(kk))
         #cube[jlat[kk], ilon[kk], tstart[kk] - min_time:tstart[kk] - min_time + durs[kk]] = categories[kk] + 1
-        try:
-            cube[jlat[kk], ilon[kk], tstart[kk]-t0:tstart[kk]-t0+durs[kk]+1] = categories[kk]+1
-        except:
-            import pdb; pdb.set_trace()
+        cube[jlat[kk], ilon[kk], tstart[kk]-t0:tstart[kk]-t0+durs[kk]] = categories[kk]+1
 
     # Save
     np.savez_compressed(outfile, cube=cube)

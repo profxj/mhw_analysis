@@ -4,6 +4,7 @@ import warnings
 
 import sqlalchemy
 import pandas as pd
+import datetime
 
 from mhw_analysis.systems import buildpy
 from mhw_analysis.systems import buildc
@@ -78,7 +79,7 @@ def full_test():
     df.to_sql('MHW_Systems', con=engine)#, if_exists='append')
 
 def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.hdf',
-         cube=None):
+         cube=None, dmy_start = (1982, 1, 1)):
     # Load cube -- See MHW_Cube Notebook
     if cube is None:
         print("Loading cube")
@@ -105,7 +106,8 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     print("area done")
 
     # pandas
-    tbl = utils.dict_to_pandas(obj_dictC, add_latlon=True)
+    tbl = utils.dict_to_pandas(obj_dictC, add_latlon=True,
+                               start_date=datetime.date(dmy_start[0], dmy_start[1], dmy_start[2]).toordinal())
     tbl.to_hdf(mhwsys_file, 'mhw_sys', mode='w')
     print("Wrote: {}".format(mhwsys_file))
 
