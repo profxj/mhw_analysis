@@ -42,9 +42,6 @@ def test_c():
     obj_id = np.unique(maskC[maskC > 0])
     areas = np.zeros_like(obj_id)
     utils.max_area(maskC, obj_id, areas)
-
-    embed(header='45 of build')
-
     obj_dictC['max_area'] = areas
 
     # pandas
@@ -101,13 +98,10 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     print("Second pass complete")
     IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
     obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
+    print("Objects nearly done")
 
     # Area
-    print("Calculating area")
-    obj_id = np.unique(maskC[maskC > 0])
-    areas = np.zeros_like(obj_id)
-    utils.max_area(maskC, obj_id, areas)
-    obj_dictC['max_area'] = areas
+    buildc.max_areas(maskC, obj_dictC)
     print("area done")
 
     # pandas
@@ -118,8 +112,10 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     # Write
     #np.savez(mhwsys_file, **obj_dictC)
     mask_file = mhwsys_file.replace('systems', 'mask')
+    mask_file = mask_file.replace('hdf', 'npz')
     np.savez_compressed(mask_file, mask=maskC)
     print("Wrote: {}".format(mask_file))
+
 
     # Return
     return tbl, maskC
@@ -132,6 +128,6 @@ if __name__ == '__main__':
     #test_c()
 
     # Real deal
-    main(sub=2500, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_2000.hdf')
-    #main()
+    #main(sub=2500, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_2000.hdf')
+    main()
 
