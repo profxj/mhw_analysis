@@ -79,7 +79,7 @@ def full_test():
     df.to_sql('MHW_Systems', con=engine)#, if_exists='append')
 
 def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.hdf',
-         cube=None, dmy_start = (1982, 1, 1)):
+         cube=None, ymd_start = (1982, 1, 1)):
     # Load cube -- See MHW_Cube Notebook
     if cube is None:
         print("Loading cube")
@@ -89,17 +89,20 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
 
     # Sub?
     if sub is not None:
-        cube = cube[:,:,0:sub].astype(np.int8)
+        cube = cube[:,:,sub[0]:sub[1]].astype(np.int8)
         print("Sub")
 
     # C
     maskC, parentC, catC = buildc.first_pass(cube)
+    # maskC[558,857,:]
     print("First pass complete")
+    embed(header='99 of build')
     NSpaxC = buildc.second_pass(maskC, parentC, catC)
     print("Second pass complete")
     IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
     obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
     print("Objects nearly done")
+    embed(header='104 of build')
 
     # Area
     buildc.max_areas(maskC, obj_dictC)
@@ -107,9 +110,10 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
 
     # pandas
     tbl = utils.dict_to_pandas(obj_dictC, add_latlon=True,
-                               start_date=datetime.date(dmy_start[0], dmy_start[1], dmy_start[2]).toordinal())
+                               start_date=datetime.date(ymd_start[0], ymd_start[1], ymd_start[2]).toordinal())
     tbl.to_hdf(mhwsys_file, 'mhw_sys', mode='w')
     print("Wrote: {}".format(mhwsys_file))
+    embed(header='114 of build')
 
     # Write
     #np.savez(mhwsys_file, **obj_dictC)
@@ -129,7 +133,15 @@ if __name__ == '__main__':
     # C testing
     #test_c()
 
+    # Debuggin
+    #tbl, mask = main(sub=(11600,11600+380), mhwsys_file='tst.hdf', ymd_start=(2013, 10, 5))
+    cube = np.load('tst_cube.npz')['arr_0'].astype(np.int8)
+    # Zero out high/low latitudes
+    cube[0:100,:,:] = 0
+    cube[-100:,:,:] = 0
+    tbl, mask = main(cube=cube, mhwsys_file='tst.hdf', ymd_start=(2013, 10, 5))
+    embed(header='134 of build')
+
     # Real deal
-    #main(sub=2500, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_2000.hdf')
-    main()
+    #main()
 

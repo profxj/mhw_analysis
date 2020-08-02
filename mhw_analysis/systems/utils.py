@@ -3,6 +3,7 @@ import numpy as np
 import pandas
 from datetime import date
 from collections import Counter
+import warnings
 from numba import njit, prange
 
 from scipy.interpolate import interp1d
@@ -46,6 +47,7 @@ def dict_to_pandas(sys_dict, add_latlon=False, start_date=None):
         f_lat = interp1d(np.arange(lat_coord.points.size), lat_coord.points)
         f_lon = interp1d(np.arange(lon_coord.points.size), lon_coord.points)
         # Evaluate
+        warnings.warn("Fix the lat kludge!")
         mhw_sys['lat'] = f_lat(np.minimum(mhw_sys['xcen'].values, 719.))
         mhw_sys['lon'] = f_lon(mhw_sys['ycen'].values)
 
