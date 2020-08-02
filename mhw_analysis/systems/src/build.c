@@ -33,6 +33,12 @@ void lunion(int *parent, int x, int y) {
 }
 
 long convert_indices(long i, long j, long k, int DimY, int DimZ) {
+    // Wrap around longitude
+    if (j == DimY)
+        j=0;
+    if (j == -1)
+        j=DimY-1;
+    // Do it
     return i*DimY*DimZ + j*DimZ + k;
 }
 
@@ -73,7 +79,7 @@ void first_pass(char *cube, int *mask, int *shape, int *parent, int *category) {
 
     // Loop me!
     for (i = 1; i<DimX-1; i++)
-        for (j = 1; j<DimY-1; j++)
+        for (j = 0; j<DimY; j++)
             for (k = 1; k<DimZ-1; k++) {
                 idx = convert_indices(i,j,k, DimY, DimZ);
                 // Debuggin
@@ -89,9 +95,9 @@ void first_pass(char *cube, int *mask, int *shape, int *parent, int *category) {
                 count = 0;
                 all_zero = 0;
                 minlabel = maxnlabels;
-                for (ii=i-1; ii<=i+1; ii++)
-                    for (jj=j-1; jj<=j+1; jj++)
-                        for (kk=k-1; kk<=k+1; kk++) {
+                for (ii=i-1; ii<=i+1; ii++) // Latitude
+                    for (jj=j-1; jj<=j+1; jj++) // Longitude
+                        for (kk=k-1; kk<=k+1; kk++) {  // Time
                             idx2 = convert_indices(ii,jj,kk, DimY, DimZ);
                             // prior_labels[count] = mask[ii,jj,kk];
                             prior_labels[count] = mask[idx2];
@@ -181,6 +187,17 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
     int id;
     int this_label;
 
+    int n180[ndet];
+    int n0[ndet];
+    int n360[ndet];
+    for (i=0; i<ndet; i++) {
+        n0[i] = 0;
+        n180[i] = 0;
+        n360[i] = 0;
+    }
+
+    float ycen2[ndet];
+
     // # Fill !..find bounding boxes and centroid for each objects
     for (i = 0; i<DimX; i++)
         for (j = 0; j<DimY; j++)
@@ -190,9 +207,23 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
                 if (this_label != 0) {
                     id = LabelToId[this_label]; //  #!..get object associated with pixel  (0-based)
                     if (id != -1) {
-                        xcen[id] += i - 0.5;
-                        ycen[id] += j - 0.5;
-                        zcen[id] += k - 0.5;
+                        xcen[id] += i;
+                        ycen[id] += j;
+                        zcen[id] += k;
+
+                        // Deal with longitude
+                        if (j < DimY/2) {
+                            ycen2[id] += j - 0.5 + DimY/2;  // Shifted by 180deg
+                        } else {
+                            ycen2[id] += j - 0.5 - DimY/2;  // Shifted by 180deg
+                        }
+
+                        if (j == 0)
+                            n0[id] += 1;
+                        if (j == DimY-1)
+                            n360[id] += 1;
+                        if (j == DimY/2)
+                            n180[id] += 1;
 
                         xboxmin[id] = fmin(xboxmin[id], i);
                         yboxmin[id] = fmin(yboxmin[id], j);
@@ -213,8 +244,19 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
     // # !..finalize geometrical centroid calculation
     for (i = 0; i<ndet; i++) {
         xcen[i] = xcen[i] / NSpax[i];
-        ycen[i] = ycen[i] / NSpax[i];
         zcen[i] = zcen[i] / NSpax[i];
+        // Deal with longitude
+        if (n0[i] > n180[i] && n360[i] > n180[i]) {
+            ycen[i] = ycen2[i] / NSpax[i] - DimY/2;
+            // Debuggin
+            if (ycen[i] < -500)
+                printf("n0 = %d, n180 = %d, n360 = %d\n", n0[i], n180[i], n360[i]);
+            if (ycen[i] < 0)
+                ycen[i] += DimY;
+        } else {
+            ycen[i] = ycen[i] / NSpax[i];
+        }
+        // TOOD -- FIX yboxmin too!
     }
 
 

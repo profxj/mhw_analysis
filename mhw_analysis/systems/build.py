@@ -96,13 +96,11 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     maskC, parentC, catC = buildc.first_pass(cube)
     # maskC[558,857,:]
     print("First pass complete")
-    embed(header='99 of build')
     NSpaxC = buildc.second_pass(maskC, parentC, catC)
     print("Second pass complete")
     IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
     obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
     print("Objects nearly done")
-    embed(header='104 of build')
 
     # Area
     buildc.max_areas(maskC, obj_dictC)
@@ -113,7 +111,6 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
                                start_date=datetime.date(ymd_start[0], ymd_start[1], ymd_start[2]).toordinal())
     tbl.to_hdf(mhwsys_file, 'mhw_sys', mode='w')
     print("Wrote: {}".format(mhwsys_file))
-    embed(header='114 of build')
 
     # Write
     #np.savez(mhwsys_file, **obj_dictC)
