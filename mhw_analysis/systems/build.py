@@ -81,13 +81,18 @@ def full_test():
 
 
 def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.hdf',
-         cube=None, ymd_start = (1982, 1, 1)):
+         cube=None, ymd_start = (1982, 1, 1), ignore_hilat=False):
     # Load cube -- See MHW_Cube Notebook
     if cube is None:
         print("Loading cube")
         cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.npz'
         cube = np.load(cubefile)['cube'].astype(np.int8)
         print("Cube is loaded")
+
+    # Ignore high latitude events
+    if ignore_hilat:
+        cube[0:100,:,:] = 0
+        cube[-100:,:,:] = 0
 
     # Sub?
     if sub is not None:
@@ -147,5 +152,6 @@ if __name__ == '__main__':
         embed(header='134 of build')
 
     # Real deal
-    main()
+    main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_nohilat.hdf',
+         ignore_hilat=True)
 
