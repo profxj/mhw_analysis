@@ -5,6 +5,7 @@ import warnings
 import sqlalchemy
 import pandas as pd
 import datetime
+import h5py
 
 from mhw_analysis.systems import buildpy
 from mhw_analysis.systems import buildc
@@ -78,6 +79,7 @@ def full_test():
     engine = sqlalchemy.create_engine('sqlite:///'+dbfile)
     df.to_sql('MHW_Systems', con=engine)#, if_exists='append')
 
+
 def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.hdf',
          cube=None, ymd_start = (1982, 1, 1)):
     # Load cube -- See MHW_Cube Notebook
@@ -106,17 +108,21 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     buildc.max_areas(maskC, obj_dictC)
     print("area done")
 
-    # pandas
+    # Write systems as pandas in HDF
     tbl = utils.dict_to_pandas(obj_dictC, add_latlon=True,
                                start_date=datetime.date(ymd_start[0], ymd_start[1], ymd_start[2]).toordinal())
     tbl.to_hdf(mhwsys_file, 'mhw_sys', mode='w')
     print("Wrote: {}".format(mhwsys_file))
 
-    # Write
-    #np.savez(mhwsys_file, **obj_dictC)
+    # Write mask as HDF
     mask_file = mhwsys_file.replace('systems', 'mask')
-    mask_file = mask_file.replace('hdf', 'npz')
-    np.savez_compressed(mask_file, mask=maskC)
+    f = h5py.File(mask_file, mode='w')
+    dset = f.create_dataset("mask", #maskC.shape, dtype='int32',
+                            compression='gzip', data=maskC,
+                            chunks=(maskC.shape[0], maskC.shape[1], 1))
+    f.close()
+    #mask_file = mask_file.replace('hdf', 'npz')
+    #np.savez_compressed(mask_file, mask=maskC)
     print("Wrote: {}".format(mask_file))
 
 
@@ -132,13 +138,14 @@ if __name__ == '__main__':
 
     # Debuggin
     #tbl, mask = main(sub=(11600,11600+380), mhwsys_file='tst.hdf', ymd_start=(2013, 10, 5))
-    cube = np.load('tst_cube.npz')['arr_0'].astype(np.int8)
-    # Zero out high/low latitudes
-    cube[0:100,:,:] = 0
-    cube[-100:,:,:] = 0
-    tbl, mask = main(cube=cube, mhwsys_file='tst.hdf', ymd_start=(2013, 10, 5))
-    embed(header='134 of build')
+    if False:
+        cube = np.load('tst_cube.npz')['arr_0'].astype(np.int8)
+        # Zero out high/low latitudes
+        cube[0:100,:,:] = 0
+        cube[-100:,:,:] = 0
+        tbl, mask = main(cube=cube, mhwsys_file='tst_systems.hdf', ymd_start=(2013, 10, 5))
+        embed(header='134 of build')
 
     # Real deal
-    #main()
+    main()
 
