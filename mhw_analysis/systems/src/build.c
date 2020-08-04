@@ -187,9 +187,9 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
     int id;
     int this_label;
 
-    int n180[ndet];
-    int n0[ndet];
-    int n360[ndet];
+    int* n0 = (int*) malloc (ndet * sizeof(int));
+    int* n180 = (int*) malloc (ndet * sizeof(int));
+    int* n360 = (int*) malloc (ndet * sizeof(int));
     for (i=0; i<ndet; i++) {
         n0[i] = 0;
         n180[i] = 0;
@@ -249,8 +249,8 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
         if (n0[i] > n180[i] && n360[i] > n180[i]) {
             ycen[i] = ycen2[i] / NSpax[i] - DimY/2;
             // Debuggin
-            if (ycen[i] < -500)
-                printf("n0 = %d, n180 = %d, n360 = %d\n", n0[i], n180[i], n360[i]);
+            // if (ycen[i] < -500)
+            //     printf("n0 = %d, n180 = %d, n360 = %d\n", n0[i], n180[i], n360[i]);
             if (ycen[i] < 0)
                 ycen[i] += DimY;
         } else {
