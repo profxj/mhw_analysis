@@ -91,6 +91,7 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
 
     # Ignore high latitude events
     if ignore_hilat:
+        print("Ignoring high latitude events (|b| > 65 deg)")
         cube[0:100,:,:] = 0
         cube[-100:,:,:] = 0
 
