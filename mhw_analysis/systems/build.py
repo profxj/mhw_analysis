@@ -153,6 +153,7 @@ if __name__ == '__main__':
         embed(header='134 of build')
 
     # Real deal
-    main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_nohilat.hdf',
-         ignore_hilat=True)
+    #main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_nohilat.hdf',
+    #     ignore_hilat=True)
+    main()
 
