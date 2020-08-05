@@ -48,11 +48,7 @@ def dict_to_pandas(sys_dict, add_latlon=False, start_date=None):
         f_lon = interp1d(np.arange(lon_coord.points.size), lon_coord.points)
         # Evaluate
         warnings.warn("Fix the lat kludge!")
-        #mhw_sys['lat'] = f_lat(np.minimum(mhw_sys['xcen'].values, 719.))
-        try:
-            mhw_sys['lat'] = f_lat(mhw_sys['xcen'].values)
-        except:
-            embed(header='55 of utils')
+        mhw_sys['lat'] = f_lat(np.minimum(mhw_sys['xcen'].values, lat_coord.points.size-1))
         mhw_sys['lon'] = f_lon(np.minimum(mhw_sys['ycen'].values, lon_coord.points.size-1))
 
     # Index
