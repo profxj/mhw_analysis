@@ -190,13 +190,14 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
     int* n0 = (int*) malloc (ndet * sizeof(int));
     int* n180 = (int*) malloc (ndet * sizeof(int));
     int* n360 = (int*) malloc (ndet * sizeof(int));
+    float* ycen2 = (float*) malloc (ndet * sizeof(float));
     for (i=0; i<ndet; i++) {
         n0[i] = 0;
         n180[i] = 0;
         n360[i] = 0;
+        ycen2[i] = 0.;
     }
 
-    float ycen2[ndet];
 
     // # Fill !..find bounding boxes and centroid for each objects
     for (i = 0; i<DimX; i++)
