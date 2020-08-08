@@ -251,13 +251,13 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
     // # !..finalize geometrical centroid calculation
     for (i = 0; i<ndet; i++) {
         xcen[i] = xcen[i] / (float)NSpax[i];
+        // Debuggin
+        if (i == 181)
+            printf("bigone: zcen=%f, NSpax=%ld\n", zcen[i], NSpax[i]")
         zcen[i] = zcen[i] / (float)NSpax[i];
         // Deal with longitude
         if (n0[i] > n180[i] && n360[i] > n180[i]) {
             ycen[i] = ycen2[i] / (float)NSpax[i] - DimY/2;
-            // Debuggin
-            // if (ycen[i] < -500)
-            //     printf("n0 = %d, n180 = %d, n360 = %d\n", n0[i], n180[i], n360[i]);
             if (ycen[i] < 0)
                 ycen[i] += DimY;
         } else {
