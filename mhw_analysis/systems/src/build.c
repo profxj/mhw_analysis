@@ -213,7 +213,7 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
                         ycen[id] += j;
                         zcen[id] += k;
                         if (this_label == 376) {
-                            printf("bigone: i=%ld, k=%ld", i, k);
+                            // printf("bigone: i=%ld, k=%ld", i, k);
                             nbig++;
                         }
                         // Deal with longitude
