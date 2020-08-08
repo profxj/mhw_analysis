@@ -246,7 +246,7 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
             }
 
     //
-    printf("bigone: nbig=%ld", nbig);
+    printf("bigone: nbig=%ld\n", nbig);
 
     // # !..finalize geometrical centroid calculation
     for (i = 0; i<ndet; i++) {
