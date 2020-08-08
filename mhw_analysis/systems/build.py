@@ -109,6 +109,7 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
     obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
     print("Objects nearly done")
+    embed(header='112 of build')
 
     # Area
     buildc.max_areas(maskC, obj_dictC)
