@@ -253,7 +253,7 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
         xcen[i] = xcen[i] / (float)NSpax[i];
         // Debuggin
         if (i == 181)
-            printf("bigone: zcen=%f, NSpax=%ld\n", zcen[i], NSpax[i]")
+            printf("bigone: zcen=%f, NSpax=%ld\n", zcen[i], NSpax[i]);
         zcen[i] = zcen[i] / (float)NSpax[i];
         // Deal with longitude
         if (n0[i] > n180[i] && n360[i] > n180[i]) {
