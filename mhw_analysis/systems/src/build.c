@@ -184,6 +184,7 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
 
     long i,j,k;
     long idx;
+    long nbig=0;
     int id;
     int this_label;
 
@@ -211,7 +212,10 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
                         xcen[id] += i;
                         ycen[id] += j;
                         zcen[id] += k;
-
+                        if (this_label == 376) {
+                            printf("bigone: i=%ld, k=%ld", i, k);
+                            nbig++;
+                        }
                         // Deal with longitude
                         if (j < DimY/2) {
                             ycen2[id] += j - 0.5 + DimY/2;  // Shifted by 180deg
@@ -241,6 +245,8 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
                 }
             }
 
+    //
+    printf("bigone: nbig=%ld", nbig);
 
     // # !..finalize geometrical centroid calculation
     for (i = 0; i<ndet; i++) {
