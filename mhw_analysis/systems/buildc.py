@@ -98,7 +98,7 @@ final_pass_c = _build.final_pass
 final_pass_c.restype = None
 final_pass_c.argtypes = [ctypes.c_int,
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                         np.ctypeslib.ndpointer(ctypes.c_long, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
@@ -108,10 +108,11 @@ final_pass_c.argtypes = [ctypes.c_int,
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
+                         np.ctypeslib.ndpointer(ctypes.c_long, flags="C_CONTIGUOUS"), # NSpax
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"), # category
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"), # Label
+                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"), # category
+                         ]
 
 
 def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId, category):
