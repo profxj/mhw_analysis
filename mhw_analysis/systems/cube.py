@@ -9,13 +9,18 @@ from datetime import date
 import pandas
 import sqlalchemy
 
+from cf_units import Unit
+import iris
+
+from oceanpy.sst import utils as sst_utils
+
 from IPython import embed
 
 mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhws_allsky_defaults.db'
 mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.hdf'
 
-def build_cube(outfile, mhw_events=None, dmy_end=(2019,12,31),
-               dmy_start=(1982,1,1)):
+def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
+               ymd_start=(1982,1,1)):
 
     # Load event table
     if mhw_events is None:
@@ -31,10 +36,10 @@ def build_cube(outfile, mhw_events=None, dmy_end=(2019,12,31),
     jlat = ((mhw_events['lat'].values + 89.975) / 0.25).astype(np.int32)
 
     # Times
-    ntimes = date(dmy_end[0], dmy_end[1], dmy_end[2]).toordinal() - date(
-        dmy_start[0], dmy_start[1], dmy_start[2]).toordinal() + 1
+    ntimes = date(ymd_end[0], ymd_end[1], ymd_end[2]).toordinal() - date(
+        ymd_start[0], ymd_start[1], ymd_start[2]).toordinal() + 1
 
-    t0 = date(dmy_start[0], dmy_start[1], dmy_start[2]).toordinal()
+    t0 = date(ymd_start[0], ymd_start[1], ymd_start[2]).toordinal()
 
     # Categories
     categories = mhw_events['category'].values
@@ -56,9 +61,29 @@ def build_cube(outfile, mhw_events=None, dmy_end=(2019,12,31),
         #cube[jlat[kk], ilon[kk], tstart[kk] - min_time:tstart[kk] - min_time + durs[kk]] = categories[kk] + 1
         cube[jlat[kk], ilon[kk], tstart[kk]-t0:tstart[kk]-t0+durs[kk]] = categories[kk]+1
 
-    # Save
-    np.savez_compressed(outfile, cube=cube)
-    print("Wrote: {}".format(outfile))
+    # Save as npz
+    #np.savez_compressed(outfile, cube=cube)
+    #print("Wrote: {}".format(outfile))
+
+    # Save as Iris
+    # Time
+    t0 = date(ymd_start[0], ymd_start[1], ymd_start[2]).toordinal()
+    t1 = date(ymd_end[0], ymd_end[1], ymd_end[2]).toordinal()
+
+    tunit = Unit('days since 01-01-01 00:00:00', calendar='gregorian')
+    times = np.arange(t0, t1+1)
+    time_coord = iris.coords.DimCoord(times, standard_name='time', units=tunit)
+
+    # Space
+    lat_coord, lon_coord = sst_utils.noaa_oi_coords(as_iris_coord=True)
+
+    # Iris
+    ecube = iris.cube.Cube(cube, var_name='Events',
+                           dim_coords_and_dims=[
+                               (lat_coord, 0),
+                               (lon_coord, 1),
+                               (time_coord, 2), ])
+    iris.save(ecube, outfile, zlib=True)
 
     # Return
     return cube
@@ -72,5 +97,6 @@ if __name__ == '__main__':
     #                                            'ievent', 'time_start', 'index', 'category'])
 
     mhw_events = pandas.read_hdf(mhw_hdf_file, 'MHW_Events')
-    build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.npz',
+    #build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.npz',
+    build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.nc',
                mhw_events=mhw_events)
