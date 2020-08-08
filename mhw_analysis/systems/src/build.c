@@ -137,7 +137,7 @@ void first_pass(char *cube, int *mask, int *shape, int *parent, int *category) {
              }
 }
 
-void second_pass(int *mask, int *parent, int *shape, int *NSpax, int *category) {
+void second_pass(int *mask, int *parent, int *shape, long *NSpax, int *category) {
 
     // Init
     int DimX = shape[0];
@@ -175,7 +175,7 @@ void second_pass(int *mask, int *parent, int *shape, int *NSpax, int *category) 
 }
 
 void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float *zcen, int *xboxmin, int *xboxmax,
-                int *yboxmin, int *yboxmax, int *zboxmin, int *zboxmax, int *NSpax, int *dcat, int *LabelToId, int *category) {
+                int *yboxmin, int *yboxmax, int *zboxmin, int *zboxmax, long *NSpax, int *dcat, int *LabelToId, int *category) {
 
     // Init
     int DimX = shape[0];

@@ -73,7 +73,7 @@ second_pass_c.restype = None
 second_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                           np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                           np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                          np.ctypeslib.ndpointer(ctypes.c_long, flags="C_CONTIGUOUS"),
                           np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
 
 def second_pass(mask, parent, category):
@@ -88,7 +88,7 @@ def second_pass(mask, parent, category):
         np.ndarray: NSpax (int32)
 
     """
-    NSpax = np.zeros(maxnlabels, dtype=np.int32)
+    NSpax = np.zeros(maxnlabels, dtype=np.int64)
     second_pass_c(mask, parent, np.array(mask.shape, dtype=np.int32), NSpax, category)
 
     return NSpax
@@ -98,7 +98,7 @@ final_pass_c = _build.final_pass
 final_pass_c.restype = None
 final_pass_c.argtypes = [ctypes.c_int,
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                         np.ctypeslib.ndpointer(ctypes.c_long, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
@@ -116,7 +116,9 @@ final_pass_c.argtypes = [ctypes.c_int,
 
 def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId, category):
     # Objects
-    obj_dict = dict(Id=np.zeros(ndet, dtype=np.int32), NSpax=np.zeros(ndet, dtype=np.int32), category=np.zeros(ndet, dtype=np.int32), # Assoc=[0]*ndet,
+    obj_dict = dict(Id=np.zeros(ndet, dtype=np.int32),
+                    NSpax=np.zeros(ndet, dtype=np.int64),
+                    category=np.zeros(ndet, dtype=np.int32), # Assoc=[0]*ndet,
                     mask_Id=np.zeros(ndet, dtype=np.int32),
                     max_area=np.zeros(ndet, dtype=np.int32),
                     xcen=np.zeros(ndet, dtype=np.float32), xboxmin=np.ones(ndet, dtype=np.int32)*100000, xboxmax=np.ones(ndet, dtype=np.int32)*-1,
