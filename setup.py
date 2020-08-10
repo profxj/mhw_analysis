@@ -1,20 +1,13 @@
 #!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import absolute_import, division, print_function
-#
 # Standard imports
 #
 import glob, os
-from distutils.extension import Extension
+
 #
-# setuptools' sdist command ignores MANIFEST.in
-#
-#from distutils.command.sdist import sdist as DistutilsSdist
 from setuptools import setup, find_packages
-#
-# DESI support code.
-#
-#from desiutil.setup import DesiTest, DesiVersion, get_version
+
+from extension_helpers import get_extensions
 #
 # Begin setup
 #
@@ -50,16 +43,12 @@ if os.path.isdir('bin'):
         if not os.path.basename(fname).endswith('.rst')]
 setup_keywords['provides'] = [setup_keywords['name']]
 setup_keywords['requires'] = ['Python (>3.7.0)']
-# setup_keywords['install_requires'] = ['Python (>2.7.0)']
 setup_keywords['zip_safe'] = False
-#setup_keywords['use_2to3'] = True
+
 setup_keywords['packages'] = find_packages()
-#setup_keywords['package_dir'] = {'':'py'}
 setup_keywords['setup_requires']=['pytest-runner']
 setup_keywords['tests_require']=['pytest']
 
-# Autogenerate command-line scripts.
-#
 
 #
 # Add internal data directories.
@@ -76,6 +65,9 @@ for path, directories, files in data_generator:
 setup_keywords['package_data'] = {'mhw_analysis': data_files,
                                   '': ['*.rst', '*.txt', '*.yaml']}
 setup_keywords['include_package_data'] = True
+
+# C code
+setup_keywords['ext_modules'] = get_extensions()
 
 #
 # Run setup command.
