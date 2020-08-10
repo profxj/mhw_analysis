@@ -117,6 +117,8 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
         # Increment
         kk += 1
 
+    # Add times
+    int_systems['max_time'] = times
 
     # Save
     np.savez_compressed(outfile, images=img_arr)
