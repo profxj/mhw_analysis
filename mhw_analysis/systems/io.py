@@ -21,7 +21,8 @@ def load_systems(mhw_sys_file=None):
     return mhw_sys
 
 
-def load_mask(ymd_start, ymd_end, mhw_mask_file=None, mask_start=(1982,1,1)):
+def load_mask_from_dates(ymd_start, ymd_end,
+                         mhw_mask_file=None, mask_start=(1982,1,1)):
     if mhw_mask_file is None:
         mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.hdf')
 
@@ -34,9 +35,29 @@ def load_mask(ymd_start, ymd_end, mhw_mask_file=None, mask_start=(1982,1,1)):
     i0 = ts-t0
     i1 = te-t0+1  # Make it inclusive
 
+    # Load + return
+    return maskcube_from_slice(i0, i1, mhw_mask_file=mhw_mask_file, mask_start=mask_start)
+
+
+def load_mask_from_system(mhw_system,
+                          mhw_mask_file = None, mask_start = (1982, 1, 1)):
+    # Load + return
+    return maskcube_from_slice(mhw_system.zboxmin, mhw_system.zboxmax,
+                               mhw_mask_file=mhw_mask_file, mask_start=mask_start)
+
+
+def maskcube_from_slice(i0,i1,
+                        mhw_mask_file=None, mask_start=(1982, 1, 1)):
+    if mhw_mask_file is None:
+        mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.hdf')
+
+    t0 = datetime.date(mask_start[0], mask_start[1], mask_start[2]).toordinal()
+    ts = t0 + i0
+    te = t0 + i1
+
     # Load from HDF
     f = h5py.File(mhw_mask_file, mode='r')
-    mask = f['mask'][:,:,i0:i1]
+    mask = f['mask'][:,:,i0:i1+1]
     f.close()
 
     # Convert to IRIS
