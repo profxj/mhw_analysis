@@ -13,6 +13,16 @@ from oceanpy.sst import utils as sst_utils
 
 
 def load_systems(mhw_sys_file=None):
+    """
+    Load up the MHW Systems into a pandas table
+
+    Args:
+        mhw_sys_file:
+
+    Returns:
+        pandas.DataFrame:
+
+    """
     if mhw_sys_file is None:
         mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems.hdf')
     # Read
