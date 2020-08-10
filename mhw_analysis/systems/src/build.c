@@ -213,8 +213,9 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
                         ycen[id] += j;
                         zcen[id] += k;
                         if (this_label == 376) {
-                            // printf("bigone: i=%ld, k=%ld", i, k);
                             nbig++;
+                            if (nbig % 100000 == 0)
+                                printf("bigone: k=%ld, zcen=%f, <zcen>=", k, zcen[id], zcen[id]/(float)nbig);
                         }
                         // Deal with longitude
                         if (j < DimY/2) {
