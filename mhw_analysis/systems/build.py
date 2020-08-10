@@ -144,7 +144,7 @@ if __name__ == '__main__':
     #test_c()
 
     # Debuggin
-    tbl, mask = main(sub=(11600,11600+380), mhwsys_file='tst.hdf', ymd_start=(2013, 10, 5))
+    #tbl, mask = main(sub=(11600,11600+380), mhwsys_file='tst.hdf', ymd_start=(2013, 10, 5))
     if False:
         cube = np.load('tst_cube.npz')['arr_0'].astype(np.int8)
         # Zero out high/low latitudes
@@ -154,10 +154,10 @@ if __name__ == '__main__':
         embed(header='134 of build')
 
     # Testing
-    main(sub=(10000,11000))
+    #main(sub=(10000,11000))
 
     # Real deal
     #main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_nohilat.hdf',
     #     ignore_hilat=True)
-    #main()
+    main()
 
