@@ -223,9 +223,9 @@ def get_noaa_extract(full_cube, bounds):
             longitude=lambda cell: lon_start <= cell <= lon_end)
 
     # get portion of z500 reframe within these boundaries
-    z500_noaa_extract = z500_noaa.extract(constraint)
+    sub_cube = full_cube.extract(constraint)
 
-    return z500_noaa_extract
+    return sub_cube
 
 
 def show_segmentation_map(lats, lons):
