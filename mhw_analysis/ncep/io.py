@@ -23,6 +23,8 @@ def load_z500(dmy, path=None, end_dmy=None):
     Returns
     -------
     z500_dmy : iris.Cube
+        lon,lat only if end_dmy is None
+        else time,lon,lat
 
     """
     # File
