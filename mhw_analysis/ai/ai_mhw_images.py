@@ -194,11 +194,7 @@ def get_noaa_extract(z500_noaa, bounds):
         if lon_start < 0.:
             lon_start += 360.
         else:
-            pass
-            # pass
-            #tmp = lon_start
-            #lon_start = lon_end - 360.
-            #lon_end = tmp
+            lon_end -= 360.
     else:
         flip = False
 
@@ -382,10 +378,12 @@ def main():
                     # Deal with wrap around
                     if (lon_start < 0.) or (lon_end > 360.):
                         lons = z500_noaa_extract.coord('longitude')
-                        # Need to figure out where the split is and
-                        # repack
-                        import pdb
-                        pdb.set_trace()
+                        # Find the jump
+                        dlon = lons - np.roll(lons, 1)
+                        jump = np.where(dlon > 10.)[0][0]
+                        # Repack
+                        z500_data = np.concatenate([z500_data[:, jump:],
+                                                    z500_data[:, :jump]], axis=1)
 
                     # if there are any MHWs on this day,
                     # if range_df is not None and not range_df.empty:
