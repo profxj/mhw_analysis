@@ -186,7 +186,21 @@ def load_z500_noaa(date, any_sst, path='../Z500', document='b.e11.B20TRC5CNBDRD.
     return z500_noaa
 
 
-def get_noaa_extract(z500_noaa, bounds):
+def get_noaa_extract(full_cube, bounds):
+    """
+    Extract a lon, lat region from an input iris Cube
+
+    Parameters
+    ----------
+    full_cube : iris.cube.Cube
+    bounds : list
+        lat_start, lat_end, lon_start, lon_end
+
+    Returns
+    -------
+    sub_cube : iris.cube.Cube
+
+    """
     lat_start, lat_end, lon_start, lon_end = bounds
 
     if (lon_start < 0.) or (lon_end > 360.):
