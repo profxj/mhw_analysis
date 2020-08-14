@@ -49,3 +49,16 @@ def load_z500(dmy, path=None, end_dmy=None):
     dmy_cube = cube.extract(constraint)
 
     return dmy_cube
+
+def load_z500_noaa_ncep(date, any_sst, path='../Z500', document='NCEP-DOE_z500.nc', end_dmy=None):
+    # create filepath
+    zfile = os.path.join(path, document)
+
+    if not end_dmy:
+        # get cube at ymd date
+        day_cube = load_z500((date.day, date.month, date.year), path)
+
+        # get z500 regridded data
+        z500_noaa = day_cube[0].regrid(any_sst, iris.analysis.Linear())
+
+        return z500_noaa
