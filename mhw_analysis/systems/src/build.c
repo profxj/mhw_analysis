@@ -81,6 +81,17 @@ void first_pass(char *cube, int *mask, int *shape, int *parent, int *category) {
     // Ocean boundaries
     int indian_lon0 = 580; // Approximately 145E
     int indian_lat0 = 360; // Approximately 0deg
+    int indian_lon1 = 400; // Approximately 100E
+    int indian_lat1a = 360; // Approximately 0deg
+    int indian_lat1b = 484; // Approximately 31degN
+    int indian_lon2 = 80; // Approximately 20E
+    int indian_lat2 = 360; // Approximately 0deg
+
+    int pacific_lon0 = 1160; // Approximately 70W
+    int pacific_lat0 = 360; // Approximately 0deg
+    int pacific_lon1a = 400; // Approximately 70W
+    int pacific_lon1b = 1040; // Approximately 70W
+    int pacific_lat1 = 624; // Approximately 0deg
 
     // Loop me!
     for (i = 1; i<DimX-1; i++)
@@ -106,13 +117,40 @@ void first_pass(char *cube, int *mask, int *shape, int *parent, int *category) {
                 ip=1;
                 im=1;
 
-                // Indian Ocean
-                if (j==indian_lon0 && i<indian_lat0) {
+                // Indian Ocean at 145E; E/W boundary
+                if (j==indian_lon0 && i<=indian_lat0)
                     jp = 0;
-                }
-                if (j==indian_lon0+1 && i<indian_lat0) {
+                if (j==indian_lon0+1 && i<=indian_lat0)
                     jm = 0;
-                }
+                // Indian Ocean at 100E; E/W boundary
+                if (j==indian_lon1 && i>=indian_lat1a-1 && i<=indian_lat1b)
+                    jp = 0;
+                if (j==indian_lon1+1 && i>=indian_lat1a && i<=indian_lat1b)
+                    jm = 0;
+                // Indian Ocean 0deg N/S boundary
+                if (i==indian_lat1a && j>=indian_lon1 && j<=indian_lon0+1)
+                    ip = 0;
+                if (i==indian_lat1a+1 && j>=indian_lon1 && j<=indian_lon0+1)
+                    im = 0;
+                // Indian Ocean at 20E; E/W boundary
+                if (j==indian_lon2 && i<=indian_lat2)
+                    jp = 0;
+                if (j==indian_lon2+1 && i<=indian_lat2)
+                    jm = 0;
+
+                // Pacific Ocean at 70W; E/W boundary
+                if (j==pacific_lon0 && i<=pacific_lat0)
+                    jp = 0;
+                if (j==pacific_lon0+1 && i<=pacific_lat0)
+                    jm = 0;
+
+                // Pacific Ocean at 66N; N/S boundary
+                if (i==pacific_lat1 && j>=pacific_lon1a && j<=pacific_lon1b)
+                    ip = 0;
+                if (i==pacific_lat1+1 && j>=pacific_lon1a && j<=pacific_lon1b)
+                    im = 0;
+
+                // Do it
                 for (ii=i-im; ii<=i+ip; ii++) // Latitude
                     for (jj=j-jm; jj<=j+jp; jj++) // Longitude
                         for (kk=k-1; kk<=k+1; kk++) {  // Time

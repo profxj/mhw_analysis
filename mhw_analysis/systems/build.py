@@ -171,7 +171,15 @@ if __name__ == '__main__':
 
     if True:
         cube = np.zeros((720,1440,100), dtype=np.int8)
-        cube[100:200,500:650,30:50] = 1
+        # Indian/Pacific
+        cube[100:400,350:650,30:50] = 1
+        # Indian/Atlantic
+        cube[150:300,70:90,20:30] = 1
+        # Pacific/Atlantic
+        cube[150:300,1150:1170,10:20] = 1
+        # Pacific/Atlantic
+        cube[600:640,600:650,15:25] = 1
+        # Run
         main(cube=cube, mhwsys_file='tst_indian_systems.hdf')
 
     # Testing
