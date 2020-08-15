@@ -169,6 +169,11 @@ if __name__ == '__main__':
         tbl, mask = main(cube=cube, mhwsys_file='tst_systems.hdf', ymd_start=(2013, 10, 5))
         embed(header='134 of build')
 
+    if True:
+        cube = np.zeros((720,1440,100), dtype=np.int8)
+        cube[100:200,500:650,30:50] = 1
+        main(cube=cube, mhwsys_file='tst_indian_systems.hdf')
+
     # Testing
     #main(sub=(10000,11000))
 
@@ -179,7 +184,7 @@ if __name__ == '__main__':
         main()
 
     # Vary
-    if True:
+    if False:
         cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary.nc'
         print("Loading: {}".format(cubefile))
         cubes = iris.load(cubefile) #np.load(cubefile)['cube'].astype(np.int8)

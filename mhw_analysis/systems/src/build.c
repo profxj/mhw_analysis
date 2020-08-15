@@ -58,6 +58,7 @@ void first_pass(char *cube, int *mask, int *shape, int *parent, int *category) {
     long idx, idx2;
     long i,j,k;
     long ii,jj,kk;
+    long ip,im,jp,jm;
     int p;
     int count;
 
@@ -77,6 +78,10 @@ void first_pass(char *cube, int *mask, int *shape, int *parent, int *category) {
     int maxnlabels = 100000000;
     int this_label;
 
+    // Ocean boundaries
+    int indian_lon0 = 580; // Approximately 145E
+    int indian_lat0 = 360; // Approximately 0deg
+
     // Loop me!
     for (i = 1; i<DimX-1; i++)
         for (j = 0; j<DimY; j++)
@@ -89,14 +94,27 @@ void first_pass(char *cube, int *mask, int *shape, int *parent, int *category) {
                 if (cube[idx] == 0)
                     continue;
 
-                // prior_labels = mask[i-1:i+2,j-1:j+2,k-1:k+2].flatten()
-                // Fill prior_labels and check for non-zero values
+                // Search for neighboring pixels
                 // Also determine the minimum value of the label
                 count = 0;
                 all_zero = 0;
                 minlabel = maxnlabels;
-                for (ii=i-1; ii<=i+1; ii++) // Latitude
-                    for (jj=j-1; jj<=j+1; jj++) // Longitude
+
+                // Reset
+                jp=1;
+                jm=1;
+                ip=1;
+                im=1;
+
+                // Indian Ocean
+                if (j==indian_lon0 && i<indian_lat0) {
+                    jp = 0;
+                }
+                if (j==indian_lon0+1 && i<indian_lat0) {
+                    jm = 0;
+                }
+                for (ii=i-im; ii<=i+ip; ii++) // Latitude
+                    for (jj=j-jm; jj<=j+jp; jj++) // Longitude
                         for (kk=k-1; kk<=k+1; kk++) {  // Time
                             idx2 = convert_indices(ii,jj,kk, DimY, DimZ);
                             // prior_labels[count] = mask[ii,jj,kk];
@@ -128,7 +146,7 @@ void first_pass(char *cube, int *mask, int *shape, int *parent, int *category) {
                     this_label = minlabel; // np.min(prior_labels[prior_labels > 0])
                     mask[idx] = this_label;
                     // #!..update parent tree
-                    for (p=0; p<27; p++) { // p in range(prior_labels.size):
+                    for (p=0; p<count; p++) { // p in range(prior_labels.size):
                         if (prior_labels[p] != 0  &&  prior_labels[p] != this_label)
                             lunion(parent, this_label, prior_labels[p]);
                     }
@@ -212,11 +230,6 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
                         xcen[id] += i;
                         ycen[id] += j;
                         zcen[id] += k;
-                        if (this_label == 376) {
-                            nbig++;
-                            if (nbig % 100000 == 0)
-                                printf("bigone: k=%ld, zcen=%f, <zcen>=", k, zcen[id], zcen[id]/(float)nbig);
-                        }
                         // Deal with longitude
                         if (j < DimY/2) {
                             ycen2[id] += j - 0.5 + DimY/2;  // Shifted by 180deg
