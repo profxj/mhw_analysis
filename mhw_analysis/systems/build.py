@@ -7,6 +7,8 @@ import pandas as pd
 import datetime
 import h5py
 
+import iris
+
 from mhw_analysis.systems import buildpy
 from mhw_analysis.systems import buildc
 from mhw_analysis.systems import utils
@@ -81,7 +83,22 @@ def full_test():
 
 
 def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.hdf',
-         cube=None, ymd_start = (1982, 1, 1), ignore_hilat=False):
+         cube=None, ymd_start=(1982, 1, 1), ignore_hilat=False):
+    """
+    Generate MHW Systems from an Event cube
+
+    Args:
+        sub (tuple, optional):
+            Restrict run to a subset of dates
+        mhwsys_file (str, optional):
+            Output file
+        cube (numpy.ndarray):
+        ymd_start:
+        ignore_hilat:
+
+    Returns:
+
+    """
     # Load cube -- See MHW_Cube Notebook
     if cube is None:
         print("Loading cube")
@@ -109,7 +126,6 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
     obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
     print("Objects nearly done")
-    embed(header='112 of build')
 
     # Area
     buildc.max_areas(maskC, obj_dictC)
@@ -144,7 +160,7 @@ if __name__ == '__main__':
     #test_c()
 
     # Debuggin
-    tbl, mask = main(sub=(11600,11600+380), mhwsys_file='tst.hdf', ymd_start=(2013, 10, 5))
+    #tbl, mask = main(sub=(11600,11600+380), mhwsys_file='tst.hdf', ymd_start=(2013, 10, 5))
     if False:
         cube = np.load('tst_cube.npz')['arr_0'].astype(np.int8)
         # Zero out high/low latitudes
@@ -154,10 +170,19 @@ if __name__ == '__main__':
         embed(header='134 of build')
 
     # Testing
-    main(sub=(10000,11000))
+    #main(sub=(10000,11000))
 
-    # Real deal
-    #main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_nohilat.hdf',
-    #     ignore_hilat=True)
-    #main()
+    # Original
+    if False:
+        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_nohilat.hdf',
+             ignore_hilat=True)
+        main()
 
+    # Vary
+    if True:
+        cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary.nc'
+        print("Loading: {}".format(cubefile))
+        cubes = iris.load(cubefile) #np.load(cubefile)['cube'].astype(np.int8)
+        cube = cubes[0].data[:].astype(np.int8)
+        #
+        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_vary.hdf', cube=cube)
