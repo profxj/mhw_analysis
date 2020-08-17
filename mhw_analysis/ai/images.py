@@ -42,14 +42,29 @@ def grab_z500(cube, lon, lat, width):
 
 def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
                        mask_start=(1982, 1, 1), debug=False):
+    """
+    Build a set of intermeidate (NVox ~ 1000) images for analysis
+
+    Args:
+        outfile:
+        xydim (int, optional):
+        mask_start:
+        debug:
+
+    Returns:
+
+    """
 
     # Load systems
-    mhw_systems = mhwsys_io.load_systems()
+    mhw_systems = mhwsys_io.load_systems(vary=True)
     # Intermediate
-    sys_1000 = (mhw_systems.max_area > 700) & (mhw_systems.max_area < 3000) & (
+    sys_1000 = (mhw_systems.max_area > 300) & (mhw_systems.max_area < 5000) & (
             np.abs(mhw_systems.lat) < 65.)
     nint = np.sum(sys_1000)
     int_systems = mhw_systems[sys_1000]
+
+    print("We have {} intermediate systems".format(nint))
+    #import pdb; pdb.set_trace()
 
     # Times
     t0 = datetime.date(mask_start[0], mask_start[1], mask_start[2]).toordinal()
@@ -59,8 +74,9 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
     img_arr = np.zeros((xydim, xydim, nint), dtype=int)
 
     # Load mask (50Gb!)
-    mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.hdf')
+    mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf')
     f = h5py.File(mhw_mask_file, mode='r')
+    print("Loading the mask: {}".format(mhw_mask_file))
     full_mask = np.array(f['mask'][:,:,:])
     print('Mask loaded')
     f.close()
@@ -108,7 +124,7 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
             rollj = 0
         mask = np.roll(mask, (rolli, rollj), axis=(0,1))
         img_arr[:,:,kk] = mask[i0:i1, j0:j1, iarea]
-        if debug or kk==47:
+        if debug:# or kk==47:
             from matplotlib import  pyplot as plt
             plt.clf()
             plt.imshow(img_arr[:,:,kk])
