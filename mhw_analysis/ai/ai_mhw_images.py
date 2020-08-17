@@ -123,8 +123,6 @@ def build_X_set(file='../../Downloads/MHW_sys_intermediate.csv', width=16.):
 	lats, lons, dates = df['lat'], df['lon'], df['date']
 	# get curr date
 	date = datetime.fromisoformat(dates[0])
-	print(date)
-	print(type(date))
 
 	# This can be any day
 	any_sst = sst_io.load_noaa((ex_date.day, ex_date.month, ex_date.year))
@@ -146,48 +144,42 @@ def build_X_set(file='../../Downloads/MHW_sys_intermediate.csv', width=16.):
 
 	lst = []
 
-	# lons 
-	# lons = lons.loc[]
+	for i, (lat, lon) in enumerate(zip(lats, lons)):
+		# get the date
+		date = dates[i]
 
+		# get the bounds
+		bounds = con.get_bounds(lat, lon, width)
+		lat_start, lat_end, lon_start, lon_end = bounds
 
-	# for i, (lat, lon) in enumerate(zip(lats, lons)):
-	lat = -58.
-	lon = 356.
-	# get the date
-	date = ex_date#dates[i]
+		# if cube not in dict
+		if not uni_dates[date]:
+			# get curr date
+			dt_date = datetime.fromisoformat(date)
+			print(dt_date)
+			# get z500 data for a particular date=date
+			z500_noaa = ncep_io.load_z500_noaa_ncep(dt_date, any_sst)
+			uni_dates[date] = z500_noaa
+		else:
+			# get from dict
+			z500_noaa = uni_dates[date]
 
-	# get the bounds
-	bounds = con.get_bounds(lat, lon, width)
-	lat_start, lat_end, lon_start, lon_end = bounds
-
-	# if cube not in dict
-	# if not uni_dates['']:
-	# get curr date
-	dt_date = date#datetime.fromisoformat(date)
-	print(dt_date)
-	# get z500 data for a particular date=date
-	z500_noaa = ncep_io.load_z500_noaa_ncep(dt_date, any_sst)
-		# uni_dates[date] = z500_noaa
-	# else:
-	# 	# get from dict
-	# 	z500_noaa = uni_dates[date]
-
-	# get the extract for that lat/lon range
-	z500_noaa_extract = get_noaa_extract(z500_noaa, bounds)
-	z500_data = z500_noaa_extract.data[:]
+		# get the extract for that lat/lon range
+		z500_noaa_extract = get_noaa_extract(z500_noaa, bounds)
+		z500_data = z500_noaa_extract.data[:]
 
 	# Deal with wrap around
-	if (lon_start < 0.) or (lon_end > 360.):
-		lons = z500_noaa_extract.coord('longitude')
-		# Need to figure out where the split is and
-		# repack
-		import pdb
-		pdb.set_trace()
-		print("pdb")
+	# if (lon_start < 0.) or (lon_end > 360.):
+	# 	lons = z500_noaa_extract.coord('longitude')
+	# 	# Need to figure out where the split is and
+	# 	# repack
+	# 	import pdb
+	# 	pdb.set_trace()
+	# 	print("pdb")
 
-	lst.append(z500_data)
+		lst.append(z500_data)
 
-	conv.save_obj(lst, 'X_parts')
+	con.save_obj(lst, 'X_parts')
 
 
 def plot(gal=20, pkl='balanced_365_64', path='/Users/kamil/Desktop/research2020/figures'):
