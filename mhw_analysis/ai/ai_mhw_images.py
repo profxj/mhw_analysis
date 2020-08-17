@@ -33,34 +33,44 @@ import pickle
 from skimage.transform import resize
 
 
-def get_noaa_extract(z500_noaa, bounds):
-	lat_start, lat_end, lon_start, lon_end = bounds
+def get_noaa_extract(full_cube, bounds):
+    """
+    Extract a lon, lat region from an input iris Cube
+    Parameters
+    ----------
+    full_cube : iris.cube.Cube
+    bounds : list
+        lat_start, lat_end, lon_start, lon_end
+    Returns
+    -------
+    sub_cube : iris.cube.Cube
+    """
+    lat_start, lat_end, lon_start, lon_end = bounds
 
-	if (lon_start < 0.) or (lon_end > 360.):
-		flip = True
-		if lon_start < 0.:
-			lon_start += 360.
-		else:
-			tmp = lon_start
-			lon_start = lon_end - 360.
-			lon_end = tmp
-	else:
-		flip = False
+    if (lon_start < 0.) or (lon_end > 360.):
+        flip = True
+        if lon_start < 0.:
+            lon_start += 360.
+        else:
+            lon_end -= 360.
+    else:
+        flip = False
 
-	# set boundaries
-	if flip:
-		constraint = iris.Constraint(
-		latitude=lambda cell: lat_start < cell < lat_end,
-		longitude=lambda cell: (lon_start <= cell) or (cell <= lon_end))
-	else:
-		constraint = iris.Constraint(
-		latitude=lambda cell: lat_start < cell < lat_end,
-		longitude=lambda cell: lon_start <= cell <= lon_end)
+    # set boundaries
+    if flip:
+        constraint = iris.Constraint(
+            latitude=lambda cell: lat_start < cell < lat_end,
+            longitude=lambda cell: (lon_start <= cell) or (cell <= lon_end))
+    else:
+        constraint = iris.Constraint(
+            latitude=lambda cell: lat_start < cell < lat_end,
+            longitude=lambda cell: lon_start <= cell <= lon_end)
 
-	# get portion of z500 reframe within these boundaries
-	z500_noaa_extract = z500_noaa.extract(constraint)
+    # get portion of z500 reframe within these boundaries
+    sub_cube = full_cube.extract(constraint)
 
-	return z500_noaa_extract
+    return sub_cube
+
 
 
 def show_segmentation_map(lats, lons):
@@ -147,7 +157,7 @@ def build_X_set(file='../../Downloads/MHW_sys_intermediate.csv', width=16.):
 	date = ex_date#dates[i]
 
 	# get the bounds
-	bounds = get_bounds(lat, lon, width)
+	bounds = con.get_bounds(lat, lon, width)
 	lat_start, lat_end, lon_start, lon_end = bounds
 
 	# if cube not in dict
@@ -365,9 +375,9 @@ def main():
 	# pickle dataset
 	# conv.save_obj(dataset, save_name)
 
-main()
+# main()
 # print(conv.load_obj('test'))
 # plot()
 # balance()
 
-# build_X_set()
+build_X_set()
