@@ -48,6 +48,20 @@ def load_mask_from_system(mhw_system,
 
 def maskcube_from_slice(i0,i1,
                         mhw_mask_file=None, mask_start=(1982, 1, 1)):
+    """
+
+    Parameters
+    ----------
+    i0 : int
+    i1 : int
+    mhw_mask_file : str, optional
+    mask_start : tuple, optional
+
+    Returns
+    -------
+    mcube : iris.cube.Cube
+
+    """
     if mhw_mask_file is None:
         mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.hdf')
 
