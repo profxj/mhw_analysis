@@ -12,10 +12,26 @@ import iris
 from oceanpy.sst import utils as sst_utils
 
 
-def load_systems(mhw_sys_file=None):
+def load_systems(mhw_sys_file=None, vary=False):
+    """
+    Load up the MHW Systems into a pandas table
+
+    Args:
+        mhw_sys_file:
+        vary (bool, optional):
+            If True, load up the MHW Systems with varying climate threshold
+
+    Returns:
+        pandas.DataFrame:
+
+    """
     if mhw_sys_file is None:
-        mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems.hdf')
+        if vary:
+            mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems_vary.hdf')
+        else:
+            mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems.hdf')
     # Read
+    print("Loading systems from {}".format(mhw_sys_file))
     mhw_sys = pandas.read_hdf(mhw_sys_file)
     # Return
     return mhw_sys
@@ -23,6 +39,17 @@ def load_systems(mhw_sys_file=None):
 
 def load_mask_from_dates(ymd_start, ymd_end,
                          mhw_mask_file=None, mask_start=(1982,1,1)):
+    """
+
+    Args:
+        ymd_start (tuple):
+        ymd_end (tuple):
+        mhw_mask_file:
+        mask_start:
+
+    Returns:
+
+    """
     if mhw_mask_file is None:
         mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.hdf')
 
@@ -40,8 +67,9 @@ def load_mask_from_dates(ymd_start, ymd_end,
 
 
 def load_mask_from_system(mhw_system,
-                          mhw_mask_file = None, mask_start = (1982, 1, 1)):
+                          mhw_mask_file=None, mask_start = (1982, 1, 1), verbose=False):
     # Load + return
+    print("Loading mask from")
     return maskcube_from_slice(mhw_system.zboxmin, mhw_system.zboxmax,
                                mhw_mask_file=mhw_mask_file, mask_start=mask_start)
 
