@@ -18,6 +18,8 @@ reload(marineHeatWaves)
 
 from IPython import embed
 
+assert False # This is now back in the marineHeatWaves repo
+
 def build_me(dbfile, noaa_path='/home/xavier/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/',
              climate_db='/home/xavier/Projects/Oceanography/MHW/db/NOAA_OI_climate_1983-2012.nc',
              years=[1986,1990], cut_sky=True, all_sst=None, min_frac=0.9,
