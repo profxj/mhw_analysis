@@ -40,6 +40,7 @@ def grab_z500(cube, lon, lat, width):
     # Return the data
     return sub_cube.data[:]
 
+
 def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
                        mask_start=(1982, 1, 1), full_mask=None,
                        debug=False):
@@ -182,7 +183,7 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
 # Testing
 if __name__ == '__main__':
     # Debug
-    if True:
+    if False:
         print("Loading debug full_mask")
         mask = mhwsys_io.load_mask_from_dates(
             (1982, 1, 1), (1985, 1, 1),
@@ -191,5 +192,5 @@ if __name__ == '__main__':
         build_intermediate(full_mask=full_mask, debug=True)
 
     # Real deal
-    if False:
+    if True:
         build_intermediate(debug=False)
