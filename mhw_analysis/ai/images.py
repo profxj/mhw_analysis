@@ -41,9 +41,12 @@ def grab_z500(cube, lon, lat, width):
     return sub_cube.data[:]
 
 def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
-                       mask_start=(1982, 1, 1), debug=False):
+                       mask_start=(1982, 1, 1), full_mask=None,
+                       debug=False):
     """
     Build a set of intermeidate (NVox ~ 1000) images for analysis
+
+    And a corresponding null set
 
     Args:
         outfile:
@@ -71,21 +74,28 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
 
     # Final arrays
     times = np.zeros(nint, dtype=int)
+    null_times = np.zeros(nint, dtype=int)
     img_arr = np.zeros((xydim, xydim, nint), dtype=int)
+    null_arr = np.zeros((xydim, xydim, nint), dtype=int)
 
-    # Load mask (50Gb!)
-    mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf')
-    f = h5py.File(mhw_mask_file, mode='r')
-    print("Loading the mask: {}".format(mhw_mask_file))
-    full_mask = np.array(f['mask'][:,:,:])
-    print('Mask loaded')
-    f.close()
+    # Load mask (50Gb!!)
+    if full_mask is None:
+        mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf')
+        f = h5py.File(mhw_mask_file, mode='r')
+        print("Loading the mask: {}".format(mhw_mask_file))
+        full_mask = np.array(f['mask'][:,:,:])
+        print('Mask loaded')
+        f.close()
 
     # Loop me
     kk = 0
     for iid, mhw_sys in int_systems.iterrows():
+        if debug:
+            if iid != 608741:
+                continue
         if kk % 100 == 0:
             print('kk={}'.format(kk))
+        # Cut on the full system
         mask = full_mask[:,:,mhw_sys.zboxmin:mhw_sys.zboxmax+1]
         # Find max day
         idx = mask == mhw_sys.mask_Id
@@ -122,6 +132,7 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
             j1 -= xydim
         else:
             rollj = 0
+        # Setup
         mask = np.roll(mask, (rolli, rollj), axis=(0,1))
         img_arr[:,:,kk] = mask[i0:i1, j0:j1, iarea]
         if debug:# or kk==47:
@@ -129,18 +140,56 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
             plt.clf()
             plt.imshow(img_arr[:,:,kk])
             plt.show()
-            import pdb; pdb.set_trace()
+        # Null -- Scan +/- 5 years
+        n_null = 999999
+        for year_off in range(-5, 6):
+            if year_off == 0:
+                continue
+            # Grab the new date
+            tdate = datetime.date.fromordinal(times[kk])
+            tnull = datetime.date(tdate.year+year_off,
+                                  tdate.month, tdate.day).toordinal()
+            inull = tnull - t0
+            # Is it in the analysis window?
+            if inull < 365 or inull >= full_mask.shape[2]:  # Skip 1982
+                continue
+            # Slurp and shuffle
+            null_mask = full_mask[:,:,inull]
+            null_mask = np.roll(null_mask, (rolli, rollj), axis=(0,1))
+            tmp = null_mask[i0:i1, j0:j1]
+            # Is the image more blank?
+            if np.sum(tmp > 0) < n_null:
+                n_null = np.sum(tmp > 0)
+                null_arr[:, :, kk] = tmp
+                null_times[kk] = tnull
+        # Warning if not very blank
+        if n_null > 300:
+            print("kk=={}: Null image has {}.  Be warned!".format(kk, n_null))
         # Increment
         kk += 1
 
     # Add times
     int_systems['max_time'] = times
+    int_systems['null_time'] = null_times
 
     # Save
-    np.savez_compressed(outfile, images=img_arr)
+    if debug:
+        import pdb; pdb.set_trace()
+    np.savez_compressed(outfile, images=img_arr, null=null_arr)
     int_systems.to_hdf(outfile.replace('npz', 'hdf'), 'mhw_sys', mode='w')
 
 
 # Testing
 if __name__ == '__main__':
-    build_intermediate(debug=False)
+    # Debug
+    if True:
+        print("Loading debug full_mask")
+        mask = mhwsys_io.load_mask_from_dates(
+            (1982, 1, 1), (1985, 1, 1),
+            mhw_mask_file=os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf'))
+        full_mask = mask.data
+        build_intermediate(full_mask=full_mask, debug=True)
+
+    # Real deal
+    if False:
+        build_intermediate(debug=False)

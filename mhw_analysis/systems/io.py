@@ -40,14 +40,18 @@ def load_systems(mhw_sys_file=None, vary=False):
 def load_mask_from_dates(ymd_start, ymd_end,
                          mhw_mask_file=None, mask_start=(1982,1,1)):
     """
+    Load a portion of a MHWS mask for a range of dates
 
     Args:
         ymd_start (tuple):
+            Starting date;  inclusive
         ymd_end (tuple):
+            End date;  inclusive
         mhw_mask_file:
         mask_start:
 
     Returns:
+        cube.Cube
 
     """
     if mhw_mask_file is None:
@@ -60,7 +64,7 @@ def load_mask_from_dates(ymd_start, ymd_end,
     te = datetime.date(ymd_end[0], ymd_end[1], ymd_end[2]).toordinal()
 
     i0 = ts-t0
-    i1 = te-t0+1  # Make it inclusive
+    i1 = te-t0  # Note: maskcube_from_slice makes it inclusive
 
     # Load + return
     return maskcube_from_slice(i0, i1, mhw_mask_file=mhw_mask_file, mask_start=mask_start)
@@ -76,6 +80,20 @@ def load_mask_from_system(mhw_system,
 
 def maskcube_from_slice(i0,i1,
                         mhw_mask_file=None, mask_start=(1982, 1, 1)):
+    """
+
+    Parameters
+    ----------
+    i0
+    i1
+    mhw_mask_file
+    mask_start
+
+    Returns
+    -------
+    mcube : cube.Cube
+
+    """
     if mhw_mask_file is None:
         mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.hdf')
 
