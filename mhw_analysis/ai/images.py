@@ -148,8 +148,11 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
                 continue
             # Grab the new date
             tdate = datetime.date.fromordinal(times[kk])
-            tnull = datetime.date(tdate.year+year_off,
+            try:
+                tnull = datetime.date(tdate.year+year_off,
                                   tdate.month, tdate.day).toordinal()
+            except:
+                embed(header='155 of images')
             inull = tnull - t0
             # Is it in the analysis window?
             if inull < 365 or inull >= full_mask.shape[2]:  # Skip 1982
