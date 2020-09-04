@@ -84,14 +84,14 @@ def maskcube_from_slice(i0,i1,
 
     Parameters
     ----------
-    i0
-    i1
-    mhw_mask_file
-    mask_start
+    i0 : int
+    i1 : int
+    mhw_mask_file : str, optional
+    mask_start : tuple, optional
 
     Returns
     -------
-    mcube : cube.Cube
+    mcube : iris.cube.Cube
 
     """
     if mhw_mask_file is None:
