@@ -1,5 +1,6 @@
 """ Codes to visualize MHW systems"""
 import numpy as np
+from matplotlib import pyplot as plt
 from mayavi import mlab
 from IPython import embed
 
@@ -22,10 +23,12 @@ def test_mayavi(cube, outfile='tst.png', scale=0.25, volume=False):
 
     # Axes
     mlab.axes(color=(1,1,1),
-              extent=[1,cube.shape[0],0.,scale*cube.shape[1],0.,scale*cube.shape[2]],
-              ylabel='lon', zlabel='lat', xlabel='day')
-    #mlab.show()
-    mlab.savefig(outfile)
+              extent=[0.,scale*cube.shape[0],0.,scale*cube.shape[1], 1,cube.shape[2]],
+              xlabel='lon', ylabel='lat', zlabel='day')
+    ifig = mlab.gcf()
+    mlab.savefig(filename=outfile, figure=ifig)
+    print("Wrote: {}".format(outfile))
+    mlab.show()
 
 # Testing
 if __name__ == '__main__':
