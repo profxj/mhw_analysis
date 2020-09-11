@@ -22,9 +22,9 @@ def grab_mhw_sys_file(vary=False):
 
 def grab_mhwsys_mask_file(vary=False):
     if vary:
-        mhwsys_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.hdf')
-    else:
         mhwsys_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf')
+    else:
+        mhwsys_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.hdf')
     return mhwsys_mask_file
 
 
@@ -81,7 +81,7 @@ def load_mask_from_dates(ymd_start, ymd_end,
 def load_mask_from_system(mhw_system,
                           mhw_mask_file=None, mask_start = (1982, 1, 1), vary=False):
     # Load + return
-    print("Loading mask from {}".format(mhw_system))
+    print("Loading mask from system: \n {}".format(mhw_system))
     return maskcube_from_slice(mhw_system.zboxmin, mhw_system.zboxmax,
                                mhw_mask_file=mhw_mask_file, mask_start=mask_start,
                                vary=vary)
@@ -112,6 +112,7 @@ def maskcube_from_slice(i0,i1,
     te = t0 + i1
 
     # Load from HDF
+    print("Loading mask from {}".format(mhw_mask_file))
     f = h5py.File(mhw_mask_file, mode='r')
     mask = f['mask'][:,:,i0:i1+1]
     f.close()
