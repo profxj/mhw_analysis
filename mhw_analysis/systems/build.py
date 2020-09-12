@@ -170,6 +170,12 @@ if __name__ == '__main__':
         tbl, mask = main(cube=cube, mhwsys_file='tst_systems.hdf', ymd_start=(2013, 10, 5))
         embed(header='134 of build')
 
+    # Testing
+    #main(sub=(10000,11000))
+
+    # Real deal
+    #main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_nohilat.hdf',
+    #     ignore_hilat=True)
     if False:
         cube = np.zeros((720,1440,100), dtype=np.int8)
         # Indian/Pacific
