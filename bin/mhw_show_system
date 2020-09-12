@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+#
+# See top-level LICENSE file for Copyright information
+#
+# -*- coding: utf-8 -*-
+
+"""
+This script shows an MHW System
+"""
+
+import mhw_analysis.scripts.show_system as show_system
+
+if __name__ == '__main__':
+    args = show_system.parser()
+    show_system.main(args)
