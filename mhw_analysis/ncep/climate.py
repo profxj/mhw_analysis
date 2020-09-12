@@ -188,5 +188,5 @@ def ncep_seas_thresh(climate_db_file,
 # Command line execution
 if __name__ == '__main__':
 
-    # NCEP testing
-    ncep_seas_thresh('ncep_tst.nc', cut_sky=False)
+    # NCEP
+    ncep_seas_thresh('NCEP-DOE_Z500_climate.nc', cut_sky=False)
