@@ -6,8 +6,10 @@ import numpy as np
 import pandas
 import h5py
 
-from cf_units import Unit
-import iris
+import xarray
+
+#from cf_units import Unit
+#import iris
 
 from oceanpy.sst import utils as sst_utils
 
@@ -112,8 +114,8 @@ def maskcube_from_slice(i0,i1,
         mhw_mask_file = grab_mhwsys_mask_file(vary=vary)
 
     t0 = datetime.date(mask_start[0], mask_start[1], mask_start[2]).toordinal()
-    ts = t0 + i0
-    te = t0 + i1
+    ts = datetime.datetime.fromordinal(t0 + i0)
+    #te = t0 + i1
 
     # Load from HDF
     print("Loading mask from {}".format(mhw_mask_file))
@@ -121,19 +123,26 @@ def maskcube_from_slice(i0,i1,
     mask = f['mask'][:,:,i0:i1+1]
     f.close()
 
-    # Convert to IRIS
-    tunit = Unit('days since 01-01-01 00:00:00', calendar='gregorian')
-    times = np.arange(ts, te+1)
-    time_coord = iris.coords.DimCoord(times, standard_name='time', units=tunit)
+    # Convert to xarray DataSet
+    #tunit = Unit('days since 01-01-01 00:00:00', calendar='gregorian')
+    #times = np.arange(ts, te+1)
+    #time_coord = iris.coords.DimCoord(times, standard_name='time', units=tunit)
 
     # Space
-    lat_coord, lon_coord = sst_utils.noaa_oi_coords(as_iris_coord=True)
+    lat_coord, lon_coord = sst_utils.noaa_oi_coords()#as_iris_coord=True)
 
+    '''
     # Iris
     mcube = iris.cube.Cube(mask, var_name='Mask',
                            dim_coords_and_dims=[
                                (lat_coord, 0),
                                (lon_coord, 1),
                                (time_coord, 2), ])
+    '''
+    # Xarray
+    times = pandas.date_range(start=ts, periods=mask.shape[2])
+    da = xarray.DataArray(mask, coords=[lat_coord, lon_coord, times],
+                          dims=['lat', 'lon', 'time'])
+
     # Return
-    return mcube
+    return da

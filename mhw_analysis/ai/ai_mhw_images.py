@@ -200,7 +200,7 @@ def load_cems_z500_noaa(date, any_sst, path='../Z500', document='b.e11.B20TRC5CN
     return z500_noaa
 
 
-def load_ncep_z500_noaa(date, sst):
+def load_ncep_z500_noaa(date, sst, full_z500_cube=None):
     """
     This is for CEMS
 
@@ -213,15 +213,12 @@ def load_ncep_z500_noaa(date, sst):
     Returns:
 
     """
-
-    # convert date to proper format
-    ymd = date.year*10000 + date.month*100 + date.day
-
-    # get cube at ymd date
-    z500_cube = ncep_io.load_z500((date.day, date.month, date.year))
+    # get cube at dmy date
+    z500_cube = ncep_io.load_z500((date.day, date.month, date.year), cube=full_z500_cube)
 
     # get z500 regridded data
-    z500_noaa = z500_cube.regrid(any_sst, iris.analysis.Linear())
+    import pdb; pdb.set_trace()
+    z500_noaa = z500_cube.regrid(sst, iris.analysis.Linear())
 
     return z500_noaa
 

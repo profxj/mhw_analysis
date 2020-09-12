@@ -6,7 +6,7 @@ import numpy as np
 import iris
 
 
-def load_z500(dmy, path=None, end_dmy=None):
+def load_z500(dmy, path=None, end_dmy=None, cube=None):
     """
     Load a Z500 cube from our NCEP nc file
 
@@ -19,6 +19,7 @@ def load_z500(dmy, path=None, end_dmy=None):
     end_dmy : tuple, optional  (day, month, year)
         if provided, scan for a range of dates
         Note, this day is *not* inclusive
+    cube : iris.Cube, optional
 
     Returns
     -------
@@ -34,7 +35,8 @@ def load_z500(dmy, path=None, end_dmy=None):
     ifile = os.path.join(path, 'NCEP-DOE_Z500.nc')
 
     # Load cube
-    cube = iris.load(ifile)
+    if cube is None:
+        cube = iris.load(ifile)[0]
 
     # Single Day
     day, month, year = dmy

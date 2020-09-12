@@ -5,7 +5,10 @@ import numpy as np
 import h5py
 import datetime
 
-import iris
+#import iris
+import xarray
+import xesmf
+
 from mhw_analysis.systems import io as mhwsys_io
 
 from IPython import embed
@@ -43,7 +46,7 @@ def grab_z500(cube, lon, lat, width):
 
 def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
                        mask_start=(1982, 1, 1), full_mask=None,
-                       debug=False):
+                       debug=False, Z500_delta_t=5):
     """
     Build a set of intermeidate (NVox ~ 1000) images for analysis
 
@@ -53,6 +56,8 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
         outfile:
         xydim (int, optional):
         mask_start:
+        Z500_delta_t (int, optional):
+            Offset for Z500:  t_Z500 = t - Z500_delta_t
         debug:
 
     Returns:
@@ -67,8 +72,17 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
     nint = np.sum(sys_1000)
     int_systems = mhw_systems[sys_1000]
 
+    # SST coords
+    lat = -89.875 + np.arange(720) * 0.25
+    lon = 0.125 + np.arange(1440) * 0.25
+
     print("We have {} intermediate systems".format(nint))
-    #import pdb; pdb.set_trace()
+
+    # Load Z500
+    ncep_path = os.getenv("NCEP_DOE")
+    ifile = os.path.join(ncep_path, 'NCEP-DOE_Z500.nc')
+    # Load cube
+    ncep_xr = xarray.load_dataset(ifile)
 
     # Times
     t0 = datetime.date(mask_start[0], mask_start[1], mask_start[2]).toordinal()
@@ -78,6 +92,8 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
     null_times = np.zeros(nint, dtype=int)
     img_arr = np.zeros((xydim, xydim, nint), dtype=int)
     null_arr = np.zeros((xydim, xydim, nint), dtype=int)
+    z500_arr = np.zeros((xydim, xydim, nint), dtype=int)
+    z500_null_arr = np.zeros((xydim, xydim, nint), dtype=int)
 
     # Load mask (50Gb!!)
     if full_mask is None:
@@ -169,6 +185,25 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
         # Warning if not very blank
         if n_null > 300:
             print("kk=={}: Null image has {}.  Be warned!".format(kk, n_null))
+
+        # Z500
+        # Good first
+        ds = ncep_xr.sel(time=datetime.datetime.fromordinal(times[kk]-Z500_delta_t))
+        ds_out = xarray.Dataset({'lat': (['lat'], lat[ii - xydim // 2:ii + xydim // 2]),
+                             'lon': (['lon'], lon[jj - xydim // 2:jj + xydim // 2]),
+                             }
+                            )
+        regridder = xesmf.Regridder(ds, ds_out, 'bilinear')
+        regridder.clean_weight_file()
+        dr_out = regridder(ds['Z500'])
+        z500_arr[:,:,kk] = dr_out.data
+
+        # Null
+        ds = ncep_xr.sel(time=datetime.datetime.fromordinal(null_times[kk]-Z500_delta_t))
+        dr_out = regridder(ds['Z500'])
+        z500_null_arr[:,:,kk] = dr_out.data
+        embed(header='198 of images')
+
         # Increment
         kk += 1
 
@@ -179,7 +214,7 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
     # Save
     if debug:
         import pdb; pdb.set_trace()
-    np.savez_compressed(outfile, images=img_arr, null=null_arr)
+    np.savez_compressed(outfile, images=img_arr, null=null_arr, z500=z500_arr, z500_null=z500_null_arr)
     int_systems.to_hdf(outfile.replace('npz', 'hdf'), 'mhw_sys', mode='w')
 
 
