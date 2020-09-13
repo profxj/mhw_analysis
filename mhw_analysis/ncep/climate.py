@@ -1,17 +1,13 @@
 """ Biuld climate"""
 
 import os
-import glob
 from pkg_resources import resource_filename
 
 import numpy as np
-from scipy import signal
 
-from datetime import date
-import datetime
 
 import pandas
-import iris
+#import iris
 
 from mhw import climate as mhw_climate
 from mhw import utils as mhw_utils

@@ -100,7 +100,8 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
         mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf')
         f = h5py.File(mhw_mask_file, mode='r')
         print("Loading the mask: {}".format(mhw_mask_file))
-        full_mask = np.array(f['mask'][:,:,:])
+        print("Be patient...")
+        full_mask = f['mask'][:,:,:]
         print('Mask loaded')
         f.close()
 
@@ -129,10 +130,14 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
         j1 = jj + xydim // 2
         # ii
         if i0 < 0:
+            # Better not get here
+            import pdb;  pdb.set_trace()
             rolli = xydim
             i0 += xydim
             i1 += xydim
         elif i1 > mask.shape[0]-1:
+            # Better not get here
+            import pdb;  pdb.set_trace()
             rolli = -1*xydim
             i0 -= xydim
             i1 -= xydim
@@ -143,20 +148,24 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
             rollj = xydim
             j0 += xydim
             j1 += xydim
+            jrolling=True
         elif j1 > mask.shape[1]-1:
             rollj = -1*xydim
             j0 -= xydim
             j1 -= xydim
+            jrolling=True
         else:
             rollj = 0
+            jrolling=False
         # Setup
         mask = np.roll(mask, (rolli, rollj), axis=(0,1))
         img_arr[:,:,kk] = mask[i0:i1, j0:j1, iarea]
-        if debug:# or kk==47:
+        if jrolling and kk==47 and debug:# or kk==47:
             from matplotlib import  pyplot as plt
             plt.clf()
             plt.imshow(img_arr[:,:,kk])
             plt.show()
+            import pdb; pdb.set_trace()
         # Null -- Scan +/- 5 years
         n_null = 999999
         for year_off in range(-5, 6):
@@ -186,23 +195,31 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
         if n_null > 300:
             print("kk=={}: Null image has {}.  Be warned!".format(kk, n_null))
 
-        # Z500
+        # Z500 -- Hack to roll myself through
         # Good first
         ds = ncep_xr.sel(time=datetime.datetime.fromordinal(times[kk]-Z500_delta_t))
-        ds_out = xarray.Dataset({'lat': (['lat'], lat[ii - xydim // 2:ii + xydim // 2]),
-                             'lon': (['lon'], lon[jj - xydim // 2:jj + xydim // 2]),
-                             }
-                            )
-        regridder = xesmf.Regridder(ds, ds_out, 'bilinear')
-        regridder.clean_weight_file()
-        dr_out = regridder(ds['Z500'])
-        z500_arr[:,:,kk] = dr_out.data
+        ds_out = ds.interp(lat=lat, lon=lon)
+        # Fill Nans with average between edges
+        bad_lon = np.where(lon > max(ds.lon.values))[0]
+        fill_val = (ds_out.Z500.data[:,min(bad_lon)-1] + ds_out.Z500.data[:,0])/2
+        for yy in bad_lon:
+            ds_out.Z500.data[:,yy] = fill_val
+        # Fill
+        z500_arr[:,:,kk] = np.roll(ds_out.Z500.data, (rolli, rollj), axis=(0, 1))[i0:i1, j0:j1]
+        if jrolling and debug:
+            from matplotlib import  pyplot as plt
+            plt.clf()
+            plt.imshow(z500_arr[:,:,kk])
+            plt.show()
+            import pdb; pdb.set_trace()
 
         # Null
         ds = ncep_xr.sel(time=datetime.datetime.fromordinal(null_times[kk]-Z500_delta_t))
-        dr_out = regridder(ds['Z500'])
-        z500_null_arr[:,:,kk] = dr_out.data
-        embed(header='198 of images')
+        ds_out = ds.interp(lat=lat, lon=lon)
+        fill_val = (ds_out.Z500.data[:,min(bad_lon)-1] + ds_out.Z500.data[:,0])/2
+        for yy in bad_lon:
+            ds_out.Z500.data[:,yy] = fill_val
+        z500_null_arr[:,:,kk] = np.roll(ds_out.Z500.data, (rolli, rollj), axis=(0, 1))[i0:i1, j0:j1]
 
         # Increment
         kk += 1
@@ -231,4 +248,13 @@ if __name__ == '__main__':
 
     # Real deal
     if True:
-        build_intermediate(debug=False)
+        if False:
+            import os, h5py
+            import numpy as np
+            mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf')
+            f = h5py.File(mhw_mask_file, mode='r')
+            print("Loading the mask: {}".format(mhw_mask_file))
+            full_mask = f['mask'][:,:,:]
+            f.close()
+            print('Mask loaded')
+        build_intermediate(full_mask=full_mask, debug=False)
