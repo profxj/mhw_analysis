@@ -170,10 +170,6 @@ def ncep_seas_thresh(climate_db_file,
             time_coord = xarray.IndexVariable('doy', np.arange(366, dtype=int) + 1)
             da_seasonal = xarray.DataArray(out_seas, coords=[time_coord, lat_coord, lon_coord])
             da_thresh = xarray.DataArray(out_thresh, coords=[time_coord, lat_coord, lon_coord])
-            #cube_seas = iris.cube.Cube(out_seas, units='m', var_name='seasonalZ500',
-            #                           dim_coords_and_dims=[(time_coord, 0),
-            #                                                (lat_coord, 1),
-            #                                                (lon_coord, 2)])
             # Data set
             climate_ds = xarray.Dataset({"seasonalZ500": da_seasonal,
                                          "threshZ500": da_thresh})
