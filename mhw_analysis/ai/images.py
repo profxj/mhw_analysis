@@ -10,6 +10,7 @@ import xarray
 import xesmf
 
 from mhw_analysis.systems import io as mhwsys_io
+from mhw_analysis import utils as mhw_utils
 
 from IPython import embed
 
@@ -46,7 +47,7 @@ def grab_z500(cube, lon, lat, width):
 
 def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
                        mask_start=(1982, 1, 1), full_mask=None,
-                       debug=False, Z500_delta_t=5):
+                       debug=False, Z500_delta_t=5, subtract_climate=False):
     """
     Build a set of intermeidate (NVox ~ 1000) images for analysis
 
@@ -83,6 +84,8 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
     ifile = os.path.join(ncep_path, 'NCEP-DOE_Z500.nc')
     # Load cube
     ncep_xr = xarray.load_dataset(ifile)
+    cfile = os.path.join(ncep_path, 'NCEP-DOE_Z500_climate.nc')
+    ncep_climate = xarray.load_dataset(cfile)
 
     # Times
     t0 = datetime.date(mask_start[0], mask_start[1], mask_start[2]).toordinal()
@@ -195,31 +198,48 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
         if n_null > 300:
             print("kk=={}: Null image has {}.  Be warned!".format(kk, n_null))
 
-        # Z500 -- Hack to roll myself through
-        # Good first
-        ds = ncep_xr.sel(time=datetime.datetime.fromordinal(times[kk]-Z500_delta_t))
-        ds_out = ds.interp(lat=lat, lon=lon)
-        # Fill Nans with average between edges
-        bad_lon = np.where(lon > max(ds.lon.values))[0]
-        fill_val = (ds_out.Z500.data[:,min(bad_lon)-1] + ds_out.Z500.data[:,0])/2
-        for yy in bad_lon:
-            ds_out.Z500.data[:,yy] = fill_val
-        # Fill
-        z500_arr[:,:,kk] = np.roll(ds_out.Z500.data, (rolli, rollj), axis=(0, 1))[i0:i1, j0:j1]
-        if jrolling and debug:
-            from matplotlib import  pyplot as plt
-            plt.clf()
-            plt.imshow(z500_arr[:,:,kk])
-            plt.show()
-            import pdb; pdb.set_trace()
+        # Z500 --
 
+        for out_arr, mhw_time in zip([z500_arr, z500_null_arr], [times[kk], null_times[kk]]):
+            # Good first
+            time = datetime.datetime.fromordinal(mhw_time-Z500_delta_t)
+            day_of_year = mhw_utils.doy(time)
+            ds = ncep_xr.sel(time=time)
+            if subtract_climate:
+                climate = ncep_climate.sel(doy=day_of_year)
+                ds = (ds.Z500 - climate.seasonalZ500).to_dataset(name='Z500')
+
+            ds_out = ds.interp(lat=lat, lon=lon)
+
+            # Fill Nans with average between edges
+            bad_lon = np.where(lon > max(ds.lon.values))[0]
+            fill_val = (ds_out.Z500.data[:,min(bad_lon)-1] + ds_out.Z500.data[:,0])/2
+            for yy in bad_lon:
+                ds_out.Z500.data[:,yy] = fill_val
+            # Fill
+            out_arr[:,:,kk] = np.roll(ds_out.Z500.data, (rolli, rollj), axis=(0, 1))[i0:i1, j0:j1]
+            if jrolling and debug:
+                from matplotlib import  pyplot as plt
+                plt.clf()
+                plt.imshow(out_arr[:,:,kk])
+                plt.show()
+                import pdb; pdb.set_trace()
+
+        '''
         # Null
-        ds = ncep_xr.sel(time=datetime.datetime.fromordinal(null_times[kk]-Z500_delta_t))
+        time=datetime.datetime.fromordinal(null_times[kk]-Z500_delta_t)
+        day_of_year = mhw_utils.doy(time)
+        ds = ncep_xr.sel(time=time)
+        if subtract_climate:
+            climate = ncep_climate.sel(day=day_of_year)
+            ds = (ds.Z500 - climate.seasonalZ500).to_dataset(name='Z500')
+
         ds_out = ds.interp(lat=lat, lon=lon)
         fill_val = (ds_out.Z500.data[:,min(bad_lon)-1] + ds_out.Z500.data[:,0])/2
         for yy in bad_lon:
             ds_out.Z500.data[:,yy] = fill_val
         z500_null_arr[:,:,kk] = np.roll(ds_out.Z500.data, (rolli, rollj), axis=(0, 1))[i0:i1, j0:j1]
+        '''
 
         # Increment
         kk += 1
@@ -258,3 +278,7 @@ if __name__ == '__main__':
             f.close()
             print('Mask loaded')
         build_intermediate(full_mask=full_mask, debug=False)
+
+    # Subtract climate
+    build_intermediate(outfile='MHW_sys_intermediate_climate.npz',
+                       full_mask=full_mask, debug=False, subtract_climate=True)
