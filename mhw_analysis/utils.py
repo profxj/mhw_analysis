@@ -20,3 +20,7 @@ def doy(time):
             day_of_year += 1
     #
     return day_of_year
+
+
+def grab_geo_subimg(da, lats, lons):
+    pass

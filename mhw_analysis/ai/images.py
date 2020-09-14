@@ -267,7 +267,7 @@ if __name__ == '__main__':
         build_intermediate(full_mask=full_mask, debug=True)
 
     # Real deal
-    if True:
+    if False:
         if False:
             import os, h5py
             import numpy as np
@@ -280,5 +280,11 @@ if __name__ == '__main__':
         build_intermediate(full_mask=full_mask, debug=False)
 
     # Subtract climate
-    build_intermediate(outfile='MHW_sys_intermediate_climate.npz',
+    if False:
+        build_intermediate(outfile='MHW_sys_intermediate_climate.npz',
                        full_mask=full_mask, debug=False, subtract_climate=True)
+
+    # Subtract climate + larger
+    if False:
+        build_intermediate(outfile='MHW_sys_intermediate_climate.npz',
+                           full_mask=full_mask, debug=False, subtract_climate=True)
