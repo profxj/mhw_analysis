@@ -39,9 +39,9 @@ def test_c():
 
     # C
     maskC, parentC, catC = buildc.first_pass(cube.astype(np.int8))
-    NSpaxC = buildc.second_pass(maskC, parentC, catC)
-    IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
-    obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
+    NVoxC = buildc.second_pass(maskC, parentC, catC)
+    IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NVoxC, MinNVox=0, verbose=True)
+    obj_dictC = buildc.final_pass(maskC, NVoxC, ndet, IdToLabel, LabelToId, catC)
 
 
     # C
@@ -127,10 +127,10 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     maskC, parentC, catC = buildc.first_pass(cube)
     # maskC[558,857,:]
     print("First pass complete")
-    NSpaxC = buildc.second_pass(maskC, parentC, catC)
+    NVoxC = buildc.second_pass(maskC, parentC, catC)
     print("Second pass complete")
-    IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NSpaxC, MinNSpax=0, verbose=True)
-    obj_dictC = buildc.final_pass(maskC, NSpaxC, ndet, IdToLabel, LabelToId, catC)
+    IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NVoxC, MinNVox=0, verbose=True)
+    obj_dictC = buildc.final_pass(maskC, NVoxC, ndet, IdToLabel, LabelToId, catC)
     print("Objects nearly done")
 
     # Area
@@ -144,7 +144,7 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     print("Wrote: {}".format(mhwsys_file))
 
     # Write mask as nc
-    mask_file = mhwsys_file.replace('systems.hdf', 'mask.nc')
+    mask_file = mhwsys_file.replace('systems', 'mask').replace('hdf', 'nc')
     t0 = datetime.datetime(ymd_start[0], ymd_start[1], ymd_start[2])
     times = pd.date_range(start=t0, periods=maskC.shape[2])
     lat_coord, lon_coord = sst_utils.noaa_oi_coords()
@@ -152,7 +152,7 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     da = xarray.DataArray(maskC, coords=[lat_coord, lon_coord, times],
                           dims=['lat', 'lon', 'time'])
     ds = xarray.Dataset({'mask': da})
-    print("Saving..")
+    print("Saving mask..")
     encoding = {'mask': dict(compression='gzip',
                          chunksizes=(maskC.shape[0], maskC.shape[1], 1))}
     ds.to_netcdf(mask_file, engine='h5netcdf', encoding=encoding)
