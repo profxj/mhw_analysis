@@ -92,6 +92,9 @@ def load_mask_from_system(mhw_system,
                                mhw_mask_file=mhw_mask_file, mask_start=mask_start,
                                vary=vary)
 
+def load_full_mask(mhw_mask_file=None, vary=False):
+    return maskcube_from_slice(0, -1, mhw_mask_file=mhw_mask_file, vary=vary)
+
 
 def maskcube_from_slice(i0,i1,
                         mhw_mask_file=None, mask_start=(1982, 1, 1),
@@ -102,6 +105,7 @@ def maskcube_from_slice(i0,i1,
     ----------
     i0 : int
     i1 : int
+        If i1=-1, grab the data to the end
     mhw_mask_file : str, optional
     mask_start : tuple, optional
 
@@ -119,7 +123,10 @@ def maskcube_from_slice(i0,i1,
     # Load from HDF
     print("Loading mask from {}".format(mhw_mask_file))
     f = h5py.File(mhw_mask_file, mode='r')
-    mask = f['mask'][:,:,i0:i1+1]
+    if i1 == -1:
+        mask = f['mask'][:,:,i0:]
+    else:
+        mask = f['mask'][:,:,i0:i1+1]
     f.close()
 
     # Convert to xarray DataSet
