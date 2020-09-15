@@ -26,7 +26,7 @@ def doy(time):
 
 def grab_geo_subimg(da, lats, lons, fix_coord=False):
     """
-    
+
     Parameters
     ----------
     da
