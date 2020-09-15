@@ -42,6 +42,21 @@ except Exception:
     raise ImportError('Unable to load build C extension.  Try rebuilding mhw_analysis.')
 
 
+def is_loaded(lib):
+    libp = os.path.abspath(lib)
+    ret = os.system("lsof -p %d | grep %s > /dev/null" % (os.getpid(), libp))
+    return (ret == 0)
+
+def reload_lib(lib):
+    handle = lib._handle
+    name = lib._name
+    del lib
+    while is_loaded(name):   
+        libdl = ctypes.CDLL("libdl.so")
+        libdl.dlclose(handle)
+    return ctypes.cdll.LoadLibrary(name)
+
+
 #-----------------------------------------------------------------------
 first_pass_c = _build.first_pass
 first_pass_c.restype = None

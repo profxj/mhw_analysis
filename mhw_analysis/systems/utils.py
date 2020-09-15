@@ -43,16 +43,14 @@ def dict_to_pandas(sys_dict, add_latlon=False, start_date=None):
     # Lon/Lat
     if add_latlon:
         # Could hard code this
-        noaa = sst_io.load_noaa((1, 1, 2003))
-        lat_coord = noaa.coord('latitude')
-        lon_coord = noaa.coord('longitude')
-        f_lat = interp1d(np.arange(lat_coord.points.size), lat_coord.points)
-        f_lon = interp1d(np.arange(lon_coord.points.size), lon_coord.points)
+        lat_coord, lon_coord = sst_utils.noaa_oi_coords()
+        f_lat = interp1d(np.arange(lat_coord.size), lat_coord)
+        f_lon = interp1d(np.arange(lon_coord.size), lon_coord)
         # Evaluate
         warnings.warn("Fix the lat kludge!")
-        mhw_sys['lat'] = f_lat(np.minimum(mhw_sys['xcen'].values, lat_coord.points.size-1))
+        mhw_sys['lat'] = f_lat(np.minimum(mhw_sys['xcen'].values, lat_coord.size-1))
         try:
-            mhw_sys['lon'] = f_lon(np.minimum(mhw_sys['ycen'].values, lon_coord.points.size-1))
+            mhw_sys['lon'] = f_lon(np.minimum(mhw_sys['ycen'].values, lon_coord.size-1))
         except:
             embed(header='55 of utils')
 
