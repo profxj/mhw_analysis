@@ -67,7 +67,7 @@ def load_mask_from_dates(ymd_start, ymd_end,
         mask_start:
 
     Returns:
-        cube.Cube
+        xarray.DataArray:
 
     """
     # Convert ymd to indices
@@ -107,7 +107,7 @@ def maskcube_from_slice(i0,i1,
 
     Returns
     -------
-    mcube : iris.cube.Cube
+    da : xarray.DataArray
 
     """
     if mhw_mask_file is None:
@@ -115,7 +115,6 @@ def maskcube_from_slice(i0,i1,
 
     t0 = datetime.date(mask_start[0], mask_start[1], mask_start[2]).toordinal()
     ts = datetime.datetime.fromordinal(t0 + i0)
-    #te = t0 + i1
 
     # Load from HDF
     print("Loading mask from {}".format(mhw_mask_file))
@@ -124,21 +123,9 @@ def maskcube_from_slice(i0,i1,
     f.close()
 
     # Convert to xarray DataSet
-    #tunit = Unit('days since 01-01-01 00:00:00', calendar='gregorian')
-    #times = np.arange(ts, te+1)
-    #time_coord = iris.coords.DimCoord(times, standard_name='time', units=tunit)
-
     # Space
-    lat_coord, lon_coord = sst_utils.noaa_oi_coords()#as_iris_coord=True)
+    lat_coord, lon_coord = sst_utils.noaa_oi_coords()
 
-    '''
-    # Iris
-    mcube = iris.cube.Cube(mask, var_name='Mask',
-                           dim_coords_and_dims=[
-                               (lat_coord, 0),
-                               (lon_coord, 1),
-                               (time_coord, 2), ])
-    '''
     # Xarray
     times = pandas.date_range(start=ts, periods=mask.shape[2])
     da = xarray.DataArray(mask, coords=[lat_coord, lon_coord, times],
