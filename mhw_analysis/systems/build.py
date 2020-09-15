@@ -7,7 +7,10 @@ import pandas as pd
 import datetime
 import h5py
 
-import iris
+#import iris
+import xarray
+
+from oceanpy.sst import utils as sst_utils
 
 from mhw_analysis.systems import buildpy
 from mhw_analysis.systems import buildc
@@ -103,8 +106,8 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     if cube is None:
         print("Loading cube")
         cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.nc'
-        cubes = iris.load(cubefile)
-        cube = cubes[0].data[:].astype(np.int8)
+        ds = xarray.open_dataset(cubefile)
+        cube = ds.events.data[:].astype(np.int8)
         print("Cube is loaded")
 
     # Ignore high latitude events
@@ -138,13 +141,25 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     tbl.to_hdf(mhwsys_file, 'mhw_sys', mode='w')
     print("Wrote: {}".format(mhwsys_file))
 
-    # Write mask as HDF
+    # Write mask as nc
     mask_file = mhwsys_file.replace('systems', 'mask')
-    f = h5py.File(mask_file, mode='w')
-    dset = f.create_dataset("mask", #maskC.shape, dtype='int32',
-                            compression='gzip', data=maskC,
-                            chunks=(maskC.shape[0], maskC.shape[1], 1))
-    f.close()
+    t0 = datetime.date(ymd_start[0], ymd_start[1], ymd_start[2]).toordinal()
+    times = pd.date_range(start=t0, periods=mask.shape[2])
+    lat_coord, lon_coord = sst_utils.noaa_oi_coords()
+
+    da = xarray.DataArray(mask, coords=[lat_coord, lon_coord, times],
+                          dims=['lat', 'lon', 'time'])
+    ds = xarray.Dataset({'mask': da})
+    print("Saving..")
+    encoding = {'events': dict(compression='gzip',
+                         chunks=(maskC.shape[0], maskC.shape[1], 1))}
+    ds.to_netcdf(mask_file, engine='h5netcdf', encoding=encoding)
+
+    #f = h5py.File(mask_file, mode='w')
+    #dset = f.create_dataset("mask", #maskC.shape, dtype='int32',
+    #                        compression='gzip', data=maskC,
+    #                        chunks=(maskC.shape[0], maskC.shape[1], 1))
+    #f.close()
     #mask_file = mask_file.replace('hdf', 'npz')
     #np.savez_compressed(mask_file, mask=maskC)
     print("Wrote: {}".format(mask_file))
@@ -189,11 +204,14 @@ if __name__ == '__main__':
         # Run
         main(cube=cube, mhwsys_file='tst_indian_systems.hdf')
 
-    if False:
+    # Testing
+    if True:
+        import xarray
         cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary.nc'
         print("Loading: {}".format(cubefile))
-        cubes = iris.load(cubefile) #np.load(cubefile)['cube'].astype(np.int8)
-        cube = cubes[0].data[:,:,9500:12000].astype(np.int8)
+        #cubes = iris.load(cubefile) #np.load(cubefile)['cube'].astype(np.int8)
+        ds = xarray.open_dataset(cubefile)
+        cube = ds.events.data[:,:,9500:12000].astype(np.int8)
         #
         main(mhwsys_file='test_basins_systems.hdf', cube=cube)
 

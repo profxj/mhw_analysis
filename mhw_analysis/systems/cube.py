@@ -8,9 +8,10 @@ from datetime import date
 
 import pandas
 import sqlalchemy
+import xarray
 
-from cf_units import Unit
-import iris
+#from cf_units import Unit
+#import iris
 
 from oceanpy.sst import utils as sst_utils
 
@@ -65,26 +66,20 @@ def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
     #np.savez_compressed(outfile, cube=cube)
     #print("Wrote: {}".format(outfile))
 
-    # Save as Iris
+    # Save as xarray.DataSet
     # Time
     t0 = date(ymd_start[0], ymd_start[1], ymd_start[2]).toordinal()
-    t1 = date(ymd_end[0], ymd_end[1], ymd_end[2]).toordinal()
-
-    tunit = Unit('days since 01-01-01 00:00:00', calendar='gregorian')
-    times = np.arange(t0, t1+1)
-    time_coord = iris.coords.DimCoord(times, standard_name='time', units=tunit)
+    times = pandas.date_range(start=t0, periods=ntimes)
 
     # Space
-    lat_coord, lon_coord = sst_utils.noaa_oi_coords(as_iris_coord=True)
+    lat_coord, lon_coord = sst_utils.noaa_oi_coords()
 
-    # Iris
-    ecube = iris.cube.Cube(cube, var_name='Events',
-                           dim_coords_and_dims=[
-                               (lat_coord, 0),
-                               (lon_coord, 1),
-                               (time_coord, 2), ])
+    # Save
+    da = xarray.DataArray(cube, coords=[lat_coord, lon_coord, times],
+                          dims=['lat', 'lon', 'time'])
+    ds = xarray.Dataset({'events': da})
     print("Saving..")
-    iris.save(ecube, outfile, zlib=True)
+    ds.to_netcdf(outfile, engine='h5netcdf', encoding={'events': {'zlib': True}})
     print("Wrote: {}".format(outfile))
 
     # Return
@@ -100,16 +95,18 @@ if __name__ == '__main__':
 
     # Original
     if False:
+        mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.hdf'
         mhw_events = pandas.read_hdf(mhw_hdf_file, 'MHW_Events')
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.nc',
                mhw_events=mhw_events)
 
     # Varying
     if True:
-        mhw_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_vary.db'
-        engine = sqlalchemy.create_engine('sqlite:///' + mhw_file)
-        mhw_events = pandas.read_sql_table('MHW_Events', con=engine,
-                                          columns=['date', 'lon', 'lat', 'duration', 'time_peak',
-                                                   'ievent', 'time_start', 'index', 'category'])
+        mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_vary.hdf'
+        mhw_events = pandas.read_hdf(mhw_hdf_file, 'MHW_Events')
+        #engine = sqlalchemy.create_engine('sqlite:///' + mhw_file)
+        #mhw_events = pandas.read_sql_table('MHW_Events', con=engine,
+        #                                  columns=['date', 'lon', 'lat', 'duration', 'time_peak',
+        #                                           'ievent', 'time_start', 'index', 'category'])
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary.nc',
                    mhw_events=mhw_events)

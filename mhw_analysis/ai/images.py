@@ -1,6 +1,7 @@
 """ Generate Images for MHW AI analysis"""
 
 import os
+from importlib import reload
 import numpy as np
 import h5py
 import datetime
@@ -14,6 +15,7 @@ from mhw_analysis import utils as mhw_utils
 
 from IPython import embed
 
+reload(mhw_utils)
 
 
 def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
@@ -112,6 +114,8 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
         # Grab the sub-image
         ii = int(np.round(mhw_sys.xcen))
         jj = int(np.round(mhw_sys.ycen))
+        if jj == mask.shape[1]:  # wrap-around
+            jj=0
         lat_ii = lat[ii]
         lon_jj = lon[jj]
         # Deal with wrap around
@@ -223,7 +227,7 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
                 # Sub image
                 #out_arr[:, :, kk] = np.roll(ds_out.Z500.data, (rolli, rollj), axis=(0, 1))[i0:i1, j0:j1]
                 out_arr[:, :, kk] = mhw_utils.grab_geo_subimg(ds_out.Z500, lats, lons).data
-            else:
+            else:  # Grab a native and likely larger image
                 Z500_lon = ds.lon.values[np.argmin(np.abs(lon_jj-ds.lon.values))]
                 Z500_lat = ds.lat.values[np.argmin(np.abs(lat_ii-ds.lat.values))]
                 Z500_lons = [Z500_lon - Z500_dlon * Z500_xydim // 2,
@@ -257,7 +261,6 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
 
         # Increment
         kk += 1
-        embed(header='234 of images')
 
     # Add times
     int_systems['max_time'] = times
@@ -286,12 +289,15 @@ if __name__ == '__main__':
         if False:
             import os, h5py
             import numpy as np
+            from mhw_analysis.systems import io as mhwsys_io
+            from importlib import reload
+
             mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf')
-            f = h5py.File(mhw_mask_file, mode='r')
-            print("Loading the mask: {}".format(mhw_mask_file))
-            full_mask = f['mask'][:,:,:]
-            f.close()
-            print('Mask loaded')
+            #f = h5py.File(mhw_mask_file, mode='r')
+            #print("Loading the mask: {}".format(mhw_mask_file))
+            #full_mask = f['mask'][:,:,:]
+            #f.close()
+            full_mask = mhwsys_io.load_full_mask(mhw_mask_file=mhw_mask_file)
         build_intermediate(full_mask=full_mask, debug=False)
 
     # Subtract climate
@@ -301,5 +307,6 @@ if __name__ == '__main__':
 
     # Subtract climate + larger
     if False:
-        build_intermediate(outfile='MHW_sys_intermediate_climate.npz',
-                           full_mask=full_mask, debug=False, subtract_climate=True)
+        build_intermediate(outfile='MHW_sys_intermediate_climate_40deg.npz',
+                           full_mask=full_mask, debug=False, subtract_climate=True,
+                           Z500_xydim=16)

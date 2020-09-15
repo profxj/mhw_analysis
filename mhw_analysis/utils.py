@@ -41,6 +41,9 @@ def grab_geo_subimg(da, lats, lons, fix_coord=False):
     # Allow for negative lons input
     if lons[0] < 0:
         lons[0] += 360.
+    # Allow for >= 360
+    if lons[1] >= 360.:
+        lons[1] -= 360.
 
     if lons[0] > lons[1]:
         # West
@@ -49,7 +52,7 @@ def grab_geo_subimg(da, lats, lons, fix_coord=False):
         if fix_coord:
             subda_A = subda_A.assign_coords(lon=(((subda_A.lon + 180) % 360) - 180))
         # East
-        subda_B = da.sel(lon=slice(0., lons[1]),
+        subda_B = da.sel(lon=slice(0., lons[1] % 360),
                         lat=slice(lats[0], lats[1]))
         # Concatenate
         sub_da = xarray.concat([subda_A, subda_B], dim='lon')
