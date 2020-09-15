@@ -279,7 +279,7 @@ if __name__ == '__main__':
             (1982, 1, 1), (1985, 1, 1),
             mhw_mask_file=os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf'))
         #full_mask = mask.data
-        build_intermediate(full_mask=mask, debug=True, Z500_xydim=16) # subtract_climate=True)
+        build_intermediate(full_mask=mask, debug=True, Z500_xydim=16, subtract_climate=True)
 
     # Real deal
     if False:
