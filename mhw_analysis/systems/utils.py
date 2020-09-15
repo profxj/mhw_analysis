@@ -81,15 +81,15 @@ def max_area(mask, obj_id, areas):
         areas[kk] = counts
 
 
-def prep_labels(mask, parent, NSpax, MinNSpax=0, verbose=False):
+def prep_labels(mask, parent, NVox, MinNVox=0, verbose=False):
     """
 
     Parameters
     ----------
     mask
     parent
-    NSpax
-    MinNSpax
+    NVox
+    MinNVox
     verbose
 
     Returns
@@ -105,14 +105,14 @@ def prep_labels(mask, parent, NSpax, MinNSpax=0, verbose=False):
     LabelToId = np.zeros(nlabels+1, dtype=np.int32) -1
     IdToLabel = np.zeros(nobj, dtype=np.int32)
 
-    #!----- DETECTION (using NSpax) -------------
+    #!----- DETECTION (using NVox) -------------
     # !..build auxiliary arrays and count detections
     ndet=0
     for i in range(1,nlabels+1):
         if parent[i] == 0:
             this_label = i
-            this_NSpax = NSpax[this_label] # 0-indexing
-            if this_NSpax > MinNSpax:
+            this_NVox = NVox[this_label] # 0-indexing
+            if this_NVox > MinNVox:
                 IdToLabel[ndet] = this_label
                 LabelToId[this_label] = ndet
                 ndet = ndet + 1  # ! update ndet

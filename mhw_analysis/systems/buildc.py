@@ -100,13 +100,13 @@ def second_pass(mask, parent, category):
         parent:
 
     Returns:
-        np.ndarray: NSpax (int32)
+        np.ndarray: NVox (int32)
 
     """
-    NSpax = np.zeros(maxnlabels, dtype=np.int64)
-    second_pass_c(mask, parent, np.array(mask.shape, dtype=np.int32), NSpax, category)
+    NVox = np.zeros(maxnlabels, dtype=np.int64)
+    second_pass_c(mask, parent, np.array(mask.shape, dtype=np.int32), NVox, category)
 
-    return NSpax
+    return NVox
 
 
 final_pass_c = _build.final_pass
@@ -123,17 +123,17 @@ final_pass_c.argtypes = [ctypes.c_int,
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
-                         np.ctypeslib.ndpointer(ctypes.c_long, flags="C_CONTIGUOUS"), # NSpax
+                         np.ctypeslib.ndpointer(ctypes.c_long, flags="C_CONTIGUOUS"), # NVox
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"), # category
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"), # Label
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"), # category
                          ]
 
 
-def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId, category):
+def final_pass(mask, NVox, ndet, IdToLabel, LabelToId, category):
     # Objects
     obj_dict = dict(Id=np.zeros(ndet, dtype=np.int32),
-                    NSpax=np.zeros(ndet, dtype=np.int64),
+                    NVox=np.zeros(ndet, dtype=np.int64),
                     category=np.zeros(ndet, dtype=np.int32), # Assoc=[0]*ndet,
                     mask_Id=np.zeros(ndet, dtype=np.int32),
                     max_area=np.zeros(ndet, dtype=np.int32),
@@ -143,7 +143,7 @@ def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId, category):
     # Init
     for ii in range(ndet):
         obj_dict['Id'][ii] = ii+1
-        obj_dict['NSpax'][ii] = NSpax[IdToLabel[ii]]
+        obj_dict['NVox'][ii] = NVox[IdToLabel[ii]]
         obj_dict['mask_Id'][ii] = IdToLabel[ii]
 
     final_pass_c(ndet, mask, np.array(mask.shape, dtype=np.int32),
@@ -151,7 +151,7 @@ def final_pass(mask, NSpax, ndet, IdToLabel, LabelToId, category):
                  obj_dict['xboxmin'], obj_dict['xboxmax'],
                  obj_dict['yboxmin'], obj_dict['yboxmax'],
                  obj_dict['zboxmin'], obj_dict['zboxmax'],
-                 obj_dict['NSpax'], obj_dict['category'],
+                 obj_dict['NVox'], obj_dict['category'],
                  LabelToId, category,
                  )
     return obj_dict
