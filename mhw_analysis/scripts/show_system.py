@@ -25,6 +25,7 @@ def main(pargs):
     import warnings
     import datetime
     from matplotlib import pyplot as plt
+    import matplotlib.ticker as mticker
 
     import xarray
 
@@ -72,7 +73,6 @@ def main(pargs):
         tstart[tstart == 9999999] = np.nan
 
         # DataArray for plotting
-        embed(header='62 of show')
         tstart_da = xarray.DataArray(tstart, coords=[mask_cube.lat, mask_cube.lon])
         
         # Plot me
@@ -96,7 +96,7 @@ def main(pargs):
 
         # Gridlines
         # https://stackoverflow.com/questions/49956355/adding-gridlines-using-cartopy
-        gl = ax.gridlines(crs=proj, #ccrs.PlateCarree(),
+        gl = ax.gridlines(crs=ccrs.PlateCarree(),
                           linewidth=2, color='black', alpha=0.5,
                           linestyle='--', draw_labels=True)
         gl.xlabels_top = False
@@ -107,6 +107,7 @@ def main(pargs):
         gl.yformatter = LATITUDE_FORMATTER
         gl.xlabel_style = {'color': 'black', 'weight': 'bold'}
         gl.ylabel_style = {'color': 'black', 'weight': 'bold'}
+        gl.xlocator = mticker.FixedLocator([-240., -180., -120, -60, 0, 60, 120.])
         # gl.xlocator = mticker.FixedLocator([-180., -170., -160, -150., -140, -120, -60, -20.])
         # gl.ylocator = mticker.FixedLocator([30., 40., 50., 60.])
 
