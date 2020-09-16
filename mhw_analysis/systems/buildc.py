@@ -37,9 +37,9 @@ from IPython import embed
 # Mimics astropy convention
 LIBRARY_PATH = os.path.dirname(__file__)
 try:
-    _build = np.ctypeslib.load_library("_build", LIBRARY_PATH)
+    _systems = np.ctypeslib.load_library("_systems", LIBRARY_PATH)
 except Exception:
-    raise ImportError('Unable to load build C extension.  Try rebuilding mhw_analysis.')
+    raise ImportError('Unable to load systems C extension.  Try rebuilding mhw_analysis.')
 
 
 def is_loaded(lib):
@@ -58,7 +58,7 @@ def reload_lib(lib):
 
 
 #-----------------------------------------------------------------------
-first_pass_c = _build.first_pass
+first_pass_c = _systems.first_pass
 first_pass_c.restype = None
 first_pass_c.argtypes = [
     #np.ctypeslib.ndpointer(ctypes.c_bool, flags="C_CONTIGUOUS"),
@@ -83,7 +83,7 @@ def first_pass(cube):
     # Return
     return mask, parent, category
 
-second_pass_c = _build.second_pass
+second_pass_c = _systems.second_pass
 second_pass_c.restype = None
 second_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                           np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
@@ -109,7 +109,7 @@ def second_pass(mask, parent, category):
     return NVox
 
 
-final_pass_c = _build.final_pass
+final_pass_c = _systems.final_pass
 final_pass_c.restype = None
 final_pass_c.argtypes = [ctypes.c_int,
                          np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
@@ -156,7 +156,7 @@ def final_pass(mask, NVox, ndet, IdToLabel, LabelToId, category):
                  )
     return obj_dict
 
-max_areas_c = _build.max_areas
+max_areas_c = _systems.max_areas
 max_areas_c.restype = None
 max_areas_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),

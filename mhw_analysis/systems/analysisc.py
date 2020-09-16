@@ -1,0 +1,43 @@
+""" Module to analyze MHW systems
+
+"""
+import os
+import numpy as np
+
+import ctypes
+
+# Mimics astropy convention
+LIBRARY_PATH = os.path.dirname(__file__)
+try:
+    _systems = np.ctypeslib.load_library("_systems", LIBRARY_PATH)
+except Exception:
+    raise ImportError('Unable to load analysis C extension.  Try rebuilding mhw_analysis.')
+
+
+spatial_systems_c = _systems.spatial_systems
+spatial_systems_c.restype = None
+spatial_systems_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),  # mask
+                             np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),  # shape
+                             np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),  # img
+                             np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),  # systems
+                             ctypes.c_int,  # n_good
+                             ctypes.c_int]  # tot_systems
+
+
+def spatial_systems(mask, systems, max_Id):
+    """
+
+    Args:
+        mask: np.ndarray of int32
+        systems:
+
+    Returns:
+        np.ndarray: spat_img (int32)
+
+    """
+    spat_img = np.zeros((mask.shape[0], mask.shape[1]), dtype=np.int32)
+    spatial_systems_c(mask, np.array(mask.shape, dtype=np.int32), spat_img,
+                  systems, len(systems), max_Id)
+
+    return spat_img
+
