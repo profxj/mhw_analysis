@@ -120,23 +120,16 @@ def maskcube_from_slice(i0,i1,
     t0 = datetime.date(mask_start[0], mask_start[1], mask_start[2]).toordinal()
     ts = datetime.datetime.fromordinal(t0 + i0)
 
-    # Load from HDF
+    # Load
     print("Loading mask from {}".format(mhw_mask_file))
-    f = h5py.File(mhw_mask_file, mode='r')
     if i1 == -1:
-        mask = f['mask'][:,:,i0:]
+        tslice = slice(i0, -1)
     else:
-        mask = f['mask'][:,:,i0:i1+1]
-    f.close()
+        tslice = slice(i0, i1+1)
+    ds = xarray.open_dataset(mhw_mask_file, engine='h5netcdf')
 
-    # Convert to xarray DataSet
-    # Space
-    lat_coord, lon_coord = sst_utils.noaa_oi_coords()
-
-    # Xarray
-    times = pandas.date_range(start=ts, periods=mask.shape[2])
-    da = xarray.DataArray(mask, coords=[lat_coord, lon_coord, times],
-                          dims=['lat', 'lon', 'time'])
+    # Cut
+    mask = ds.mask.isel(time=tslice)
 
     # Return
-    return da
+    return mask
