@@ -17,16 +17,16 @@ from IPython import embed
 
 def grab_mhw_sys_file(vary=False):
     if vary:
-        mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems_vary.csv.gz')
+        mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems_vary.csv')
     else:
         mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems.hdf')
     return mhw_sys_file
 
 def grab_mhwsys_mask_file(vary=False):
     if vary:
-        mhwsys_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf')
+        mhwsys_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.nc')
     else:
-        mhwsys_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.hdf')
+        mhwsys_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.nc')
     return mhwsys_mask_file
 
 

@@ -26,10 +26,8 @@ def main(pargs):
     import datetime
     from matplotlib import pyplot as plt
 
-    import iris
-    import iris.plot as iplot
+    import xarray
 
-    from oceanpy.sst import utils as sst_utils
     from mhw_analysis.systems import io as mhw_sys_io
 
     import cartopy.crs as ccrs
@@ -62,7 +60,7 @@ def main(pargs):
 
     # Plot
     if pargs.plot_type == 'first_day':
-        sys_idx = mask_cube.data[:] == mhw_system.mask_Id
+        sys_idx = mask_cube.data == mhw_system.mask_Id
         mask_cube.data[np.logical_not(sys_idx)] = 0
         mask_cube.data[sys_idx] = 1
         # Date
@@ -72,33 +70,34 @@ def main(pargs):
         mask_cube.data[mask_cube.data == 0] = 9999999
         tstart = np.min(mask_cube.data, axis=2).astype(float)
         tstart[tstart == 9999999] = np.nan
-        # Cube me
-        lat_coord, lon_coord = sst_utils.noaa_oi_coords(as_iris_coord=True)
-        tstart_cube = iris.cube.Cube(tstart, var_name='tstart',
-                                          dim_coords_and_dims=[(lat_coord, 0),
-                                                               (lon_coord, 1)])
+
+        # DataArray for plotting
+        embed(header='62 of show')
+        tstart_da = xarray.DataArray(tstart, coords=[mask_cube.lat, mask_cube.lon])
+        
         # Plot me
-        # First day
+        # http://xarray.pydata.org/en/stable/examples/visualization_gallery.html
         fig = plt.figure(figsize=(10, 6))
         plt.clf()
 
         proj = ccrs.PlateCarree(central_longitude=-180.0)
-        ax = plt.gca(projection=proj)
+        #ax = plt.gca(projection=proj)
 
         # Pacific events
         # Draw the contour with 25 levels.
         cm = plt.get_cmap('rainbow')
-
-        cplt = iplot.contourf(tstart_cube, 20, cmap=cm)  # , vmin=0, vmax=20)#, 5)
-        cb = plt.colorbar(cplt, fraction=0.020, pad=0.04)
-        cb.set_label('t_start (Days since )')
+        p = tstart_da.plot(cmap=cm, transform=ccrs.PlateCarree(),
+                       subplot_kws={'projection': proj},
+                           cbar_kwargs={'label': 't_start (Days since)'})
+        ax = p.axes
 
         # Add coastlines to the map created by contourf.
-        plt.gca().coastlines()
+        ax.coastlines()
 
         # Gridlines
         # https://stackoverflow.com/questions/49956355/adding-gridlines-using-cartopy
-        gl = ax.gridlines(crs=ccrs.PlateCarree(), linewidth=2, color='black', alpha=0.5,
+        gl = ax.gridlines(crs=proj, #ccrs.PlateCarree(),
+                          linewidth=2, color='black', alpha=0.5,
                           linestyle='--', draw_labels=True)
         gl.xlabels_top = False
         gl.ylabels_left = True
@@ -110,6 +109,7 @@ def main(pargs):
         gl.ylabel_style = {'color': 'black', 'weight': 'bold'}
         # gl.xlocator = mticker.FixedLocator([-180., -170., -160, -150., -140, -120, -60, -20.])
         # gl.ylocator = mticker.FixedLocator([30., 40., 50., 60.])
+
 
         plt.show()
 
