@@ -87,7 +87,7 @@ def full_test():
     df.to_sql('MHW_Systems', con=engine)#, if_exists='append')
 
 
-def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.hdf',
+def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.csv',
          cube=None, ymd_start=(1982, 1, 1), ignore_hilat=False, debug=False):
     """
     Generate MHW Systems from an Event cube
@@ -140,11 +140,11 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     # Write systems as pandas in HDF
     tbl = utils.dict_to_pandas(obj_dictC, add_latlon=True,
                                start_date=datetime.date(ymd_start[0], ymd_start[1], ymd_start[2]).toordinal())
-    tbl.to_hdf(mhwsys_file, 'mhw_sys', mode='w')
+    tbl.to_csv(mhwsys_file)#, 'mhw_sys', mode='w')
     print("Wrote: {}".format(mhwsys_file))
 
     # Write mask as nc
-    mask_file = mhwsys_file.replace('systems', 'mask').replace('hdf', 'nc')
+    mask_file = mhwsys_file.replace('systems', 'mask').replace('csv', 'nc')
     t0 = datetime.datetime(ymd_start[0], ymd_start[1], ymd_start[2])
     times = pd.date_range(start=t0, periods=maskC.shape[2])
     lat_coord, lon_coord = sst_utils.noaa_oi_coords()
@@ -214,7 +214,7 @@ if __name__ == '__main__':
 
     # Original
     if True:
-        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_nohilat.hdf',
+        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_nohilat.csv',
              ignore_hilat=True)
         main()
 
@@ -230,5 +230,5 @@ if __name__ == '__main__':
         ds.close()
         print("Loaded!")
         #
-        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_vary.hdf', cube=cube)
+        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_vary.csv', cube=cube)
 

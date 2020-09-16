@@ -17,7 +17,7 @@ from IPython import embed
 
 def grab_mhw_sys_file(vary=False):
     if vary:
-        mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems_vary.hdf')
+        mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems_vary.csv.gz')
     else:
         mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems.hdf')
     return mhw_sys_file
@@ -47,7 +47,7 @@ def load_systems(mhw_sys_file=None, vary=False):
         mhw_sys_file = grab_mhw_sys_file(vary=vary)
     # Read
     print("Loading systems from {}".format(mhw_sys_file))
-    mhw_sys = pandas.read_hdf(mhw_sys_file)
+    mhw_sys = pandas.read_csv(mhw_sys_file)
     # Return
     return mhw_sys
 
