@@ -276,11 +276,11 @@ def build_intermediate(outfile='MHW_sys_intermediate.npz', xydim=64,
 # Testing
 if __name__ == '__main__':
     # Debug
-    if True:
+    if False:
         print("Loading debug full_mask")
         mask = mhwsys_io.load_mask_from_dates(
             (1982, 1, 1), (1985, 1, 1),
-            mhw_mask_file=os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf'))
+            mhw_mask_file=os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.nc'))
         #full_mask = mask.data
         build_intermediate(full_mask=mask, debug=True, Z500_xydim=16, subtract_climate=True)
 
@@ -292,7 +292,7 @@ if __name__ == '__main__':
             from mhw_analysis.systems import io as mhwsys_io
             from importlib import reload
 
-            mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf')
+            mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.nc')
             #f = h5py.File(mhw_mask_file, mode='r')
             #print("Loading the mask: {}".format(mhw_mask_file))
             #full_mask = f['mask'][:,:,:]
