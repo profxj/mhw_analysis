@@ -310,3 +310,12 @@ if __name__ == '__main__':
         build_intermediate(outfile='MHW_sys_intermediate_climate_40deg.npz',
                            full_mask=full_mask, debug=False, subtract_climate=True,
                            Z500_xydim=16)
+
+    # Subtract climate + larger + earlier
+    if True:
+        build_intermediate(outfile='MHW_sys_intermediate_climate_40deg_m10.npz',
+                           full_mask=full_mask, debug=False, subtract_climate=True,
+                           Z500_xydim=16, Z500_delta_t=10)
+        build_intermediate(outfile='MHW_sys_intermediate_climate_40deg_m20.npz',
+                           full_mask=full_mask, debug=False, subtract_climate=True,
+                           Z500_xydim=16, Z500_delta_t=20)
