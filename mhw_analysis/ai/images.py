@@ -313,6 +313,10 @@ if __name__ == '__main__':
 
     # Subtract climate + larger + earlier
     if True:
+        # Load
+        mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf')
+        full_mask = mhwsys_io.load_full_mask(mhw_mask_file=mhw_mask_file)
+        
         build_intermediate(outfile='MHW_sys_intermediate_climate_40deg_m10.npz',
                            full_mask=full_mask, debug=False, subtract_climate=True,
                            Z500_xydim=16, Z500_delta_t=10)
