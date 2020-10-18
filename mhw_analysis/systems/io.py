@@ -11,21 +11,59 @@ import iris
 
 from oceanpy.sst import utils as sst_utils
 
+from IPython import embed
 
-def load_systems(mhw_sys_file=None):
-    if mhw_sys_file is None:
+def grab_mhw_sys_file(vary=False):
+    if vary:
+        mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems_vary.hdf')
+    else:
         mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems.hdf')
+    return mhw_sys_file
+
+def grab_mhwsys_mask_file(vary=False):
+    if vary:
+        mhwsys_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.hdf')
+    else:
+        mhwsys_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.hdf')
+    return mhwsys_mask_file
+
+
+def load_systems(mhw_sys_file=None, vary=False):
+    """
+    Load up the MHW Systems into a pandas table
+
+    Args:
+        mhw_sys_file:
+        vary (bool, optional):
+            If True, load up the MHW Systems with varying climate threshold
+
+    Returns:
+        pandas.DataFrame:
+
+    """
+    if mhw_sys_file is None:
+        mhw_sys_file = grab_mhw_sys_file(vary=vary)
     # Read
+    print("Loading systems from {}".format(mhw_sys_file))
     mhw_sys = pandas.read_hdf(mhw_sys_file)
     # Return
     return mhw_sys
 
 
 def load_mask_from_dates(ymd_start, ymd_end,
-                         mhw_mask_file=None, mask_start=(1982,1,1)):
-    if mhw_mask_file is None:
-        mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.hdf')
+                         mhw_mask_file=None, mask_start=(1982,1,1),
+                         vary=False):
+    """
 
+    Args:
+        ymd_start (tuple):
+        ymd_end (tuple):
+        mhw_mask_file:
+        mask_start:
+
+    Returns:
+
+    """
     # Convert ymd to indices
     t0 = datetime.date(mask_start[0], mask_start[1], mask_start[2]).toordinal()
 
@@ -36,26 +74,45 @@ def load_mask_from_dates(ymd_start, ymd_end,
     i1 = te-t0+1  # Make it inclusive
 
     # Load + return
-    return maskcube_from_slice(i0, i1, mhw_mask_file=mhw_mask_file, mask_start=mask_start)
+    return maskcube_from_slice(i0, i1, mhw_mask_file=mhw_mask_file, mask_start=mask_start,
+                               vary=vary)
 
 
 def load_mask_from_system(mhw_system,
-                          mhw_mask_file = None, mask_start = (1982, 1, 1)):
+                          mhw_mask_file=None, mask_start = (1982, 1, 1), vary=False):
     # Load + return
+    print("Loading mask from system: \n {}".format(mhw_system))
     return maskcube_from_slice(mhw_system.zboxmin, mhw_system.zboxmax,
-                               mhw_mask_file=mhw_mask_file, mask_start=mask_start)
+                               mhw_mask_file=mhw_mask_file, mask_start=mask_start,
+                               vary=vary)
 
 
 def maskcube_from_slice(i0,i1,
-                        mhw_mask_file=None, mask_start=(1982, 1, 1)):
+                        mhw_mask_file=None, mask_start=(1982, 1, 1),
+                        vary=False):
+    """
+
+    Parameters
+    ----------
+    i0 : int
+    i1 : int
+    mhw_mask_file : str, optional
+    mask_start : tuple, optional
+
+    Returns
+    -------
+    mcube : iris.cube.Cube
+
+    """
     if mhw_mask_file is None:
-        mhw_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.hdf')
+        mhw_mask_file = grab_mhwsys_mask_file(vary=vary)
 
     t0 = datetime.date(mask_start[0], mask_start[1], mask_start[2]).toordinal()
     ts = t0 + i0
     te = t0 + i1
 
     # Load from HDF
+    print("Loading mask from {}".format(mhw_mask_file))
     f = h5py.File(mhw_mask_file, mode='r')
     mask = f['mask'][:,:,i0:i1+1]
     f.close()

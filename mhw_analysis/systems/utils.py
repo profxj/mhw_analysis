@@ -7,8 +7,10 @@ import warnings
 from numba import njit, prange
 
 from scipy.interpolate import interp1d
+import healpy as hp
 
 from oceanpy.sst import io as sst_io
+from oceanpy.sst import utils as sst_utils
 
 from IPython import embed
 
@@ -82,6 +84,20 @@ def max_area(mask, obj_id, areas):
 
 
 def prep_labels(mask, parent, NSpax, MinNSpax=0, verbose=False):
+    """
+
+    Parameters
+    ----------
+    mask
+    parent
+    NSpax
+    MinNSpax
+    verbose
+
+    Returns
+    -------
+
+    """
     # !..this is the number of individual connected components found in the cube:
     nlabels = np.max(mask)
     nobj=np.sum(parent[1:nlabels+1]==0)
@@ -107,3 +123,44 @@ def prep_labels(mask, parent, NSpax, MinNSpax=0, verbose=False):
 
     # Return
     return IdToLabel, LabelToId, ndet
+
+
+def mhw_sys_to_healpix(mhw_sys, nside):
+    """
+    Generate a healpix map of where the input
+    MHW Systems are located on the globe
+
+    Parameters
+    ----------
+    mhw_sys : pandas.DataFrame
+    nside : int
+
+    Returns
+    -------
+    healpix_array : hp.ma
+
+    """
+
+    # NOAA Coords
+    lat, lon = sst_utils.noaa_oi_coords()
+    f_lat = interp1d(np.arange(lat.size), lat)
+    f_lon = interp1d(np.arange(lon.size), lon)
+
+    lats = f_lat(np.minimum(mhw_sys['xcen'].values, lat.size-1))
+    lons = f_lon(np.minimum(mhw_sys['ycen'].values, lon.size-1))
+
+    # Healpix coords
+    theta = (90 - lats) * np.pi / 180.
+    phi = lons * np.pi / 180.
+    idx_all = hp.pixelfunc.ang2pix(nside, theta, phi)
+
+    # Count events
+    npix_hp = hp.nside2npix(nside)
+    all_events = np.ma.masked_array(np.zeros(npix_hp, dtype='int'))
+    for idx in idx_all:
+        all_events[idx] += 1
+
+    # Mask
+
+    # Return
+    return hp.ma(all_events.astype(float))
