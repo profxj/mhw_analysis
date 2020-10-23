@@ -48,6 +48,8 @@ def load_systems(mhw_sys_file=None, vary=False):
     # Read
     print("Loading systems from {}".format(mhw_sys_file))
     mhw_sys = pandas.read_csv(mhw_sys_file)
+    # Add datetime
+    mhw_sys['datetime'] = [datetime.datetime.strptime(idate, '%Y-%m-%d') for idate in mhw_sys['date'].values]
     # Return
     return mhw_sys
 
@@ -84,8 +86,20 @@ def load_mask_from_dates(ymd_start, ymd_end,
                                vary=vary)
 
 
-def load_mask_from_system(mhw_system,
-                          mhw_mask_file=None, mask_start = (1982, 1, 1), vary=False):
+def load_mask_from_system(mhw_system, mhw_mask_file=None,
+                          mask_start=(1982, 1, 1), vary=False):
+    """
+
+    Args:
+        mhw_system (dict-like):
+        mhw_mask_file:
+        mask_start:
+        vary:
+
+    Returns:
+        xarray.DataArray :
+
+    """
     # Load + return
     print("Loading mask from system: \n {}".format(mhw_system))
     return maskcube_from_slice(mhw_system.zboxmin, mhw_system.zboxmax,
