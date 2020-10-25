@@ -125,6 +125,8 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
 
     # C
     maskC, parentC, catC = buildc.first_pass(cube)
+    del(cube)
+
     # maskC[558,857,:]
     print("First pass complete")
     NVoxC = buildc.second_pass(maskC, parentC, catC)
@@ -213,7 +215,7 @@ if __name__ == '__main__':
     #main(sub=(10000,11000))
 
     # Original
-    if True:
+    if False:
         main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_nohilat.csv',
              ignore_hilat=True)
         main()
@@ -231,4 +233,27 @@ if __name__ == '__main__':
         print("Loaded!")
         #
         main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_vary.csv', cube=cube)
+
+    # Vary 95
+    if False:
+        cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary_95.nc'
+        print("Loading: {}".format(cubefile))
+        ds = xarray.open_dataset(cubefile)
+        cube = ds.events.data.astype(np.int8)
+        ds.close()
+        print("Loaded!")
+        #
+        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_vary_95.csv', cube=cube)
+
+
+    # Cold 10
+    if True:
+        cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MCSevent_cube.nc'
+        print("Loading: {}".format(cubefile))
+        ds = xarray.open_dataset(cubefile)
+        cube = ds.events.data.astype(np.int8)
+        ds.close()
+        print("Loaded!")
+        #
+        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MCS_systems.csv', cube=cube)
 

@@ -17,15 +17,29 @@ from oceanpy.sst import utils as sst_utils
 
 from IPython import embed
 
-mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.db'
 mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.hdf'
 
 def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
-               ymd_start=(1982,1,1)):
+               ymd_start=(1982,1,1), mhw_db_file=None):
+    """
+
+    Args:
+        outfile:
+        mhw_events:
+        ymd_end:
+        ymd_start:
+
+    Returns:
+
+    """
+
 
     # Load event table
     if mhw_events is None:
-        # Original
+        if mhw_db_file is None:
+            # Original
+            mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.db'
+        print("Loading the events from: {}".format(mhw_db_file))
         engine = sqlalchemy.create_engine('sqlite:///'+mhw_db_file)
         mhw_events = pandas.read_sql_table('MHW_Events', con=engine,
                                        columns=['date', 'lon', 'lat', 'duration', 'time_peak',
@@ -62,10 +76,6 @@ def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
             print('kk = {} of {}'.format(kk, len(mhw_events)))
         cube[jlat[kk], ilon[kk], tstart[kk]-t0:tstart[kk]-t0+durs[kk]] = categories[kk]+1
 
-    # Save as npz
-    #np.savez_compressed(outfile, cube=cube)
-    #print("Wrote: {}".format(outfile))
-
     # Save as xarray.DataSet
     # Time
     t0 = date(ymd_start[0], ymd_start[1], ymd_start[2]).toordinal()
@@ -87,11 +97,6 @@ def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
 
 # Testing
 if __name__ == '__main__':
-    print("Loading the events")
-    #engine = sqlalchemy.create_engine('sqlite:///' + mhw_file)
-    #mhw_events = pandas.read_sql_table('MHW_Events', con=engine,
-    #                                   columns=['date', 'lon', 'lat', 'duration', 'time_peak',
-    #                                            'ievent', 'time_start', 'index', 'category'])
 
     # Original
     if False:
@@ -101,12 +106,21 @@ if __name__ == '__main__':
                mhw_events=mhw_events)
 
     # Varying
-    if True:
+    if False:
         mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_vary.hdf'
         mhw_events = pandas.read_hdf(mhw_hdf_file, 'MHW_Events')
-        #engine = sqlalchemy.create_engine('sqlite:///' + mhw_file)
-        #mhw_events = pandas.read_sql_table('MHW_Events', con=engine,
-        #                                  columns=['date', 'lon', 'lat', 'duration', 'time_peak',
-        #                                           'ievent', 'time_start', 'index', 'category'])
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary.nc',
                    mhw_events=mhw_events)
+
+    # 95 Varying
+    if False:
+        mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_vary_95.db'
+        #mhw_events = pandas.read_hdf(mhw_hdf_file, 'MHW_Events')
+        build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary_95.nc',
+                   mhw_db_file=mhw_db_file)
+
+    # Cold std
+    if True:
+        mcs_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mcs_events_allsky_defaults.db'
+        build_cube('/home/xavier/Projects/Oceanography/MHW/db/MCSevent_cube.nc',
+                   mhw_db_file=mcs_db_file)

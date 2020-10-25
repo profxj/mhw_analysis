@@ -48,8 +48,15 @@ def load_systems(mhw_sys_file=None, vary=False):
     # Read
     print("Loading systems from {}".format(mhw_sys_file))
     mhw_sys = pandas.read_csv(mhw_sys_file)
-    # Add datetime
+    # Add duration
+    mhw_sys['duration'] = pandas.TimedeltaIndex(mhw_sys.zboxmax - mhw_sys.zboxmin + 1, unit='D')
+    # Add datetime (based on zcen!)
     mhw_sys['datetime'] = [datetime.datetime.strptime(idate, '%Y-%m-%d') for idate in mhw_sys['date'].values]
+    # Add start/end date
+    mhw_sys['startdate'] = mhw_sys.datetime - pandas.TimedeltaIndex(mhw_sys.zcen-mhw_sys.zboxmin, unit='D')
+    mhw_sys['enddate'] = mhw_sys.startdate + mhw_sys.duration
+
+    print("Done")
     # Return
     return mhw_sys
 
