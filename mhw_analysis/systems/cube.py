@@ -78,8 +78,8 @@ def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
 
     # Save as xarray.DataSet
     # Time
-    t0 = date(ymd_start[0], ymd_start[1], ymd_start[2]).toordinal()
-    times = pandas.date_range(start=t0, periods=ntimes)
+    pt0 = date(ymd_start[0], ymd_start[1], ymd_start[2])
+    times = pandas.date_range(start=pt0, periods=ntimes)
 
     # Space
     lat_coord, lon_coord = sst_utils.noaa_oi_coords()
@@ -99,28 +99,26 @@ def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
 if __name__ == '__main__':
 
     # Original
-    if False:
-        mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.hdf'
-        mhw_events = pandas.read_hdf(mhw_hdf_file, 'MHW_Events')
+    if True:
+        mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.db'
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.nc',
-               mhw_events=mhw_events)
+               mhw_db_file=mhw_hdf_file)
 
     # Varying
-    if False:
-        mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_vary.hdf'
-        mhw_events = pandas.read_hdf(mhw_hdf_file, 'MHW_Events')
+    if True:
+        mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_vary.db'
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary.nc',
-                   mhw_events=mhw_events)
+                   mhw_db_file=mhw_hdf_file)
 
     # 95 Varying
-    if False:
+    if True:
         mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_vary_95.db'
         #mhw_events = pandas.read_hdf(mhw_hdf_file, 'MHW_Events')
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary_95.nc',
                    mhw_db_file=mhw_db_file)
 
     # Cold std
-    if True:
+    if False:
         mcs_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mcs_events_allsky_defaults.db'
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MCSevent_cube.nc',
                    mhw_db_file=mcs_db_file)

@@ -215,10 +215,15 @@ if __name__ == '__main__':
     #main(sub=(10000,11000))
 
     # Original
-    if False:
-        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_nohilat.csv',
-             ignore_hilat=True)
-        main()
+    if True:
+        cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.nc'
+        print("Loading: {}".format(cubefile))
+        ds = xarray.open_dataset(cubefile)
+        cube = ds.events.data.astype(np.int8)
+        ds.close()
+        print("Loaded!")
+        #
+        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.csv', cube=cube)
 
     # Vary
     if False:
@@ -247,7 +252,7 @@ if __name__ == '__main__':
 
 
     # Cold 10
-    if True:
+    if False:
         cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MCSevent_cube.nc'
         print("Loading: {}".format(cubefile))
         ds = xarray.open_dataset(cubefile)
