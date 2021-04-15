@@ -23,9 +23,21 @@ spatial_systems_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONT
                              ctypes.c_int,  # n_good
                              ctypes.c_int]  # tot_systems
 
+days_in_systems_c = _systems.days_in_systems
+days_in_systems_c.restype = None
+days_in_systems_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),  # mask
+                             np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),  # shape
+                             np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),  # img
+                             np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),  # systems
+                             ctypes.c_int,  # n_good
+                             ctypes.c_int]  # tot_systems
+
+
 
 def spatial_systems(mask, systems, max_Id):
     """
+    Count up the number of times a given location
+    is within the set of systems
 
     Args:
         mask: np.ndarray of int32
@@ -41,3 +53,22 @@ def spatial_systems(mask, systems, max_Id):
 
     return spat_img
 
+
+def days_in_systems(mask, systems, max_Id):
+    """
+    Count up the number of times a given location
+    is within the set of systems
+
+    Args:
+        mask: np.ndarray of int32
+        systems:
+
+    Returns:
+        np.ndarray: spat_img (int32)
+
+    """
+    spat_img = np.zeros((mask.shape[0], mask.shape[1]), dtype=np.int32)
+    spatial_systems_c(mask, np.array(mask.shape, dtype=np.int32), spat_img,
+                  systems, len(systems), max_Id)
+
+    return spat_img
