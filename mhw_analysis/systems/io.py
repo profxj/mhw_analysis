@@ -16,6 +16,15 @@ from oceanpy.sst import utils as sst_utils
 from IPython import embed
 
 def grab_mhw_sys_file(vary=False):
+    """ Default filenames for the MHWS tables
+
+    Args:
+        vary (bool, optional): Use the varying climatology? Defaults to False.
+
+    Returns:
+        str: filename for the Table
+    """
+    
     if vary:
         mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems_vary.csv')
     else:
