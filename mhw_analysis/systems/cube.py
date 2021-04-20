@@ -1,6 +1,7 @@
 """ Build the cube(s) that feeds into build"""
 
 # imports
+import os
 import numpy as np
 from importlib import reload
 
@@ -20,7 +21,9 @@ from IPython import embed
 mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.hdf'
 
 def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
-               ymd_start=(1982,1,1), mhw_db_file=None):
+               ymd_start=(1982,1,1), mhw_db_file=None, 
+               lat_lon_coord=None, test=False,
+               angular_res=0.25, lon_lat_min=(0.125, -89.975)):
     """
 
     Args:
@@ -28,6 +31,14 @@ def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
         mhw_events:
         ymd_end:
         ymd_start:
+        angular_res : float, optional
+            Angular resolution in deg
+        lon_lat_min : tuple, optional
+            Minimum lon, lat values in deg
+        lat_lon_coord : tuple, optional
+            xarray.Coords
+        test : bool, optional
+            For testing, debugging
 
     Returns:
 
@@ -48,8 +59,8 @@ def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
     print("Events are loaded")
 
     # Size the cube for coords
-    ilon = ((mhw_events['lon'].values - 0.125) / 0.25).astype(np.int32)
-    jlat = ((mhw_events['lat'].values + 89.975) / 0.25).astype(np.int32)
+    ilon = ((mhw_events['lon'].values - lon_lat_min[0]) / angular_res).astype(np.int32)
+    jlat = ((mhw_events['lat'].values - lon_lat_min[1]) / angular_res).astype(np.int32)
 
     # Times
     ntimes = date(ymd_end[0], ymd_end[1], ymd_end[2]).toordinal() - date(
@@ -61,7 +72,15 @@ def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
     categories = mhw_events['category'].values
 
     # Cube me
-    cube = np.zeros((720, 1440, ntimes), dtype=np.int8)
+    if angular_res == 0.25:
+        idim, jdim = 720, 1440
+    elif test:
+        idim, jdim = 21, 29
+    elif angular_res == 2.5:
+        idim, jdim = 72, 144
+    else:
+        raise IOError("Not ready for this ang_res")
+    cube = np.zeros((idim, jdim, ntimes), dtype=np.int8)
 
     # Do it
     tstart = mhw_events['time_start'].values
@@ -82,7 +101,10 @@ def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
     times = pandas.date_range(start=pt0, periods=ntimes)
 
     # Space
-    lat_coord, lon_coord = sst_utils.noaa_oi_coords()
+    if lat_lon_coord is None:
+        lat_coord, lon_coord = sst_utils.noaa_oi_coords()
+    else:
+        lat_coord, lon_coord = lat_lon_coord
 
     # Save
     da = xarray.DataArray(cube, coords=[lat_coord, lon_coord, times],
@@ -99,19 +121,19 @@ def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
 if __name__ == '__main__':
 
     # Original
-    if True:
+    if False:
         mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.db'
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.nc',
                mhw_db_file=mhw_hdf_file)
 
     # Varying
-    if True:
+    if False:
         mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_vary.db'
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary.nc',
                    mhw_db_file=mhw_hdf_file)
 
     # 95 Varying
-    if True:
+    if False:
         mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_vary_95.db'
         #mhw_events = pandas.read_hdf(mhw_hdf_file, 'MHW_Events')
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary_95.nc',
@@ -122,3 +144,16 @@ if __name__ == '__main__':
         mcs_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mcs_events_allsky_defaults.db'
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MCSevent_cube.nc',
                    mhw_db_file=mcs_db_file)
+
+    # Interpolated
+    if True:
+        noaa_path = os.getenv("NOAA_OI")
+        ds = xarray.open_dataset(os.path.join(noaa_path, 'sst_interp_2.5deg.nc'))
+        lat_lon_coord = ds.lat, ds.lon
+
+        mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_interp2.5_test.db'
+        build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_interp2.5_test.nc',
+               mhw_db_file=mhw_db_file,
+               lat_lon_coord=lat_lon_coord,
+               test=True,
+               angular_res=2.5, lon_lat_min=(187.65, 12.625))
