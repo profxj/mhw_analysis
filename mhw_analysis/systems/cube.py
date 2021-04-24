@@ -152,8 +152,19 @@ if __name__ == '__main__':
                                               'interpolated_sst_1983.nc'))
         lat_lon_coord = ds.lat, ds.lon
 
-        mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_interp2.5_2019.db'
-        build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_interp2.5_2019.nc',
+        # 2012
+        mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_interp2.5_2012.db'
+        build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_interp2.5_2012.nc',
+               mhw_db_file=mhw_db_file,
+               lat_lon_coord=lat_lon_coord,
+               angular_res=2.5, 
+               lon_lat_min=(float(ds.lon.min()), float(ds.lat.min())))
+               #lon_lat_min=(187.65, 12.625))
+
+        # 2019
+        if False:
+            mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_interp2.5_2019.db'
+            build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_interp2.5_2019.nc',
                mhw_db_file=mhw_db_file,
                lat_lon_coord=lat_lon_coord,
                angular_res=2.5, 
