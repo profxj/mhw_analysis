@@ -77,3 +77,33 @@ void days_in_systems(int *mask, int *shape, int *img, int *systems) {
             }
         }
 }
+
+// Add up the number of days a location is in a system category
+void days_in_systems_by_year(int *mask, int *shape, int *img, int *systems, int *year) {
+
+    // Init
+    int DimX = shape[0];
+    int DimY = shape[1];
+    int DimZ = shape[2];
+    int DimZ2 = shape[3];
+
+    long i,j,k;
+    long idx, idx2;
+
+    for (i = 0; i<DimX; i++)
+        for (j = 0; j<DimY; j++) {
+            // Loop on day
+            for (k = 0; k<DimZ; k++) {
+                idx = convert_indices(i,j,k, DimY, DimZ);
+                // Any system?
+                if (mask[idx] == 0)
+                    continue;
+                // One in our category?
+                if (systems[mask[idx]] == 0)
+                    continue;
+                // Add it in
+                idx2 = convert_indices(i,j,year[k], DimY, DimZ2);
+                img[idx2] += 1;
+            }
+        }
+}

@@ -1,4 +1,4 @@
-""" Build the cube(s) that feeds into build"""
+""" Build the cube(s) that feeds into build systems"""
 
 # imports
 import os
@@ -117,56 +117,78 @@ def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
     # Return
     return cube
 
-# Testing
-if __name__ == '__main__':
+def main(flg_main):
+    if flg_main == 'all':
+        flg_main = np.sum(np.array([2 ** ii for ii in range(25)]))
+    else:
+        flg_main = int(flg_main)
+        
+    noaa_path = os.getenv('NOAA_OI')
+
 
     # Original
-    if False:
+    if flg_main & (2 ** 1):
         mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.db'
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.nc',
                mhw_db_file=mhw_hdf_file)
 
     # Varying
-    if False:
+    if flg_main & (2 ** 2):
         mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_vary.db'
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary.nc',
                    mhw_db_file=mhw_hdf_file)
 
     # 95 Varying
-    if False:
+    if flg_main & (2 ** 3):
         mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_vary_95.db'
         #mhw_events = pandas.read_hdf(mhw_hdf_file, 'MHW_Events')
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary_95.nc',
                    mhw_db_file=mhw_db_file)
 
     # Cold std
-    if False:
+    if flg_main & (2 ** 4):
         mcs_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mcs_events_allsky_defaults.db'
         build_cube('/home/xavier/Projects/Oceanography/MHW/db/MCSevent_cube.nc',
                    mhw_db_file=mcs_db_file)
 
+
     # Interpolated
-    if True:
+    if flg_main & (2 ** 5):
         noaa_path = os.getenv("NOAA_OI")
+        MHW_path = os.getenv("MHW")
         ds = xarray.open_dataset(os.path.join(noaa_path, 'Interpolated',
                                               'interpolated_sst_1983.nc'))
         lat_lon_coord = ds.lat, ds.lon
 
         # 2012
-        mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_interp2.5_2012.db'
-        build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_interp2.5_2012.nc',
+        mhw_db_file = os.path.join(MHW_path, 'db', 'mhw_events_interp2.5_2012.db')
+        build_cube(os.path.join(MHW_path, 'db', 'MHWevent_cube_interp2.5_2012.nc'),
                mhw_db_file=mhw_db_file,
                lat_lon_coord=lat_lon_coord,
                angular_res=2.5, 
                lon_lat_min=(float(ds.lon.min()), float(ds.lat.min())))
                #lon_lat_min=(187.65, 12.625))
 
-        # 2019
-        if False:
-            mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_interp2.5_2019.db'
-            build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_interp2.5_2019.nc',
-               mhw_db_file=mhw_db_file,
-               lat_lon_coord=lat_lon_coord,
-               angular_res=2.5, 
-               lon_lat_min=(float(ds.lon.min()), float(ds.lat.min())))
-               #lon_lat_min=(187.65, 12.625))
+        mhw_db_file = os.path.join(MHW_path, 'db', 'mhw_events_interp2.5_2019.db')
+        build_cube(os.path.join(MHW_path, 'db','MHWevent_cube_interp2.5_2019.nc'),
+            mhw_db_file=mhw_db_file,
+            lat_lon_coord=lat_lon_coord,
+            angular_res=2.5, 
+            lon_lat_min=(float(ds.lon.min()), float(ds.lat.min())))
+            #lon_lat_min=(187.65, 12.625))
+
+# Command line execution
+if __name__ == '__main__':
+    import sys
+
+    if len(sys.argv) == 1:
+        flg_main = 0
+        #flg_main += 2 ** 1  # Hobday
+        #flg_main += 2 ** 2  # de-trend median
+        #flg_main += 2 ** 3  # T95
+        #flg_main += 2 ** 4  # Cold waves
+        flg_main += 2 ** 5  # Interpolated
+    else:
+        flg_main = sys.argv[1]
+
+    main(flg_main)
