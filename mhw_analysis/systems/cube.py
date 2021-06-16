@@ -4,6 +4,7 @@
 import os
 import numpy as np
 from importlib import reload
+import pathlib
 
 from datetime import date
 
@@ -18,7 +19,8 @@ from oceanpy.sst import utils as sst_utils
 
 from IPython import embed
 
-mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.hdf'
+mhw_path = os.getenv('MHW')
+mhwdb_path = os.path.join(mhw_path, 'db')
 
 def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
                ymd_start=(1982,1,1), mhw_db_file=None, 
@@ -48,13 +50,17 @@ def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
     # Load event table
     if mhw_events is None:
         if mhw_db_file is None:
-            # Original
-            mhw_db_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.db'
+            raise IOError("Need to provide a file")
         print("Loading the events from: {}".format(mhw_db_file))
-        engine = sqlalchemy.create_engine('sqlite:///'+mhw_db_file)
-        mhw_events = pandas.read_sql_table('MHW_Events', con=engine,
+        if pathlib.Path(mhw_db_file).suffix == '.parquet':
+            mhw_events = pandas.read_parquet(mhw_db_file)
+        elif pathlib.Path(mhw_db_file).suffix == '.db':
+            engine = sqlalchemy.create_engine('sqlite:///'+mhw_db_file)
+            mhw_events = pandas.read_sql_table('MHW_Events', con=engine,
                                        columns=['date', 'lon', 'lat', 'duration', 'time_peak',
                                                 'ievent', 'time_start', 'index', 'category'])
+        else:
+            raise IOError("Not ready for this file type")
 
     print("Events are loaded")
 
@@ -88,9 +94,6 @@ def build_cube(outfile, mhw_events=None, ymd_end=(2019,12,31),
 
     cube[:] = False
     for kk in range(len(mhw_events)):
-        # Convenience
-        # iilon, jjlat, tstart, dur = ilon[kk], jlat[kk], time_start[kk], durations[kk]
-        #
         if kk % 1000000 == 0:
             print('kk = {} of {}'.format(kk, len(mhw_events)))
         cube[jlat[kk], ilon[kk], tstart[kk]-t0:tstart[kk]-t0+durs[kk]] = categories[kk]+1
@@ -126,11 +129,11 @@ def main(flg_main):
     noaa_path = os.getenv('NOAA_OI')
 
 
-    # Original
+    # Hobday (1983,2012 climatology)
     if flg_main & (2 ** 1):
-        mhw_hdf_file = '/home/xavier/Projects/Oceanography/MHW/db/mhw_events_allsky_defaults.db'
-        build_cube('/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.nc',
-               mhw_db_file=mhw_hdf_file)
+        mhw_pq_file = os.path.join(mhwdb_path, 'mhw_events_allsky_defaults.parquet')
+        outfile = os.path.join(mhwdb_path, 'MHWevent_cube_defaults.nc')
+        build_cube(outfile, mhw_db_file=mhw_pq_file)
 
     # Varying
     if flg_main & (2 ** 2):
@@ -177,6 +180,13 @@ def main(flg_main):
             lon_lat_min=(float(ds.lon.min()), float(ds.lat.min())))
             #lon_lat_min=(187.65, 12.625))
 
+    # 2019, de-trend local
+    if flg_main & (2 ** 6):
+        mhw_pq_file = os.path.join(mhwdb_path, 'mhw_events_allsky_2019_local.parquet')
+        outfile = os.path.join(mhwdb_path, 'MHWevent_cube_2019_local.nc')
+        build_cube(outfile, mhw_db_file=mhw_pq_file)
+
+
 # Command line execution
 if __name__ == '__main__':
     import sys
@@ -187,7 +197,8 @@ if __name__ == '__main__':
         #flg_main += 2 ** 2  # de-trend median
         #flg_main += 2 ** 3  # T95
         #flg_main += 2 ** 4  # Cold waves
-        flg_main += 2 ** 5  # Interpolated
+        #flg_main += 2 ** 5  # Interpolated
+        flg_main += 2 ** 6  # 2019, de-trend local
     else:
         flg_main = sys.argv[1]
 

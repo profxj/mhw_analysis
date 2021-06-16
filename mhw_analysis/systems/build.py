@@ -1,4 +1,5 @@
 """ Driver for the build which uses either Python or C"""
+import os
 import numpy as np
 import warnings
 
@@ -7,9 +8,7 @@ from importlib import reload
 import sqlalchemy
 import pandas as pd
 import datetime
-import h5py
 
-#import iris
 import xarray
 
 from oceanpy.sst import utils as sst_utils
@@ -26,6 +25,9 @@ except:
     warnings.warn('Unable to load build C extension.  Try rebuilding mhw_analysis.  In the '
                   'meantime, falling back to pure python code.')
     from mhw_analysis.systems.buildpy import final_pass
+
+mhw_path = os.getenv('MHW')
+mhwdb_path = os.path.join(mhw_path, 'db')
 
 def test_c():
 
@@ -87,16 +89,16 @@ def full_test():
     df.to_sql('MHW_Systems', con=engine)#, if_exists='append')
 
 
-def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.csv',
+def generate_mhw(mhwsys_file, sub=None, 
          cube=None, ymd_start=(1982, 1, 1), ignore_hilat=False, debug=False):
     """
     Generate MHW Systems from an Event cube
 
     Args:
+        mhwsys_file (str):
+            Output csv file.  Needs to have .csv extension
         sub (tuple, optional):
             Restrict run to a subset of dates
-        mhwsys_file (str, optional):
-            Output file
         cube (numpy.ndarray):
         ymd_start:
         ignore_hilat:
@@ -104,6 +106,8 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     Returns:
 
     """
+    if mhwsys_file[-4:] != '.csv':
+        raise IOError("Output filename needs to be .csv")
     # Load cube -- See MHW_Cube Notebook
     if cube is None:
         print("Loading cube")
@@ -146,7 +150,7 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     print("Wrote: {}".format(mhwsys_file))
 
     # Write mask as nc
-    mask_file = mhwsys_file.replace('systems', 'mask').replace('csv', 'nc')
+    mask_file = mhwsys_file.replace('.csv', '_mask.nc')
     t0 = datetime.datetime(ymd_start[0], ymd_start[1], ymd_start[2])
     times = pd.date_range(start=t0, periods=maskC.shape[2])
     lat_coord, lon_coord = sst_utils.noaa_oi_coords()
@@ -164,15 +168,27 @@ def main(sub=None, mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_sy
     return
 
 # Testing
-if __name__ == '__main__':
-    #full_test()
 
-    # C testing
-    #test_c()
+def main(flg_main):
+    # Not sure why this needs to be here.  But it does..
+    import xarray
+
+    if flg_main == 'all':
+        flg_main = np.sum(np.array([2 ** ii for ii in range(25)]))
+    else:
+        flg_main = int(flg_main)
+        
+
+    # Test
+    if flg_main & (2 ** 0):
+        # Scaled seasonalT, thresholdT
+        # C testing
+        test_c()
+        full_test()
 
     # Debuggin
     #tbl, mask = main(sub=(11600,11600+380), mhwsys_file='tst.hdf', ymd_start=(2013, 10, 5))
-    if False:
+    if flg_main & (2 ** 1):
         cube = np.load('tst_cube.npz')['arr_0'].astype(np.int8)
         # Zero out high/low latitudes
         cube[0:100,:,:] = 0
@@ -181,12 +197,11 @@ if __name__ == '__main__':
         embed(header='134 of build')
 
     # Testing
-    #main(sub=(10000,11000))
+    if flg_main & (2 ** 2):
+        generate_mhw(sub=(10000,11000))
 
-    # Real deal
-    #main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_nohilat.hdf',
-    #     ignore_hilat=True)
-    if False:
+    # Test Indian
+    if flg_main & (2 ** 3):
         cube = np.zeros((720,1440,100), dtype=np.int8)
         # Indian/Pacific
         cube[100:400,350:650,30:50] = 1
@@ -197,10 +212,10 @@ if __name__ == '__main__':
         # Pacific/Atlantic
         cube[600:640,600:650,15:25] = 1
         # Run
-        main(cube=cube, mhwsys_file='tst_indian_systems.hdf')
+        generate_mhw(cube=cube, mhwsys_file='tst_indian_systems.hdf')
 
     # Testing
-    if False:
+    if flg_main & (2 ** 4):
         import xarray
         cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary.nc'
         print("Loading: {}".format(cubefile))
@@ -209,24 +224,27 @@ if __name__ == '__main__':
         cube = ds.events.data[:,:,9500:10000].astype(np.int8)
         print("Loaded!")
         #
-        main(mhwsys_file='test_basins_systems.hdf', cube=cube)
+        generate_mhw(mhwsys_file='test_basins_systems.hdf', cube=cube)
 
     # Testing
-    #main(sub=(10000,11000))
+    if flg_main & (2 ** 5):
+        generate_mhw(sub=(10000,11000))
 
-    # Original
-    if True:
-        cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube.nc'
+    # Hobday
+    if flg_main & (2 ** 6):
+        cubefile = os.path.join(mhwdb_path, 'MHWevent_cube_defaults.nc')
+        # Cube
         print("Loading: {}".format(cubefile))
         ds = xarray.open_dataset(cubefile)
         cube = ds.events.data.astype(np.int8)
         ds.close()
         print("Loaded!")
         #
-        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems.csv', cube=cube)
+        outfile = os.path.join(mhwdb_path, 'MHWS_defaults.csv')
+        generate_mhw(outfile, cube=cube)
 
     # Vary
-    if False:
+    if flg_main & (2 ** 7):
         #import xarray
         #import numpy as np
         #from importlib import reload
@@ -237,10 +255,10 @@ if __name__ == '__main__':
         ds.close()
         print("Loaded!")
         #
-        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_vary.csv', cube=cube)
+        generate_mhw(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_vary.csv', cube=cube)
 
     # Vary 95
-    if False:
+    if flg_main & (2 ** 8):
         cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MHWevent_cube_vary_95.nc'
         print("Loading: {}".format(cubefile))
         ds = xarray.open_dataset(cubefile)
@@ -248,11 +266,11 @@ if __name__ == '__main__':
         ds.close()
         print("Loaded!")
         #
-        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_vary_95.csv', cube=cube)
+        generate_mhw(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MHW_systems_vary_95.csv', cube=cube)
 
 
     # Cold 10
-    if False:
+    if flg_main & (2 ** 9):
         cubefile = '/home/xavier/Projects/Oceanography/MHW/db/MCSevent_cube.nc'
         print("Loading: {}".format(cubefile))
         ds = xarray.open_dataset(cubefile)
@@ -260,5 +278,32 @@ if __name__ == '__main__':
         ds.close()
         print("Loaded!")
         #
-        main(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MCS_systems.csv', cube=cube)
+        generate_mhw(mhwsys_file='/home/xavier/Projects/Oceanography/MHW/db/MCS_systems.csv', cube=cube)
 
+    # 2019, de-trend
+    if flg_main & (2 ** 10):
+        cubefile = os.path.join(mhwdb_path, 'MHWevent_cube_2019_local.nc')
+        # Cube
+        print("Loading: {}".format(cubefile))
+        ds = xarray.open_dataset(cubefile)
+        cube = ds.events.data.astype(np.int8)
+        ds.close()
+        print("Loaded!")
+        #
+        outfile = os.path.join(mhwdb_path, 'MHWS_2019_local.csv')
+        generate_mhw(outfile, cube=cube)
+
+
+
+# Command line execution
+if __name__ == '__main__':
+    import sys
+
+    if len(sys.argv) == 1:
+        flg_main = 0
+        #flg_main += 2 ** 6  # Hobday
+        flg_main += 2 ** 10  # 2019, de-trend
+    else:
+        flg_main = sys.argv[1]
+
+    main(flg_main)
