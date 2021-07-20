@@ -26,16 +26,20 @@ def grab_mhw_sys_file(vary=False):
     """
     
     if vary:
-        mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems_vary.csv')
-    else:
-        mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_systems.hdf')
+        mhw_sys_file = os.path.join(os.getenv('MHW'), 
+                                    'db', 'MHWS_2019_local.csv')
+    else: # Hobday
+        mhw_sys_file = os.path.join(os.getenv('MHW'), 'db', 
+                                    'MHWS_defaults.csv')
     return mhw_sys_file
 
 def grab_mhwsys_mask_file(vary=False):
     if vary:
-        mhwsys_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask_vary.nc')
+        mhwsys_mask_file = os.path.join(os.getenv('MHW'), 'db', 
+                                        'MHWS_2019_local.nc')
     else:
-        mhwsys_mask_file = os.path.join(os.getenv('MHW'), 'db', 'MHW_mask.nc')
+        mhwsys_mask_file = os.path.join(os.getenv('MHW'), 'db', 
+                                        'MHWS_defaults_mask.nc')
     return mhwsys_mask_file
 
 
