@@ -5,7 +5,6 @@ import warnings
 
 from importlib import reload
 
-import sqlalchemy
 import pandas as pd
 import datetime
 
@@ -30,6 +29,9 @@ mhw_path = os.getenv('MHW')
 mhwdb_path = os.path.join(mhw_path, 'db')
 
 def test_c():
+    """
+    Simple method to test some of the C code
+    """
 
     # Load
     cube = np.load('../../doc/nb/tst_cube_pacific.npy')
@@ -69,7 +71,7 @@ def test_c():
 
     #assert np.array_equal(obj_dictC['zcen'], obj_dict['zcen'])
 
-
+'''
 def full_test():
     """
     Python
@@ -87,23 +89,29 @@ def full_test():
     dbfile = '/home/xavier/Projects/Oceanography/MHW/db/pacific_mhw_system.db'
     engine = sqlalchemy.create_engine('sqlite:///'+dbfile)
     df.to_sql('MHW_Systems', con=engine)#, if_exists='append')
+'''
 
 
-def generate_mhw(mhwsys_file, sub=None, 
+def generate_mhw(mhwsys_file:str, sub=None, 
          cube=None, ymd_start=(1982, 1, 1), ignore_hilat=False, debug=False):
     """
-    Generate MHW Systems from an Event cube
+    Generate MHW Systems from an Event data cube
+
+    The list of MHWS is written to the input CSV file
+    In addition, a cube describing the locations in lat,lon,time
+    of each MHWS is written to a netcdf file with extension .nc
 
     Args:
         mhwsys_file (str):
             Output csv file.  Needs to have .csv extension
+            netcdf file will match this name but have an _mask.nc extension
         sub (tuple, optional):
             Restrict run to a subset of dates
         cube (numpy.ndarray):
-        ymd_start:
-        ignore_hilat:
-
-    Returns:
+            3D array (lat, lon, day) built from a set of MHWEs
+        ymd_start (tuple, optional):
+            Defines the first day of the cube
+        ignore_hilat (bool, optional):
 
     """
     if mhwsys_file[-4:] != '.csv':
@@ -139,7 +147,7 @@ def generate_mhw(mhwsys_file, sub=None,
     obj_dictC = buildc.final_pass(maskC, NVoxC, ndet, IdToLabel, LabelToId, catC)
     print("Objects nearly done")
 
-    # Area
+    # Find maximum Area
     buildc.max_areas(maskC, obj_dictC)
     print("area done")
 
@@ -184,7 +192,7 @@ def main(flg_main):
         # Scaled seasonalT, thresholdT
         # C testing
         test_c()
-        full_test()
+        #full_test()
 
     # Debuggin
     #tbl, mask = main(sub=(11600,11600+380), mhwsys_file='tst.hdf', ymd_start=(2013, 10, 5))
@@ -301,7 +309,7 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 1:
         flg_main = 0
-        #flg_main += 2 ** 6  # Hobday
+        #flg_main += 2 ** 6  # Hobday MHWEs (1983-2012)
         flg_main += 2 ** 10  # 2019, de-trend
     else:
         flg_main = sys.argv[1]

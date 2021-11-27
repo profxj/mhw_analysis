@@ -1,19 +1,15 @@
-""" Biuld climate"""
+""" Build climate for NCEP data"""
 
 import os
-from pkg_resources import resource_filename
 
 import numpy as np
 
-
-import pandas
 #import iris
 import xarray
 
 from mhw import climate as mhw_climate
 from mhw import utils as mhw_utils
 from mhw import mhw_numba
-
 
 from IPython import embed
 
@@ -31,8 +27,8 @@ def ncep_seas_thresh(climate_db_file,
     ----------
     climate_db_file : str
         output filename.  Should have extension .nc
-    climatologyPeriod
-    cut_sky
+    climatologyPeriod : tuple
+    cut_sky : bool
     all_sst
     min_frac
     n_calc

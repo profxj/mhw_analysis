@@ -71,7 +71,16 @@ first_pass_c.argtypes = [
 
 maxnlabels = 100000000
 
-def first_pass(cube):
+def first_pass(cube:np.ndarray):
+    """ Perform the first step in 
+    MHWS construction
+
+    Args:
+        cube (np.ndarray): lat,lon,time cube of MHWEs
+
+    Returns:
+        tuple: np.ndarray (mask), np.ndarray (parent), np.ndarray (category)
+    """
     # Init
     mask = np.zeros_like(cube, dtype=np.int32)
     # C
@@ -91,16 +100,18 @@ second_pass_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUO
                           np.ctypeslib.ndpointer(ctypes.c_long, flags="C_CONTIGUOUS"),
                           np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
 
-def second_pass(mask, parent, category):
+def second_pass(mask:np.ndarray, parent:np.ndarray, category:np.ndarray):
     """
+    Perform the second step in MHWS construction
 
     Args:
-        mask: np.ndarray of int32
+        mask (np.ndarray, int32):
             Modified in place
-        parent:
+        parent (np.ndarray):
+        category (np.ndarray):
 
     Returns:
-        np.ndarray: NVox (int32)
+        np.ndarray: NVox (int32) -- Volume of each MHWS
 
     """
     NVox = np.zeros(maxnlabels, dtype=np.int64)
@@ -130,7 +141,24 @@ final_pass_c.argtypes = [ctypes.c_int,
                          ]
 
 
-def final_pass(mask, NVox, ndet, IdToLabel, LabelToId, category):
+def final_pass(mask:np.ndarray, NVox:np.ndarray, ndet:int, 
+               IdToLabel:np.ndarray, 
+               LabelToId:np.ndarray, category:np.ndarray):
+    """ Last step in MHWS construction
+
+    Also measures some basic metrics on the MHWS
+
+    Args:
+        mask (np.ndarray): [description]
+        NVox (np.ndarray): [description]
+        ndet (int): [description]
+        IdToLabel (np.ndarray): [description]
+        LabelToId (np.ndarray): [description]
+        category (np.ndarray): [description]
+
+    Returns:
+        dict: contains metrics on MHWS
+    """
     # Objects
     obj_dict = dict(Id=np.zeros(ndet, dtype=np.int32),
                     NVox=np.zeros(ndet, dtype=np.int64),
@@ -164,7 +192,16 @@ max_areas_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS
                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
 
 
-def max_areas(mask, obj_dict):
+def max_areas(mask:np.ndarray, obj_dict:dict):
+    """
+    Calculate the maximum area of each MHWS
+
+    Done as an afterburner...
+
+    Args:
+        mask (np.ndarray): [description]
+        obj_dict (dict): [description]
+    """
     max_label = np.max(obj_dict['mask_Id'])
     areas = np.zeros(max_label+1, dtype=np.int32)
 
