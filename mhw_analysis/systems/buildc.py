@@ -165,6 +165,7 @@ def final_pass(mask:np.ndarray, NVox:np.ndarray, ndet:int,
                     category=np.zeros(ndet, dtype=np.int32), # Assoc=[0]*ndet,
                     mask_Id=np.zeros(ndet, dtype=np.int32),
                     max_area=np.zeros(ndet, dtype=np.int32),
+                    max_area_km=np.zeros(ndet, dtype=np.float32),
                     xcen=np.zeros(ndet, dtype=np.float32), xboxmin=np.ones(ndet, dtype=np.int32)*100000, xboxmax=np.ones(ndet, dtype=np.int32)*-1,
                     ycen=np.zeros(ndet, dtype=np.float32), yboxmin=np.ones(ndet, dtype=np.int32)*100000, yboxmax=np.ones(ndet, dtype=np.int32)*-1,
                     zcen=np.zeros(ndet, dtype=np.float32), zboxmin=np.ones(ndet, dtype=np.int32)*100000, zboxmax=np.ones(ndet, dtype=np.int32)*-1)
@@ -217,4 +218,5 @@ def max_areas(mask:np.ndarray, obj_dict:dict, cell_deg=0.25):
     # Fill
     for kk, label in enumerate(obj_dict['mask_Id']):
         obj_dict['max_area'][kk] = areas[label]
+        obj_dict['max_area_km'][kk] = areas_km2[label]
 
