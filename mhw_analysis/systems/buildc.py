@@ -188,11 +188,14 @@ max_areas_c = _systems.max_areas
 max_areas_c.restype = None
 max_areas_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                        np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
                         ctypes.c_int,
-                        np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS")]
+                        np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                        ctypes.c_float,
+                        ]
 
 
-def max_areas(mask:np.ndarray, obj_dict:dict):
+def max_areas(mask:np.ndarray, obj_dict:dict, cell_deg=0.25):
     """
     Calculate the maximum area of each MHWS
 
@@ -201,11 +204,16 @@ def max_areas(mask:np.ndarray, obj_dict:dict):
     Args:
         mask (np.ndarray): [description]
         obj_dict (dict): [description]
+        cell_deg (float): Cell size in deg
     """
     max_label = np.max(obj_dict['mask_Id'])
     areas = np.zeros(max_label+1, dtype=np.int32)
+    areas_km2 = np.zeros(max_label+1, dtype=np.float32)
 
-    max_areas_c(mask, areas, max_label, np.array(mask.shape, dtype=np.int32))
+    # Run
+    max_areas_c(mask, areas, areas_km2, max_label, 
+                np.array(mask.shape, dtype=np.int32),
+                cell_deg)
     # Fill
     for kk, label in enumerate(obj_dict['mask_Id']):
         obj_dict['max_area'][kk] = areas[label]

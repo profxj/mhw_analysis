@@ -147,7 +147,7 @@ def generate_mhw(mhwsys_file:str, sub=None,
     obj_dictC = buildc.final_pass(maskC, NVoxC, ndet, IdToLabel, LabelToId, catC)
     print("Objects nearly done")
 
-    # Find maximum Area
+    # Find maximum Area (km^2)
     buildc.max_areas(maskC, obj_dictC)
     print("area done")
 
