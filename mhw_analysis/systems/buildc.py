@@ -162,6 +162,7 @@ def final_pass(mask:np.ndarray, NVox:np.ndarray, ndet:int,
     # Objects
     obj_dict = dict(Id=np.zeros(ndet, dtype=np.int32),
                     NVox=np.zeros(ndet, dtype=np.int64),
+                    NVox_km=np.zeros(ndet, dtype=np.float32),
                     category=np.zeros(ndet, dtype=np.int32), # Assoc=[0]*ndet,
                     mask_Id=np.zeros(ndet, dtype=np.int32),
                     max_area=np.zeros(ndet, dtype=np.int32),
@@ -185,10 +186,12 @@ def final_pass(mask:np.ndarray, NVox:np.ndarray, ndet:int,
                  )
     return obj_dict
 
-max_areas_c = _systems.max_areas
-max_areas_c.restype = None
-max_areas_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+# ###################################################
+calc_km_c = _systems.calc_km
+calc_km_c.restype = None
+calc_km_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
+                        np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
                         np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
                         ctypes.c_int,
                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
@@ -196,9 +199,10 @@ max_areas_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS
                         ]
 
 
-def max_areas(mask:np.ndarray, obj_dict:dict, cell_deg=0.25):
+def calc_km(mask:np.ndarray, obj_dict:dict, cell_deg=0.25):
     """
-    Calculate the maximum area of each MHWS
+    Calculate the maximum area of each MHWS 
+    in cells and km2 and also NVox
 
     Done as an afterburner...
 
@@ -210,13 +214,15 @@ def max_areas(mask:np.ndarray, obj_dict:dict, cell_deg=0.25):
     max_label = np.max(obj_dict['mask_Id'])
     areas = np.zeros(max_label+1, dtype=np.int32)
     areas_km2 = np.zeros(max_label+1, dtype=np.float32)
+    NVox_km = np.zeros(max_label+1, dtype=np.float32)
 
     # Run
-    max_areas_c(mask, areas, areas_km2, max_label, 
+    calc_km_c(mask, areas, areas_km2, NVox_km, max_label, 
                 np.array(mask.shape, dtype=np.int32),
                 cell_deg)
     # Fill
     for kk, label in enumerate(obj_dict['mask_Id']):
         obj_dict['max_area'][kk] = areas[label]
         obj_dict['max_area_km'][kk] = areas_km2[label]
+        obj_dict['NVox_km'][kk] = NVox_km[label]
 

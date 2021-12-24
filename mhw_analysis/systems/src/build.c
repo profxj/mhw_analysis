@@ -333,7 +333,8 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
 
 }
 
-void max_areas(int *mask, int *areas, float *areas_km2, int max_label, int *shape, float cell_deg) {
+// Calculate areas and NVox in physical units
+void calc_km(int *mask, int *areas, float *areas_km2, float *NVox_km, int max_label, int *shape, float cell_deg) {
 
     // cell_deg -- Cell size in deg. Used to convert to km
 
@@ -383,6 +384,7 @@ void max_areas(int *mask, int *areas, float *areas_km2, int max_label, int *shap
                 // Increment
                 sub_areas[mask[idx]]++;
                 sub_areas_km2[mask[idx]] = sub_areas_km2[mask[idx]] + cell_lat[i];
+                NVox_km[mask[idx]] = NVox_km[mask[idx]] + cell_lat[i];
             }
 
         // Update
