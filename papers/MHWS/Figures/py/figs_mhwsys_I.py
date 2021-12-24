@@ -3,12 +3,6 @@ import os, sys
 import numpy as np
 from pkg_resources import resource_filename
 
-# Parallel processing
-from functools import partial
-from concurrent.futures import ProcessPoolExecutor
-from tqdm import tqdm
-import multiprocessing
-
 from datetime import date
 
 import matplotlib as mpl
@@ -38,15 +32,13 @@ import datetime
 import xarray
 
 from oceanpy.sst import io as sst_io
-from oceanpy.sst import utils as sst_utils
 from oceanpy.utils import catalog
-from oceanpy import defs as opy_defs
 
 from mhw_analysis.systems import io as mhw_sys_io
 from mhw_analysis.systems import utils as mhw_sys_utils
 from mhw_analysis.systems import analysisc as mhw_analysisc
 
-from ulmo import io as ulmo_io # for s3
+#from ulmo import io as ulmo_io # for s3
 
 from IPython import embed
 
