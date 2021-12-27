@@ -1,8 +1,6 @@
 """ Module to deal with I/O of CEMS-LENS files"""
 import os
 
-import numpy as np
-
 import datetime
 
 import xarray
@@ -44,6 +42,8 @@ def climate_doy(doy, climate_file=None):
 def load_z500(dmy, ncep_path=None, end_dmy=None):
     """
     Load a Z500 cube from our NCEP nc file
+
+    CURRENTLY BROKEN.  NEED to replace iris
 
     Parameters
     ----------

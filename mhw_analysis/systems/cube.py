@@ -186,7 +186,7 @@ def main(flg_main):
         outfile = os.path.join(mhwdb_path, 'MHWevent_cube_2019_local.nc')
         build_cube(outfile, mhw_db_file=mhw_pq_file)
 
-    # 2019, withou de-trend 
+    # 2019
     if flg_main & (2 ** 7):
         mhw_pq_file = os.path.join(mhwdb_path, 'mhw_events_allsky_2019.parquet')
         outfile = os.path.join(mhwdb_path, 'MHWevent_cube_2019.nc')
@@ -205,7 +205,7 @@ if __name__ == '__main__':
         #flg_main += 2 ** 4  # Cold waves
         #flg_main += 2 ** 5  # Interpolated
         #flg_main += 2 ** 6  # 2019, de-trend local
-        flg_main += 2 ** 7  # 2019 without de-trend
+        flg_main += 2 ** 7  # 2019
     else:
         flg_main = sys.argv[1]
 

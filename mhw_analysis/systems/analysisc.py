@@ -15,7 +15,7 @@ try:
 except Exception:
     raise ImportError('Unable to load analysis C extension.  Try rebuilding mhw_analysis.')
 
-
+# Define functions for C
 spatial_systems_c = _systems.spatial_systems
 spatial_systems_c.restype = None
 spatial_systems_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),  # mask
@@ -42,17 +42,22 @@ days_in_systems_by_year_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags
 
 
 
-def spatial_systems(mask, systems, max_Id):
+def spatial_systems(mask:np.ndarray, systems, max_Id):
     """
     Count up the number of times a given location
     is within the set of systems
 
     Args:
-        mask: np.ndarray of int32
-        systems:
+        mask (np.ndarray, int32): 
+            Cube (lon, lat, time) of MHWS 
+        systems (np.ndarray): 
+            MHWS ID values to be considered
+        max_Id (int): 
+            Maximum number of MHWS (not just ones input)
 
     Returns:
-        np.ndarray: spat_img (int32)
+        np.ndarray: spat_img (int32) -- Number times 
+            the given location has one of the MHWS present
 
     """
     spat_img = np.zeros((mask.shape[0], mask.shape[1]), dtype=np.int32)
@@ -68,8 +73,9 @@ def days_in_systems(mask, sys_flag):
     is within the set of systems
 
     Args:
-        mask: np.ndarray of int32
-        sys_flag: np.ndarray of int64
+        mask (np.ndarray, int32):
+            Cube (lon, lat, time) of MHWS 
+        sys_flag (np.ndarray of int64):
             Labels whether the mask_ID is in the list of systems
 
     Returns:

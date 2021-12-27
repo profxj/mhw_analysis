@@ -20,6 +20,7 @@ def dict_to_pandas(sys_dict, add_latlon=False, start_date=None):
     Parameters
     ----------
     sys_dict : dict
+        Contains all of the MHWS measurements
     add_latlon : bool, optional
         If True, load an NOAA OI and add lat, lon values to Table for convenience
     start_date : int, optional
@@ -59,15 +60,6 @@ def dict_to_pandas(sys_dict, add_latlon=False, start_date=None):
     # Return
     return mhw_sys
 
-'''
-def tmp_max_area(mask):
-    obj_id = np.unique(mask[mask > 0])
-    areas = np.zeros_like(obj_id)
-    for kk, id in enumerate(obj_id):
-        idx = np.where(mask == id)
-        areas[kk] = Counter(idx[2]).most_common(1)[0][1]
-    return areas
-'''
 
 @njit(parallel=True)
 def max_area(mask, obj_id, areas):
