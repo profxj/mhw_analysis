@@ -1,5 +1,5 @@
 /*
-Support algorithms for bspline.
+Shapiro & Stockman, Computer Vision, Mar 2000
 */
 
 #include <stdlib.h>

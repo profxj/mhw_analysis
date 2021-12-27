@@ -293,6 +293,19 @@ def main(flg_main):
         outfile = os.path.join(mhwdb_path, 'MHWS_2019_local.csv')
         generate_mhw(outfile, cube=cube)
 
+    # 2019, no de-trend
+    if flg_main & (2 ** 11):
+        cubefile = os.path.join(mhwdb_path, 'MHWevent_cube_2019.nc')
+        # Cube
+        print("Loading: {}".format(cubefile))
+        ds = xarray.open_dataset(cubefile)
+        cube = ds.events.data.astype(np.int8)
+        ds.close()
+        print("Loaded!")
+        #
+        outfile = os.path.join(mhwdb_path, 'MHWS_2019.csv')
+        generate_mhw(outfile, cube=cube)
+
 
 
 # Command line execution
@@ -302,7 +315,8 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         flg_main = 0
         #flg_main += 2 ** 6  # Hobday
-        flg_main += 2 ** 10  # 2019, de-trend
+        #flg_main += 2 ** 10  # 2019, de-trend
+        flg_main += 2 ** 11  # 2019, no de-trend
     else:
         flg_main = sys.argv[1]
 
