@@ -127,7 +127,8 @@ def load_mask_from_system(mhw_system, mhw_mask_file=None,
                                vary=vary)
 
 def load_full_mask(mhw_mask_file=None, vary=False):
-    return maskcube_from_slice(0, -1, mhw_mask_file=mhw_mask_file, vary=vary)
+    return maskcube_from_slice(0, -1, mhw_mask_file=mhw_mask_file, 
+                               vary=vary)
 
 
 def maskcube_from_slice(i0,i1,

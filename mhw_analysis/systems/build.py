@@ -324,9 +324,9 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 1:
         flg_main = 0
-        #flg_main += 2 ** 6  # Hobday MHWEs (1983-2012)
-        #flg_main += 2 ** 10  # 2019, de-trend
-        flg_main += 2 ** 11  # 2019
+        flg_main += 2 ** 6  # Hobday MHWEs (1983-2012)
+        flg_main += 2 ** 10  # 2019, de-trend
+        #flg_main += 2 ** 11  # 2019
     else:
         flg_main = sys.argv[1]
 
