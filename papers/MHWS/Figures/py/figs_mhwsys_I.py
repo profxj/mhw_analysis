@@ -1160,12 +1160,17 @@ def fig_location_NVox(ext, size, vary=True, nside=64, nmax=10):
     print('Wrote {:s}'.format(outfile))
 
 
-def fig_example_mhws(outfile, mhw_sys_file=None, vary=True,
+def fig_example_mhws(outfile, mhw_sys_file=os.path.join(
+                            os.getenv('MHW'), 'db', 'MHWS_2019.csv'),
+                        vary=False,
                      #mask_Id=1575120, 
                      make_mayavi=False,
-                     mask_Id=1475052): # 2019, local
+                     mask_Id=1458524): # 2019
+                     #mask_Id=544711, # 2019
+                     #mask_Id=1475052): # 2019, local
     #1489500):
 
+    mask_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019_mask.nc')
     # Load MHW Systems
     mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=mhw_sys_file, 
                                       vary=vary)
@@ -1184,7 +1189,8 @@ def fig_example_mhws(outfile, mhw_sys_file=None, vary=True,
 
 
     # Grab the mask
-    mask_da = mhw_sys_io.load_mask_from_system(isys, vary=vary)
+    mask_da = mhw_sys_io.load_mask_from_system(isys, vary=vary,
+                                               mhw_mask_file=mask_file)
 
     # Patch
     fov = 70.  # deg
@@ -2303,6 +2309,7 @@ def fig_compare_MHWE(outfile='fig_compare_MHWE.png', show_all=False):
     plt.close()
     print('Wrote {:s}'.format(outfile))
 
+
 def mk_segments(mapimg,dx,dy,x0=-0.5,y0=-0.5):
     # a vertical line segment is needed, when the pixels next to each other horizontally
     #   belong to diffferent groups (one is part of the mask, the other isn't)
@@ -2334,8 +2341,11 @@ def mk_segments(mapimg,dx,dy,x0=-0.5,y0=-0.5):
     #   at this point let's assume it has extents (x0, y0)..(x1,y1) on the axis
     #   drawn with origin='lower'
     # with this information we can rescale our points
-    segments[:, 0] = x0 + dx * segments[:, 0] / mapimg.shape[1]
-    segments[:, 1] = y0 + dy * segments[:, 1] / mapimg.shape[0]
+    try:
+        segments[:, 0] = x0 + dx * segments[:, 0] / mapimg.shape[1]
+        segments[:, 1] = y0 + dy * segments[:, 1] / mapimg.shape[0]
+    except:
+        embed(header='2346 of figs')
 
     return segments
 
@@ -2781,7 +2791,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 8  # Climate
         #flg_fig += 2 ** 9  # max area vs. NSpax
         #flg_fig += 2 ** 10  # Location location location
-        #flg_fig += 2 ** 11  # Example MHWS
+        flg_fig += 2 ** 11  # Example MHWS
         #flg_fig += 2 ** 12  # Nsys vs. year
         #flg_fig += 2 ** 13  # Spatial location of Systems
         #flg_fig += 2 ** 14  # Tthresh, T90, T95 vs DOY
@@ -2789,7 +2799,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 16  # Intermediate gallery
         #flg_fig += 2 ** 17  # Extreme examples
         #flg_fig += 2 ** 18  # SST vs. T_thresh
-        flg_fig += 2 ** 19  # Main Histogram figure (Figure 2)
+        #flg_fig += 2 ** 19  # Main Histogram figure (Figure 2)
         #flg_fig += 2 ** 20  # Spatial in days -- Fig 3 of the paper
         #flg_fig += 2 ** 21  # Extreme evolution
         #flg_fig += 2 ** 22  # Comparing MHWE definitions/approaches (by year)
