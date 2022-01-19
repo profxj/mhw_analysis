@@ -37,3 +37,25 @@ def fit_discrete_powerlaw(xval:np.ndarray, xmin:int,
 
     # Return
     return C, best_alpha, alpha, logL
+
+def fit_continuous_powerlaw(xval:np.ndarray, xmin:float):
+    """Perform a continuous power-law fit to a distribution of 
+    continuous values
+
+    See https://www.jstor.org/stable/pdf/25662336.pdf
+
+    Args:
+        xval (np.ndarray): [description]
+        xmin (float): [description]
+    
+    Returns:
+        tuple: C, best_alpha
+    """
+    # MLE estimator [alpha is *positive* here]
+    pos_alpha = 1 + xval.size / np.sum(np.log(xval/xmin))
+
+    # Constant
+    C = (pos_alpha-1) / xmin * (1./xmin)**(-1*pos_alpha)
+
+    # Return
+    return C, -1*pos_alpha

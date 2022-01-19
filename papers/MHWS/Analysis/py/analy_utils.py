@@ -1,5 +1,6 @@
 
 import os, sys
+from matplotlib import use
 import numpy as np
 
 from astropy.coordinates import SkyCoord
@@ -35,22 +36,47 @@ def cut_by_type(mhw_sys):
     return small, normal, extreme
 
 
-def Nvox_by_year(mhw_sys):
+def cell_area_by_lat(R_Earth=6371.,cell_deg = 0.25):
+    """Cell area in km^2 as a function of latitutde
+
+    Args:
+        nlat ([type]): [description]
+        R_Earth ([type], optional): [description]. Defaults to 6371..
+        cell_deg (float, optional): [description]. Defaults to 0.25.
+
+    Returns:
+        [type]: [description]
+    """
+    nlat = int(180./cell_deg)
+
+    cell_km = cell_deg * 2 * np.pi * R_Earth / 360.
+    lat = -89.875 + cell_deg*np.arange(nlat)
+    cell_lat = cell_km * cell_km * np.cos(np.pi * lat / 180.)
+    return cell_lat
+    
+def Nvox_by_year(mhw_sys, use_km=True):
     """
 
     Args:
         mhw_sys (pandas.DataFrame):
 
     Returns:
+        pandas.DataFrame: 
 
     """
+    if use_km:
+        attr = 'NVox_km'
+        dt = float
+    else:
+        attr = 'NVox'
+        dt = int
 
     # Do the stats
     years = 1983 + np.arange(37)
 
-    small_Nvox = np.zeros_like(years)
-    int_Nvox = np.zeros_like(years)
-    ex_Nvox = np.zeros_like(years)
+    small_Nvox = np.zeros_like(years, dtype=dt)
+    int_Nvox = np.zeros_like(years, dtype=dt)
+    ex_Nvox = np.zeros_like(years, dtype=dt)
 
     # Types
     random, normal, extreme = cut_by_type(mhw_sys)
@@ -64,8 +90,9 @@ def Nvox_by_year(mhw_sys):
         ndays = day_end-day_beg
         in_year = ndays > datetime.timedelta(days=0)
 
-        # Fraction
-        nvox_in_year = mhw_sys.NVox * ndays.to_numpy().astype(float) / mhw_sys.duration.to_numpy().astype(float)
+        # Fraction 
+        #  This is approximate for NVox_km
+        nvox_in_year = mhw_sys[attr] * ndays.to_numpy().astype(float) / mhw_sys.duration.to_numpy().astype(float)
 
         # Cut em up
         small_Nvox[jj] = np.sum(nvox_in_year[in_year & random])

@@ -2,6 +2,7 @@
 """
 import numpy as np
 import datetime
+import os
 
 import h5py
 import pandas
@@ -22,9 +23,12 @@ def grab_doy(dt):
     # Return
     return day_of_year
 
-def build_mhws_grid(outfile, mhw_sys_file=None, vary=True,
+def build_mhws_grid(outfile, mhw_sys_file=os.path.join(
+                            os.getenv('MHW'), 'db', 'MHWS_2019.csv'),
+                    vary=False,
                      #mask_Id=1468585,  -- Hobday
-                     mask_Id=1475052, # 2019, local
+                     #mask_Id=1475052, # 2019, local
+                     mask_Id=1458524, # 2019
                      find=False):
     #1489500):
 
@@ -45,7 +49,9 @@ def build_mhws_grid(outfile, mhw_sys_file=None, vary=True,
     sys_startdate = isys.datetime - datetime.timedelta(days=int(isys.zcen)-int(isys.zboxmin))
 
     # Grab the mask
-    mask_da = mhw_sys_io.load_mask_from_system(isys, vary=vary)
+    mask_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019_mask.nc')
+    mask_da = mhw_sys_io.load_mask_from_system(isys, vary=vary,
+                                               mhw_mask_file=mask_file)
     
     # Patch
     fov = 80.  # deg
@@ -104,11 +110,13 @@ def build_mhws_grid(outfile, mhw_sys_file=None, vary=True,
         final_grid[:,:,ss] = Tdiff 
 
     # save
-    import pdb; pdb.set_trace()
     with h5py.File(outfile, 'w') as f:
         f.create_dataset('grid', data=final_grid)
     print('Wrote {:s}'.format(outfile))
 
 # Command line execution
 if __name__ == '__main__':
-    build_mhws_grid('mhws_for_bruno.h5')#, find=True)
+    build_mhws_grid('mhws_for_bruno_2019_1458524.h5', 
+                    mask_Id=1458524, # 2019
+                    vary=False,
+                    find=False)

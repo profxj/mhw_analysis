@@ -4,18 +4,11 @@ import numpy as np
 from pkg_resources import resource_filename
 
 # Parallel processing
-from functools import partial
-from concurrent.futures import ProcessPoolExecutor
-from tqdm import tqdm
-import multiprocessing
 
 from datetime import date
 
 import matplotlib as mpl
-import matplotlib.gridspec as gridspec
 from matplotlib import pyplot as plt
-import matplotlib.ticker as mticker
-import matplotlib.image as mpimg
 import matplotlib.animation as animation
 
 mpl.rcParams['font.family'] = 'splttixgeneral'
@@ -28,23 +21,14 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import healpy as hp
 
 import pandas
-import datetime
 
 #import iris
 #import iris.quickplot as qplt
 
-import xarray
 
 from oceanpy.sst import io as sst_io
-from oceanpy.sst import utils as sst_utils
-from oceanpy.utils import catalog
-from oceanpy import defs as opy_defs
 
 from mhw_analysis.systems import io as mhw_sys_io
-from mhw_analysis.systems import utils as mhw_sys_utils
-from mhw_analysis.systems import analysisc as mhw_analysisc
-
-from ulmo import io as ulmo_io # for s3
 
 from IPython import embed
 
@@ -110,7 +94,8 @@ def extreme_movie(sys_file, mask_file, ordinal, outfile,
 
     """
     # Load MHW Systems
-    mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=os.path.join(mhw_path, sys_file))
+    mhw_sys = mhw_sys_io.load_systems(
+        mhw_sys_file=os.path.join(mhw_path, sys_file))
 
     # Grab the extreme systems
     isrt = np.argsort(mhw_sys.NVox.values)
@@ -157,6 +142,11 @@ def main(flg_movie):
 
     if flg_movie & (2 ** 0):
         extreme_movie('MHW_systems_vary.csv', 'MHW_mask_vary.nc', 
+            0, 'fig_extreme_vary_ex0.mp4', lon_mnx=(120., 300.),
+            lat_mnx=(-70., 70.))
+
+    if flg_movie & (2 ** 1):
+        extreme_movie('MHWS_2019.csv', 'MHWS_2019_mask.nc',
             0, 'fig_extreme_ex0.mp4', lon_mnx=(120., 300.),
             lat_mnx=(-70., 70.))
 
@@ -166,7 +156,8 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 1:
         flg_movie = 0
-        flg_movie += 2 ** 0  # MHW Events (spatial)
+        #flg_movie += 2 ** 0  # MHW Events (spatial)
+        flg_movie += 2 ** 1  # MHWS movie; 2019
     else:
         flg_movie = sys.argv[1]
 

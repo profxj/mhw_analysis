@@ -7,7 +7,7 @@ from datetime import date
 
 import matplotlib as mpl
 import matplotlib.gridspec as gridspec
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, use
 import matplotlib.ticker as mticker
 import matplotlib.image as mpimg
 import matplotlib.animation as animation
@@ -399,7 +399,8 @@ def fig_NSys_by_year(outfile, mhw_sys_file=None, lbl=None, vary=False):
     print('Wrote {:s}'.format(outfile))
 
 
-def fig_Nvox_by_year(outfile, normalize=True, save=True):
+def fig_Nvox_by_year(outfile, normalize=True, save=True,
+                     use_km=True):
     """
     Nvox by year
 
@@ -417,10 +418,12 @@ def fig_Nvox_by_year(outfile, normalize=True, save=True):
     #sys_files = ['MHW_systems.csv', 'MHW_systems_vary.csv',
     #             'MHW_systems_vary_95.csv', 'MCS_systems.csv']
     #labels = ['Standard', 'Vary', 'Vary_95', 'ColdSpells']
-    sys_files = ['MHWS_2019_local.csv', 'MHWS_2019.csv']
+    #sys_files = ['MHWS_2019_local.csv', 'MHWS_2019.csv']
+    sys_files = ['MHWS_2019.csv', 'MHWS_defaults.csv']
     #sys_files = ['MHWS_2019_local.csv', 'MHWS_defaults.csv']
     #labels = [r'$T_{90}^a$', r'$T_{90}$'] 
-    labels = ['de-trended', 'standard']
+    #labels = ['trended', 'standard']
+    labels = ['2019', 'Hobday']
     #
     # Stats and normalization
     vary_90_file = os.path.join(noaa_path, 
@@ -428,14 +431,29 @@ def fig_Nvox_by_year(outfile, normalize=True, save=True):
     clim = xarray.open_dataset(vary_90_file)
     Tthresh_day = clim.threshT.values[0,...]
 
-    N_T_day = np.sum(Tthresh_day != 0.)
+    R_Earth = 6371. # km
+    Area_Earth = 4 * np.pi * R_Earth**2
+
+
+    # Add up the ocean
+    ocean = Tthresh_day != 0
+    N_T_day = np.sum(ocean) # Number of cells
+    cell_lat = analy_utils.cell_area_by_lat(cell_deg=0.25)
+
+    grid_area = np.outer(cell_lat, np.ones(Tthresh_day.shape[1]))
+    ocean_area = np.sum(grid_area[ocean]) # km^2
+
     print(f"The ocean occupies {N_T_day} cells of [0.25deg]^2")
-    print("The ocean is {} of the total area".format(N_T_day/Tthresh_day.size))
+    print("The ocean is {} of the total gridded area".format(N_T_day/Tthresh_day.size))
+    print("The ocean is {} of the total surface area".format(ocean_area/Area_Earth))
     print("There are 10**{} vox in 1 day".format(np.log10(N_T_day)))
     print("There are 10**{} vox in 1 year".format(np.log10(N_T_day*365)))
 
     if normalize:
-        norm = N_T_day*365
+        if not use_km:
+            norm = N_T_day*365
+        else:
+            norm = ocean_area*365
     else: 
         norm=1.
 
@@ -446,11 +464,13 @@ def fig_Nvox_by_year(outfile, normalize=True, save=True):
     #gs = gridspec.GridSpec(2,2)
 
     for ss, sys_file in zip(np.arange(len(sys_files)), sys_files):
+        if ss > 0:
+            continue
         # Load MHW Systems
         mhw_sys = mhw_sys_io.load_systems(
             mhw_sys_file=os.path.join(mhw_path, sys_file))
         # Grab Nvox by year
-        pd_nvox = analy_utils.Nvox_by_year(mhw_sys)
+        pd_nvox = analy_utils.Nvox_by_year(mhw_sys, use_km=use_km)
 
         # Total NSpax
         ax_tot = plt.subplot(gs[ss])
@@ -469,7 +489,10 @@ def fig_Nvox_by_year(outfile, normalize=True, save=True):
         #ax_tot.set_yscale('log')
         ax_tot.set_xlabel('Year')
         #ax_tot.set_ylim(5e5, 5e7)
-        ax_tot.set_ylim(0, 3.5e7/norm)
+        if use_km:
+            ax_tot.set_ylim(0, 0.1)
+        else:
+            ax_tot.set_ylim(0, 3.5e7/norm)
         ax_tot.xaxis.set_major_locator(plt.MultipleLocator(5.))
 
         # Label lat, lon
@@ -1137,12 +1160,17 @@ def fig_location_NVox(ext, size, vary=True, nside=64, nmax=10):
     print('Wrote {:s}'.format(outfile))
 
 
-def fig_example_mhws(outfile, mhw_sys_file=None, vary=True,
+def fig_example_mhws(outfile, mhw_sys_file=os.path.join(
+                            os.getenv('MHW'), 'db', 'MHWS_2019.csv'),
+                        vary=False,
                      #mask_Id=1575120, 
                      make_mayavi=False,
-                     mask_Id=1475052): # 2019, local
+                     mask_Id=1458524): # 2019
+                     #mask_Id=544711, # 2019
+                     #mask_Id=1475052): # 2019, local
     #1489500):
 
+    mask_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019_mask.nc')
     # Load MHW Systems
     mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=mhw_sys_file, 
                                       vary=vary)
@@ -1161,7 +1189,8 @@ def fig_example_mhws(outfile, mhw_sys_file=None, vary=True,
 
 
     # Grab the mask
-    mask_da = mhw_sys_io.load_mask_from_system(isys, vary=vary)
+    mask_da = mhw_sys_io.load_mask_from_system(isys, vary=vary,
+                                               mhw_mask_file=mask_file)
 
     # Patch
     fov = 70.  # deg
@@ -1613,14 +1642,29 @@ def fig_extreme_evolution(sys_file, mask_file, ordinal, outfile,
 
 
 def fig_MHWS_histograms(outfile, 
-                        mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 
-                                                  'MHWS_2019_local.csv')):
+                        mhw_sys_file=os.path.join(
+                            os.getenv('MHW'), 'db', 
+                            'MHWS_2019.csv'),
+                            show_insets=False,
+                        use_km=True):
     # Load MHW Systems
     mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=mhw_sys_file)#, vary=vary)
     mhw_sys['duration'] = mhw_sys.zboxmax - mhw_sys.zboxmin + 1
 
+    # km?
+    if use_km:
+        vox_key = 'NVox_km'
+        area_key = 'max_area_km'
+        type_dict = defs.type_dict_km
+    else:
+        vox_key = 'NVox'
+        area_key = 'max_area'
+        type_dict = defs.type_dict
+
     # Trim on duration >=5
     mhw_sys = mhw_sys[mhw_sys.duration >= 5].copy()
+
+    #embed(header='1637 figs')
 
     # Categories
     cats = np.arange(1,5)
@@ -1635,25 +1679,38 @@ def fig_MHWS_histograms(outfile,
         # Bins
         ylabel = 'Number of MHWSs'
         if ss >= 2:
-            bins = 1. + np.arange(32)*0.25
-            if np.log10(np.max(mhw_sys.NVox.values)+1) > bins[-1]:
-                bins[-1] = np.log10(np.max(mhw_sys.NVox.values)+1) # Extend to incluce the last one
-            attr = 'NVox'
+            if use_km:
+                bins = 1. + np.arange(38)*0.25
+            else:
+                bins = 1. + np.arange(32)*0.25
+            attr = vox_key
+            if np.log10(np.max(mhw_sys[attr].values)+1) > bins[-1]:
+                bins[-1] = np.log10(np.max(mhw_sys[attr].values)+1) # Extend to incluce the last one
             xlabel = r'$N_{\rm Vox}$'
+            if use_km:
+                xlabel += r'$\; (\rm{days \, km^2})$'
             clr = 'b'
+            if ss == 3:
+                ylabel = r'Fraction of total $N_{\rm Vox}$'
         elif ss == 0:
             bins = np.linspace(np.log10(5), 4.0, 32)
-            if np.log10(np.max(mhw_sys.duration.values)+1) > bins[-1]:
-                bins[-1] = np.log10(np.max(mhw_sys.duration.values)+1)
             attr = 'duration'
+            if np.log10(np.max(mhw_sys[attr].values)+1) > bins[-1]:
+                bins[-1] = np.log10(np.max(mhw_sys[attr].values)+1) # Extend to incluce the last one
             xlabel = r'$t_{\rm dur} \; ({\rm days})$'
             clr = 'g'
-        elif ss == 1:
-            bins = np.linspace(0., 5.0, 32)
-            if np.log10(np.max(mhw_sys.max_area.values)+1) > bins[-1]:
-                bins[-1] = np.log10(np.max(mhw_sys.max_area.values)+1) # Extend to incluce the last one
-            attr = 'max_area'
-            xlabel = r'$A_{\rm max} \; ({\rm 0.25deg^2})$'
+        elif ss == 1: # Max area
+            if use_km:
+                bins = np.linspace(0., 8.0, 32)
+            else:
+                bins = np.linspace(0., 5.0, 32)
+            attr = area_key
+            if np.log10(np.max(mhw_sys[attr].values)+1) > bins[-1]:
+                bins[-1] = np.log10(np.max(mhw_sys[attr].values)+1) # Extend to incluce the last one
+            if use_km:
+                xlabel = r'$A_{\rm max} \; ({\rm km^2})$'
+            else:
+                xlabel = r'$A_{\rm max} \; ({\rm 0.25deg^2})$'
             clr = 'r'
             #ylim = (0.5, 1e6)
 
@@ -1664,22 +1721,35 @@ def fig_MHWS_histograms(outfile,
             sns.histplot(mhw_sys, x=attr, bins=bins, log_scale=True, ax=ax,
                      color=clr)
         else:
+            '''
+            # Original -- Sum Nvox
             xbin = []
             tot_Vox = []
             for tt in range(len(bins)-1):
-                in_bin = (mhw_sys.NVox >= 10**bins[tt]) & (mhw_sys.NVox < 10**bins[tt+1]) 
+                in_bin = (mhw_sys[attr] >= 10**bins[tt]) & (mhw_sys[attr] < 10**bins[tt+1]) 
                 #
                 xbin.append(np.mean(bins[tt:tt+1]))
-                tot_Vox.append(np.sum(mhw_sys[in_bin].NVox))
+                tot_Vox.append(np.sum(mhw_sys[in_bin][attr]))
             ax.stairs(tot_Vox, 10**bins, color='k', fill=True) 
-            # Label regions
-            ax.axvline(defs.type_dict['normal'][0], color='gray', ls='--')
-            ax.axvline(defs.type_dict['normal'][1], color='gray', ls='--')
 
             # Finish
             ax.set_xscale('log')
             xlabel = r'$N_{\rm Vox}$'
             ylabel = 'Total Vox'
+            '''
+            # Cumulative
+            xval = mhw_sys[vox_key].values
+            srt = np.argsort(xval)
+            xdata = xval[srt]
+            CDF_data = np.cumsum(xval[srt]) / np.sum(xval)
+            ax.plot(xdata, CDF_data, label='data', color='black',
+                    drawstyle='steps-mid')
+            ax.set_xscale('log')
+            ax.set_ylim(0., 1.05)
+
+            # Label regions
+            ax.axvline(type_dict['normal'][0], color='gray', ls='--')
+            ax.axvline(type_dict['normal'][1], color='gray', ls='--')
 
         #for cat, clr in zip(cats, clrs):
         #    idx = mhw_sys.category == cat
@@ -1688,7 +1758,8 @@ def fig_MHWS_histograms(outfile,
 
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
-        ax.set_yscale('log')
+        if ss <= 2:
+            ax.set_yscale('log')
         #ax.set_ylim(0.5, 1e6)
         ax.minorticks_on()
 
@@ -1697,44 +1768,59 @@ def fig_MHWS_histograms(outfile,
 
         # ###############################################3333
         # Insets
-        if ss == 0:
-            xmin = 5 # days
-            xval = mhw_sys[mhw_sys.duration >= xmin].duration.values
-            alpha_mnx = (-4., -2.)
-        elif ss == 1:
-            xmin = 30 # xval.min() # days
-            xval = mhw_sys[mhw_sys.max_area >= xmin].max_area.values
-            alpha_mnx = (-3.5, -1.01)
-        elif ss == 2:
-            xmin = 200 # xval.min() # days
-            xval = mhw_sys[mhw_sys.NVox >= xmin].NVox.values
-            alpha_mnx = (-3.5, -1.01)
-        else: 
-            continue
+        if show_insets:
+            if ss == 0:
+                xmin = type_dict['dur_xmin']
+                alpha_mnx = (-4., -2.)
+            elif ss == 1:
+                xmin = type_dict['area_xmin']
+                alpha_mnx = (-3.5, -1.01)
+            elif ss == 2:
+                xmin = type_dict['vox_xmin']
+                alpha_mnx = (-3.5, -1.01)
+            else: 
+                continue
 
-        C, best_alpha, alpha, logL = fitting.fit_discrete_powerlaw(
-            xval, xmin, alpha_mnx)
+            xval = mhw_sys[mhw_sys[attr] >= xmin][attr].values
 
-        ax_inset = ax.inset_axes([0.65, 0.65, 0.3, 0.3])
-        val = np.arange(xmin, xval.max()+1)
+            if ss == 0 or (not use_km):
+                C, best_alpha, alpha, logL = fitting.fit_discrete_powerlaw(
+                    xval, xmin, alpha_mnx)
+            else:
+                C, best_alpha = fitting.fit_continuous_powerlaw(
+                    xval, xmin)
 
-        Pt_fit = C*val**(best_alpha)
-        CDF_fit = np.cumsum(Pt_fit)/np.sum(Pt_fit)
+            ax_inset = ax.inset_axes([0.65, 0.65, 0.3, 0.3])
+            if ss == 0 or (not use_km):
+                val = np.arange(xmin, xval.max()+1)
+                dx = 1.
+            else:
+                val = 10**np.linspace(np.log10(xval.min()), np.log10(xval.max()), 10000)
+                dx = val - np.roll(val,1)
+                dx[0] = dx[1]
 
-        # Data
-        xdata, counts = np.unique(xval, return_counts=True)
-        CDF_data = np.cumsum(counts)/np.sum(counts)
+            Pt_fit = C*val**(best_alpha)
+            CDF_fit = np.cumsum(Pt_fit*dx)/np.sum(Pt_fit*dx)
 
-        # Plot
-        ax_inset.plot(val, CDF_fit, label=r'$\alpha='+'{:0.1f}'.format(
-            best_alpha)+'$)', color='gray')
-        ax_inset.plot(xdata, CDF_data, label='data', color='orange',
-                drawstyle='steps-mid')
-        ax_inset.legend(fontsize=9., loc='lower right')
-        ax_inset.set_xscale('log')
-        ax_inset.set_ylim(0., 1.05)
-        ax_inset.set_xlabel(xlabel)
-        ax_inset.set_ylabel('CDF')  
+            # Data
+            if ss == 0 or (not use_km):
+                xdata, counts = np.unique(xval, return_counts=True)
+                CDF_data = np.cumsum(counts)/np.sum(counts)
+            else:
+                srt = np.argsort(xval)
+                xdata = xval[srt]
+                CDF_data = np.arange(xval.size) / (xval.size-1)
+
+            # Plot
+            ax_inset.plot(val, CDF_fit, label=r'$\alpha='+'{:0.1f}'.format(
+                best_alpha)+'$)', color='gray')
+            ax_inset.plot(xdata, CDF_data, label='data', color='orange',
+                    drawstyle='steps-mid')
+            ax_inset.legend(fontsize=9., loc='lower right')
+            ax_inset.set_xscale('log')
+            ax_inset.set_ylim(0., 1.05)
+            ax_inset.set_xlabel(xlabel)
+            ax_inset.set_ylabel('CDF')  
 
 
     #legend = plt.legend(loc='upper right', scatterpoints=1, borderpad=0.3,
@@ -1748,11 +1834,72 @@ def fig_MHWS_histograms(outfile,
     print('Wrote {:s}'.format(outfile))
 
     # A few extra stats
-    extreme = mhw_sys.NVox > defs.type_dict['extreme'][0]
-    total_NVox = np.sum(mhw_sys.NVox)
-    NVox_extreme = np.sum(mhw_sys[extreme].NVox)
+    extreme = mhw_sys[vox_key] > type_dict['extreme'][0]
+    total_NVox = np.sum(mhw_sys[vox_key])
+    NVox_extreme = np.sum(mhw_sys[extreme][vox_key])
     print("There are {} extreme MHWS.".format(np.sum(extreme)))
     print("Extreme are {} percent of the total".format(100.*NVox_extreme/total_NVox,))
+
+
+
+def fig_cumulative_NVox(outfile, mhw_sys_file=os.path.join(
+                            os.getenv('MHW'), 'db', 
+                            'MHWS_2019.csv'),
+                        use_km=True):
+    # Load MHW Systems
+    mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=mhw_sys_file)#, vary=vary)
+    mhw_sys['duration'] = mhw_sys.zboxmax - mhw_sys.zboxmin + 1
+
+    # km?
+    if use_km:
+        vox_key = 'NVox_km'
+        area_key = 'max_area_km'
+        type_dict = defs.type_dict_km
+    else:
+        vox_key = 'NVox'
+        area_key = 'max_area'
+        type_dict = defs.type_dict
+
+    # Trim on duration >=5
+    mhw_sys = mhw_sys[mhw_sys.duration >= 5].copy()
+
+    # Begin the figure
+    fig = plt.figure(figsize=(12, 8))
+    plt.clf()
+    gs = gridspec.GridSpec(1,1)
+
+    ax = plt.subplot(gs[0])
+
+    xval = mhw_sys[vox_key].values
+    srt = np.argsort(xval)
+    xdata = xval[srt]
+    CDF_data = np.cumsum(xval[srt]) / np.sum(xval)
+
+    # Plot
+    ax.plot(xdata, CDF_data, label='data', color='black',
+                drawstyle='steps-mid')
+    ax.set_xscale('log')
+    ax.set_ylim(0., 1.05)
+
+    xlabel = r'$N_{\rm Vox}$'
+    if use_km:
+        xlabel += r'$\; (\rm{days \, km^2})$'
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel('CDF')  
+
+    # Font size
+    set_fontsize(ax, 19.)
+
+    # Mark regions
+    ax.axvline(type_dict['normal'][0], color='gray', ls='--')
+    ax.axvline(type_dict['normal'][1], color='gray', ls='--')
+
+    # Layout and save
+    plt.tight_layout(pad=0.2,h_pad=0.,w_pad=0.1)
+    plt.savefig(outfile, dpi=300)
+    plt.close()
+    print('Wrote {:s}'.format(outfile))
+
 
 def count_systems(list_of_Ids, mask, spat_systems):
     # Proceed
@@ -1766,7 +1913,7 @@ def count_systems(list_of_Ids, mask, spat_systems):
 
 def fig_spatial_systems(outfile, mask=None, debug=False,
                         mhw_sys=None, save_spat_root=None, clobber=False,
-                       vmax=None, days=False):
+                       vmax=None, days=False, use_km=True):
     """
     Spatial distribution of MHW systems
 
@@ -1787,25 +1934,39 @@ def fig_spatial_systems(outfile, mask=None, debug=False,
     """
     # Load MHW Systems
     if mhw_sys is None:
-        mhw_sys = mhw_sys_io.load_systems(vary=True)
+        mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019.csv')
+        mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=mhw_sys_file)#, vary=vary)
 
-    fig = plt.figure(figsize=(8, 11))
+    mask_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019_mask.nc')
+
+    # km?
+    if use_km:
+        vox_key = 'NVox_km'
+        area_key = 'max_area_km'
+        type_dict = defs.type_dict_km
+    else:
+        vox_key = 'NVox'
+        area_key = 'max_area'
+        type_dict = defs.type_dict
+
+    fig = plt.figure(figsize=(8.5, 11))
     plt.clf()
     proj = ccrs.PlateCarree(central_longitude=-180.0)
     gs = gridspec.GridSpec(3,1)
 
     for ss, mhw_type, cmap, vmax in zip(range(3),
-        ['random', 'normal', 'extreme'],
+        ['minor', 'normal', 'extreme'],
         ['Blues', 'Greens', 'Reds'],
-        [100., 800., None]): 
+        [200., 800., None]): 
 
         # Init
-        NVox_mxn = defs.type_dict[mhw_type]
+        NVox_mxn = type_dict[mhw_type]
         if save_spat_root is not None:
             save_spat_file = save_spat_root+mhw_type+'.nc'
 
         # Cut Systems
-        cut = (mhw_sys.NVox >= NVox_mxn[0]) & (mhw_sys.NVox <= NVox_mxn[1])
+        cut = (mhw_sys[vox_key] >= NVox_mxn[0]) & (
+            mhw_sys[vox_key] <= NVox_mxn[1])
         cut_sys = mhw_sys[cut]
 
         if days:
@@ -1814,6 +1975,7 @@ def fig_spatial_systems(outfile, mask=None, debug=False,
 
         if save_spat_file is not None and os.path.isfile(
             save_spat_file) and not clobber:
+            print(f"Loading data from {save_spat_file}")
             ds = xarray.open_dataset(save_spat_file) 
             spat_systems = ds.spatial
         else:
@@ -1821,9 +1983,9 @@ def fig_spatial_systems(outfile, mask=None, debug=False,
             if mask is None:
                 if debug:
                     print("Loading only a subset of the mask for debuggin")
-                    mask = mhw_sys_io.maskcube_from_slice(0, 4000, vary=True)
+                    mask = mhw_sys_io.maskcube_from_slice(0, 4000)#, vary=True)
                 else:
-                    mask = mhw_sys_io.load_full_mask(vary=True)
+                    mask = mhw_sys_io.load_full_mask(mhw_mask_file=mask_file)#vary=True)
 
             # Lazy
             _ = mask.data
@@ -1874,9 +2036,9 @@ def fig_spatial_systems(outfile, mask=None, debug=False,
         # https://stackoverflow.com/questions/49956355/adding-gridlines-using-cartopy
         gl = ax.gridlines(crs=ccrs.PlateCarree(), linewidth=2, color='black', alpha=0.5,
                         linestyle='--', draw_labels=True)
-        gl.xlabels_top = False
-        gl.ylabels_left = True
-        gl.ylabels_right=False
+        gl.top_labels = False
+        gl.left_labels = True
+        gl.right_labels = False
         gl.xlines = True
         gl.xformatter = LONGITUDE_FORMATTER
         gl.yformatter = LATITUDE_FORMATTER
@@ -2147,6 +2309,7 @@ def fig_compare_MHWE(outfile='fig_compare_MHWE.png', show_all=False):
     plt.close()
     print('Wrote {:s}'.format(outfile))
 
+
 def mk_segments(mapimg,dx,dy,x0=-0.5,y0=-0.5):
     # a vertical line segment is needed, when the pixels next to each other horizontally
     #   belong to diffferent groups (one is part of the mask, the other isn't)
@@ -2178,8 +2341,11 @@ def mk_segments(mapimg,dx,dy,x0=-0.5,y0=-0.5):
     #   at this point let's assume it has extents (x0, y0)..(x1,y1) on the axis
     #   drawn with origin='lower'
     # with this information we can rescale our points
-    segments[:, 0] = x0 + dx * segments[:, 0] / mapimg.shape[1]
-    segments[:, 1] = y0 + dy * segments[:, 1] / mapimg.shape[0]
+    try:
+        segments[:, 0] = x0 + dx * segments[:, 0] / mapimg.shape[1]
+        segments[:, 1] = y0 + dy * segments[:, 1] / mapimg.shape[0]
+    except:
+        embed(header='2346 of figs')
 
     return segments
 
@@ -2534,8 +2700,11 @@ def main(flg_fig):
 
     # Nvox vs. year by type and method
     if flg_fig & (2 ** 15):
-        for outfile in ['fig_Nvox_by_year.png']:
-            fig_Nvox_by_year(outfile)
+        for use, outfile in zip([False,True], ['fig_Nvox_by_year.png',
+                                               'fig_Nvox_by_year_km.png']):
+            if not use:
+                continue                                   
+            fig_Nvox_by_year(outfile, use_km=use)
 
     # Gallery of intermediate events
     if flg_fig & (2 ** 16):
@@ -2559,16 +2728,21 @@ def main(flg_fig):
     if flg_fig & (2 ** 18):
         fig_SST_vs_Tthresh('fig_SST_vs_Tthresh')
 
-    # SST vs. Tthresh
+    # MHWS Histograms
     if flg_fig & (2 ** 19):
-        fig_MHWS_histograms('fig_MHWS_histograms.png')
+        #fig_MHWS_histograms('fig_MHWS_histograms.png', use_km=False)
+        fig_MHWS_histograms('fig_MHWS_histograms_km.png')
 
     # Days in a given system vs. location
     if flg_fig & (2 ** 20):
         fig_spatial_systems(
-            'fig_days_systems.png',
+            'fig_days_systems_km.png',
             debug=False, days=True, clobber=False, 
-            save_spat_root='days_spatial_')
+            save_spat_root='days_spatial_km_')
+        #fig_spatial_systems(
+        #    'fig_days_systems.png',
+        #    debug=False, days=True, clobber=False, 
+        #    save_spat_root='days_spatial_', use_km=False)
         #fig_spatial_sytems('fig_spatial_extreme.png', 
         #                   (1e5, 1e9), 
         #                   debug=False,
@@ -2596,6 +2770,10 @@ def main(flg_fig):
     if flg_fig & (2 ** 24):
         fig_detrend_global()
 
+    # Cumulative NVox
+    if flg_fig & (2 ** 25):
+        fig_cumulative_NVox('fig_cumulative_NVox_km.png', use_km=True)
+
 
 # Command line execution
 if __name__ == '__main__':
@@ -2613,7 +2791,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 8  # Climate
         #flg_fig += 2 ** 9  # max area vs. NSpax
         #flg_fig += 2 ** 10  # Location location location
-        #flg_fig += 2 ** 11  # Example MHWS
+        flg_fig += 2 ** 11  # Example MHWS
         #flg_fig += 2 ** 12  # Nsys vs. year
         #flg_fig += 2 ** 13  # Spatial location of Systems
         #flg_fig += 2 ** 14  # Tthresh, T90, T95 vs DOY
@@ -2621,12 +2799,13 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 16  # Intermediate gallery
         #flg_fig += 2 ** 17  # Extreme examples
         #flg_fig += 2 ** 18  # SST vs. T_thresh
-        flg_fig += 2 ** 19  # Main Histogram figure
+        #flg_fig += 2 ** 19  # Main Histogram figure
         #flg_fig += 2 ** 20  # Spatial in days
         #flg_fig += 2 ** 21  # Extreme evolution
         #flg_fig += 2 ** 22  # Comparing MHWE definitions/approaches (by year)
         #flg_fig += 2 ** 23  # MHWE spatial
         #flg_fig += 2 ** 24  # de-trend global view
+        #flg_fig += 2 ** 25  # Cumulative NVox
     else:
         flg_fig = sys.argv[1]
 
