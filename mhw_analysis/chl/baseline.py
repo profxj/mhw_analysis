@@ -37,7 +37,7 @@ from mhw import utils as mhw_utils
 from mhw import mhw_numba
 
 from mhw_analysis.chl import utils as chl_utils
-from mhw_analysis.chl import climatechl
+from mhw import climate
 
 from IPython import embed
 
@@ -103,7 +103,7 @@ def chl_thresh(climate_db_file,
     print('Finsished loading')    
 
     # Time -- especially DOY
-    time_dict = climatechl.build_time_dict(t)
+    time_dict = climate.build_time_dict(t)
 
     # Scaling
     scls = np.zeros_like(t).astype(float)
@@ -231,10 +231,10 @@ def chl_thresh(climate_db_file,
         if (counter % 1000 == 0) or (counter == n_calc):
             print('count={} of {}.'.format(counter, n_calc))
             print("Saving...")
-            climatechl.write_me(out_linear, out_seas, out_thresh, lat_coord, lon_coord, climate_db_file)
+            climate.write_me(out_linear, out_seas, out_thresh, lat_coord, lon_coord, climate_db_file)
     print('Finshed going through data')
     # Final write
-    climatechl.write_me(out_linear, out_seas, out_thresh, lat_coord, lon_coord, climate_db_file)
+    climate.write_me(out_linear, out_seas, out_thresh, lat_coord, lon_coord, climate_db_file)
     print("All done!!")
 
 if __name__ == '__main__':
