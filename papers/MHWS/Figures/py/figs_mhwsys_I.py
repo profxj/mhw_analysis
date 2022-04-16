@@ -2805,12 +2805,12 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 12  # Nsys vs. year
         #flg_fig += 2 ** 13  # Spatial location of Systems
         #flg_fig += 2 ** 14  # Tthresh, T90, T95 vs DOY
-        #flg_fig += 2 ** 15  # Nvox vs. year by category -- Now Fig 4
+        #flg_fig += 2 ** 15  # Nvox vs. year by method
         #flg_fig += 2 ** 16  # Intermediate gallery
         #flg_fig += 2 ** 17  # Extreme examples
         #flg_fig += 2 ** 18  # SST vs. T_thresh
-        flg_fig += 2 ** 19  # Main Histogram figure (Figure 2)
-        #flg_fig += 2 ** 20  # Spatial in days -- Fig 3 of the paper
+        #flg_fig += 2 ** 19  # Main Histogram figure
+        #flg_fig += 2 ** 20  # Spatial in days
         #flg_fig += 2 ** 21  # Extreme evolution
         #flg_fig += 2 ** 22  # Comparing MHWE definitions/approaches (by year)
         #flg_fig += 2 ** 23  # MHWE spatial
