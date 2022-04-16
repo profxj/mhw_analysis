@@ -27,10 +27,10 @@ def cut_by_type(mhw_sys):
     Returns:
 
     """
-    small = mhw_sys.NVox < defs.type_dict['random'][1]
-    normal = (mhw_sys.NVox >= defs.type_dict['normal'][0]) & (
-            mhw_sys.NVox < defs.type_dict['normal'][1])
-    extreme = (mhw_sys.NVox >= defs.type_dict['extreme'][0])
+    small = mhw_sys.NVox < defs.type_dict[defs.classa][1]
+    normal = (mhw_sys.NVox >= defs.type_dict[defs.classb][0]) & (
+            mhw_sys.NVox < defs.type_dict[defs.classb][1])
+    extreme = (mhw_sys.NVox >= defs.type_dict[defs.classc][0])
 
     # Return
     return small, normal, extreme
@@ -101,9 +101,9 @@ def Nvox_by_year(mhw_sys, use_km=True):
 
     # Fill me up
     df = pandas.DataFrame(
-        dict(random=small_Nvox, 
-             normal=int_Nvox, 
-             extreme=ex_Nvox),
+        {defs.classa: small_Nvox, 
+             defs.classb: int_Nvox, 
+             defs.classc: ex_Nvox},
         index=years)
 
     # Return

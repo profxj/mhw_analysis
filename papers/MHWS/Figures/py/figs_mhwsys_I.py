@@ -400,6 +400,8 @@ def fig_NSys_by_year(outfile, mhw_sys_file=None, lbl=None, vary=False):
 
 
 def fig_Nvox_by_year(outfile, normalize=True, save=True,
+            sys_file='MHWS_2019.csv', 
+            label = '1983-2019 Climatology',
                      use_km=True):
     """
     Nvox by year
@@ -419,11 +421,11 @@ def fig_Nvox_by_year(outfile, normalize=True, save=True,
     #             'MHW_systems_vary_95.csv', 'MCS_systems.csv']
     #labels = ['Standard', 'Vary', 'Vary_95', 'ColdSpells']
     #sys_files = ['MHWS_2019_local.csv', 'MHWS_2019.csv']
-    sys_files = ['MHWS_2019.csv', 'MHWS_defaults.csv']
+    #sys_files = ['MHWS_2019.csv', 'MHWS_defaults.csv']
     #sys_files = ['MHWS_2019_local.csv', 'MHWS_defaults.csv']
     #labels = [r'$T_{90}^a$', r'$T_{90}$'] 
     #labels = ['trended', 'standard']
-    labels = ['2019', 'Hobday']
+    #labels = ['1983-2019 Climatology', 'Hobday']
     #
     # Stats and normalization
     vary_90_file = os.path.join(noaa_path, 
@@ -445,6 +447,7 @@ def fig_Nvox_by_year(outfile, normalize=True, save=True,
 
     print(f"The ocean occupies {N_T_day} cells of [0.25deg]^2")
     print("The ocean is {} of the total gridded area".format(N_T_day/Tthresh_day.size))
+    print("The ocean has a surface area of {} km^2".format(ocean_area))
     print("The ocean is {} of the total surface area".format(ocean_area/Area_Earth))
     print("There are 10**{} vox in 1 day".format(np.log10(N_T_day)))
     print("There are 10**{} vox in 1 year".format(np.log10(N_T_day*365)))
@@ -463,57 +466,54 @@ def fig_Nvox_by_year(outfile, normalize=True, save=True,
     #fig = plt.figure(figsize=(12, 8))
     #gs = gridspec.GridSpec(2,2)
 
-    for ss, sys_file in zip(np.arange(len(sys_files)), sys_files):
-        if ss > 0:
-            continue
-        # Load MHW Systems
-        mhw_sys = mhw_sys_io.load_systems(
-            mhw_sys_file=os.path.join(mhw_path, sys_file))
-        # Grab Nvox by year
-        pd_nvox = analy_utils.Nvox_by_year(mhw_sys, use_km=use_km)
+    # Load MHW Systems
+    mhw_sys = mhw_sys_io.load_systems(
+        mhw_sys_file=os.path.join(mhw_path, sys_file))
+    # Grab Nvox by year
+    pd_nvox = analy_utils.Nvox_by_year(mhw_sys, use_km=use_km)
 
-        # Total NSpax
-        ax_tot = plt.subplot(gs[ss])
+    # Total NSpax
+    ax_tot = plt.subplot(gs[0])
 
-        clrs = ['b', 'g', 'r']
-        for key, clr in zip(['random', 'normal', 'extreme'], clrs):
-            ax_tot.scatter(pd_nvox.index, getattr(pd_nvox, key)/norm, 
-                           color=clr, label=key)
-        #ax_tot.scatter(pd_nvox.index, pd_nvox.intermediate, color='g', label=
-        #ax_tot.scatter(pd_nvox.index, pd_nvox.extreme, color='r', label='Extreme')
+    clrs = ['b', 'g', 'r']
+    for key, clr in zip([defs.classa, defs.classb, defs.classc], clrs):
+        ax_tot.scatter(pd_nvox.index, 
+                        getattr(pd_nvox, key)/norm, 
+                        color=clr, label=key)
+    #ax_tot.scatter(pd_nvox.index, pd_nvox.intermediate, color='g', label=
+    #ax_tot.scatter(pd_nvox.index, pd_nvox.extreme, color='r', label='Extreme')
 
-        if normalize:
-            ax_tot.set_ylabel(r'Normalized $N_{\rm vox}$ per year')
-        else:
-            ax_tot.set_ylabel(r'$N_{\rm vox}$ per year')
-        #ax_tot.set_yscale('log')
-        ax_tot.set_xlabel('Year')
-        #ax_tot.set_ylim(5e5, 5e7)
-        if use_km:
-            ax_tot.set_ylim(0, 0.1)
-        else:
-            ax_tot.set_ylim(0, 3.5e7/norm)
-        ax_tot.xaxis.set_major_locator(plt.MultipleLocator(5.))
+    if normalize:
+        ax_tot.set_ylabel(r'Normalized $N_{\rm vox}$ per year')
+    else:
+        ax_tot.set_ylabel(r'$N_{\rm vox}$ per year')
+    #ax_tot.set_yscale('log')
+    ax_tot.set_xlabel('Year')
+    #ax_tot.set_ylim(5e5, 5e7)
+    if use_km:
+        ax_tot.set_ylim(0, 0.1)
+    else:
+        ax_tot.set_ylim(0, 3.5e7/norm)
+    ax_tot.xaxis.set_major_locator(plt.MultipleLocator(5.))
 
-        # Label lat, lon
-        ax_tot.text(0.4, 0.9, labels[ss], color='black',
-                transform=ax_tot.transAxes, ha='center', fontsize=19.)
+    # Label lat, lon
+    ax_tot.text(0.05, 0.9, label, color='black',
+            transform=ax_tot.transAxes, ha='left', fontsize=19.)
 
-        # Font
-        set_fontsize(ax_tot, 17.)
+    # Font
+    set_fontsize(ax_tot, 17.)
 
-        if ss == 1:
-            legend = plt.legend(loc='upper left', scatterpoints=1, borderpad=0.3,
-                        handletextpad=0.3, fontsize='x-large', numpoints=1)
+    legend = plt.legend(loc='upper right', scatterpoints=1, borderpad=0.3,
+                    handletextpad=0.3, fontsize='x-large', numpoints=1)
+    
+    # Save?
+    if save:
+        prs = sys_file.split('.')
+        tblfile = prs[0]+'_Vox_by_year.csv'
+        # Write
+        pd_nvox.to_csv(tblfile)
+        print("Wrote: {}".format(tblfile))
         
-        # Save?
-        if save:
-            prs = sys_file.split('.')
-            tblfile = prs[0]+'_Vox_by_year.csv'
-            # Write
-            pd_nvox.to_csv(tblfile)
-            print("Wrote: {}".format(tblfile))
-            
 
 
     # Layout and save
@@ -893,8 +893,9 @@ def fig_dur_vs_NVox(outfile, mhw_sys_file=None, vary=True,
     print('Wrote {:s}'.format(outfile))
 
     # Stats
-    extreme = mhw_sys.NVox > defs.type_dict['extreme'][0]
-    print("Minimum duration for extreme {}".format(
+    extreme = mhw_sys.NVox > defs.type_dict[defs.classc][0]
+    print("Minimum duration for {} {}".format(
+        defs.classc,
         mhw_sys[extreme].duration.min()))
 
 
@@ -1691,7 +1692,7 @@ def fig_MHWS_histograms(outfile,
                 xlabel += r'$\; (\rm{days \, km^2})$'
             clr = 'b'
             if ss == 3:
-                ylabel = r'Fraction of total $N_{\rm Vox}$'
+                ylabel = 'Cumulative Distribution Function'
         elif ss == 0:
             bins = np.linspace(np.log10(5), 4.0, 32)
             attr = 'duration'
@@ -1748,8 +1749,8 @@ def fig_MHWS_histograms(outfile,
             ax.set_ylim(0., 1.05)
 
             # Label regions
-            ax.axvline(type_dict['normal'][0], color='gray', ls='--')
-            ax.axvline(type_dict['normal'][1], color='gray', ls='--')
+            ax.axvline(type_dict['moderate'][0], color='gray', ls='--')
+            ax.axvline(type_dict['moderate'][1], color='gray', ls='--')
 
         #for cat, clr in zip(cats, clrs):
         #    idx = mhw_sys.category == cat
@@ -1768,28 +1769,29 @@ def fig_MHWS_histograms(outfile,
 
         # ###############################################3333
         # Insets
+        if ss == 0:
+            xmin = type_dict['dur_xmin']
+            alpha_mnx = (-4., -2.)
+        elif ss == 1:
+            xmin = type_dict['area_xmin']
+            alpha_mnx = (-3.5, -1.01)
+        elif ss == 2:
+            xmin = type_dict['vox_xmin']
+            alpha_mnx = (-3.5, -1.01)
+        else: 
+            continue
+
+        xval = mhw_sys[mhw_sys[attr] >= xmin][attr].values
+
+        if ss == 0 or (not use_km):
+            C, best_alpha, alpha, logL = fitting.fit_discrete_powerlaw(
+                xval, xmin, alpha_mnx)
+        else:
+            C, best_alpha = fitting.fit_continuous_powerlaw(
+                xval, xmin)
+        print(f"ss={ss}, alpha={best_alpha}")
+
         if show_insets:
-            if ss == 0:
-                xmin = type_dict['dur_xmin']
-                alpha_mnx = (-4., -2.)
-            elif ss == 1:
-                xmin = type_dict['area_xmin']
-                alpha_mnx = (-3.5, -1.01)
-            elif ss == 2:
-                xmin = type_dict['vox_xmin']
-                alpha_mnx = (-3.5, -1.01)
-            else: 
-                continue
-
-            xval = mhw_sys[mhw_sys[attr] >= xmin][attr].values
-
-            if ss == 0 or (not use_km):
-                C, best_alpha, alpha, logL = fitting.fit_discrete_powerlaw(
-                    xval, xmin, alpha_mnx)
-            else:
-                C, best_alpha = fitting.fit_continuous_powerlaw(
-                    xval, xmin)
-
             ax_inset = ax.inset_axes([0.65, 0.65, 0.3, 0.3])
             if ss == 0 or (not use_km):
                 val = np.arange(xmin, xval.max()+1)
@@ -1834,10 +1836,10 @@ def fig_MHWS_histograms(outfile,
     print('Wrote {:s}'.format(outfile))
 
     # A few extra stats
-    extreme = mhw_sys[vox_key] > type_dict['extreme'][0]
+    extreme = mhw_sys[vox_key] > type_dict[defs.classc][0]
     total_NVox = np.sum(mhw_sys[vox_key])
     NVox_extreme = np.sum(mhw_sys[extreme][vox_key])
-    print("There are {} extreme MHWS.".format(np.sum(extreme)))
+    print("There are {} {} MHWS.".format(np.sum(extreme), defs.classc))
     print("Extreme are {} percent of the total".format(100.*NVox_extreme/total_NVox,))
 
 
@@ -1891,8 +1893,8 @@ def fig_cumulative_NVox(outfile, mhw_sys_file=os.path.join(
     set_fontsize(ax, 19.)
 
     # Mark regions
-    ax.axvline(type_dict['normal'][0], color='gray', ls='--')
-    ax.axvline(type_dict['normal'][1], color='gray', ls='--')
+    ax.axvline(type_dict['moderate'][0], color='gray', ls='--')
+    ax.axvline(type_dict['moderate'][1], color='gray', ls='--')
 
     # Layout and save
     plt.tight_layout(pad=0.2,h_pad=0.,w_pad=0.1)
@@ -1955,7 +1957,7 @@ def fig_spatial_systems(outfile, mask=None, debug=False,
     gs = gridspec.GridSpec(3,1)
 
     for ss, mhw_type, cmap, vmax in zip(range(3),
-        ['minor', 'normal', 'extreme'],
+        [defs.classa, defs.classb, defs.classc],
         ['Blues', 'Greens', 'Reds'],
         [200., 800., None]): 
 
@@ -2683,7 +2685,7 @@ def main(flg_fig):
     if flg_fig & (2 ** 13):
         #fig_spatial_sytems('fig_spatial_intermediate.png', (1e3, 1e5), debug=True,
         #                   save_spat_file='spatial_intermediate.nc')
-        for mhw_type, vmax in zip(['random', 'normal', 'extreme'],
+        for mhw_type, vmax in zip([defs.classa, defs.classb, defs.classc],
                                   [40., None, None]): 
             fig_spatial_systems('fig_spatial_{}.png'.format(mhw_type), 
                            defs.type_dict[mhw_type],
@@ -2705,6 +2707,11 @@ def main(flg_fig):
             if not use:
                 continue                                   
             fig_Nvox_by_year(outfile, use_km=use)
+        # Local
+        fig_Nvox_by_year('fig_Nvox_by_year_local_km.png',
+            sys_file='MHWS_2019_local.csv',
+            label = '1983-2019 Detrended',
+                         use_km=True)
 
     # Gallery of intermediate events
     if flg_fig & (2 ** 16):
@@ -2732,6 +2739,9 @@ def main(flg_fig):
     if flg_fig & (2 ** 19):
         #fig_MHWS_histograms('fig_MHWS_histograms.png', use_km=False)
         fig_MHWS_histograms('fig_MHWS_histograms_km.png')
+        fig_MHWS_histograms('fig_MHWS_local_histograms_km.png',
+            mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 
+                            'MHWS_2019_local.csv'))
 
     # Days in a given system vs. location
     if flg_fig & (2 ** 20):
@@ -2791,15 +2801,15 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 8  # Climate
         #flg_fig += 2 ** 9  # max area vs. NSpax
         #flg_fig += 2 ** 10  # Location location location
-        flg_fig += 2 ** 11  # Example MHWS
+        #flg_fig += 2 ** 11  # Example MHWS
         #flg_fig += 2 ** 12  # Nsys vs. year
         #flg_fig += 2 ** 13  # Spatial location of Systems
         #flg_fig += 2 ** 14  # Tthresh, T90, T95 vs DOY
-        #flg_fig += 2 ** 15  # Nvox vs. year by category
+        #flg_fig += 2 ** 15  # Nvox vs. year by category -- Now Fig 4
         #flg_fig += 2 ** 16  # Intermediate gallery
         #flg_fig += 2 ** 17  # Extreme examples
         #flg_fig += 2 ** 18  # SST vs. T_thresh
-        #flg_fig += 2 ** 19  # Main Histogram figure (Figure 2)
+        flg_fig += 2 ** 19  # Main Histogram figure (Figure 2)
         #flg_fig += 2 ** 20  # Spatial in days -- Fig 3 of the paper
         #flg_fig += 2 ** 21  # Extreme evolution
         #flg_fig += 2 ** 22  # Comparing MHWE definitions/approaches (by year)
