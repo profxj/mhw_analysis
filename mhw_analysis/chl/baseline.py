@@ -36,7 +36,7 @@ import xarray
 from mhw import utils as mhw_utils
 from mhw import mhw_numba
 
-from mhw_analysis.chl import chl_utils
+from mhw_analysis.chl import utils as chl_utils
 from mhw import climate
 
 from IPython import embed
