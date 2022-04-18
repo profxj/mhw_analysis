@@ -1,5 +1,5 @@
 /*
-Support algorithms for bspline.
+Shapiro & Stockman, Computer Vision, Mar 2000
 */
 
 #include <stdlib.h>
@@ -8,6 +8,8 @@ Support algorithms for bspline.
 #include <math.h>
 
 #include "build.h"
+
+#define PI 3.14159265358 
 
 void lunion(int *parent, int x, int y) {
     /*
@@ -247,8 +249,14 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
     int* n0 = (int*) malloc (ndet * sizeof(int));
     int* n180 = (int*) malloc (ndet * sizeof(int));
     int* n360 = (int*) malloc (ndet * sizeof(int));
+    long* x = (long*) malloc (ndet * sizeof(long));
+    long* y = (long*) malloc (ndet * sizeof(long));
+    long* z = (long*) malloc (ndet * sizeof(long));
     float* ycen2 = (float*) malloc (ndet * sizeof(float));
     for (i=0; i<ndet; i++) {
+        x[i] = 0;
+        y[i] = 0;
+        z[i] = 0;
         n0[i] = 0;
         n180[i] = 0;
         n360[i] = 0;
@@ -256,6 +264,7 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
     }
 
 
+    printf("starting the loop");
     // # Fill !..find bounding boxes and centroid for each objects
     for (i = 0; i<DimX; i++)
         for (j = 0; j<DimY; j++)
@@ -265,9 +274,12 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
                 if (this_label != 0) {
                     id = LabelToId[this_label]; //  #!..get object associated with pixel  (0-based)
                     if (id != -1) {
-                        xcen[id] += i;
-                        ycen[id] += j;
-                        zcen[id] += k;
+                        x[id] += i;
+                        y[id] += j;
+                        z[id] += k;
+                        // Debug
+                        //if (this_label == 32106)
+                        //    printf("bigone: z=%ld, k=%ld\n", z[id], k);
                         // Deal with longitude
                         if (j < DimY/2) {
                             ycen2[id] += j - 0.5 + DimY/2;  // Shifted by 180deg
@@ -302,18 +314,18 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
 
     // # !..finalize geometrical centroid calculation
     for (i = 0; i<ndet; i++) {
-        xcen[i] = xcen[i] / (float)NSpax[i];
+        xcen[i] = (float)x[i] / (float)NSpax[i];
         // Debuggin
-        if (i == 181)
-            printf("bigone: zcen=%f, NSpax=%ld\n", zcen[i], NSpax[i]);
-        zcen[i] = zcen[i] / (float)NSpax[i];
+        //if (i == 181)
+        //    printf("bigone: zcen=%f, NSpax=%ld\n", zcen[i], NSpax[i]);
+        zcen[i] = (float)z[i] / (float)NSpax[i];
         // Deal with longitude
         if (n0[i] > n180[i] && n360[i] > n180[i]) {
             ycen[i] = ycen2[i] / (float)NSpax[i] - DimY/2;
             if (ycen[i] < 0)
                 ycen[i] += DimY;
         } else {
-            ycen[i] = ycen[i] / (float)NSpax[i];
+            ycen[i] = (float)y[i] / (float)NSpax[i];
         }
         // TOOD -- FIX yboxmin too!
     }
@@ -321,7 +333,10 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
 
 }
 
-void max_areas(int *mask, int *areas, int max_label, int *shape) {
+// Calculate areas and NVox in physical units
+void calc_km(int *mask, int *areas, float *areas_km2, float *NVox_km, int max_label, int *shape, float cell_deg) {
+
+    // cell_deg -- Cell size in deg. Used to convert to km
 
     // Init
     int DimX = shape[0];
@@ -331,8 +346,24 @@ void max_areas(int *mask, int *areas, int max_label, int *shape) {
     long i,j,k, ii;
     long idx;
 
+    // Deal with km
+    float R_Earth = 6371.0;
+    float cell_km;
+    float lat;
+
+    // cell size in km on Equator
+    cell_km = cell_deg * 2 * PI * R_Earth / 360.;
+
+    // Area of a cell at a given lat 
+    float* cell_lat = (float*) malloc (DimX * sizeof(float));
+    for (i = 0; i<DimX; i++) {
+        lat = -89.875 + i*cell_deg;
+        cell_lat[i] = cell_km * cell_km * cos(PI * lat / 180.);
+    }
+
     //printf("Define sub_areas with max_label=%d\n", max_label);
     int* sub_areas = (int*) malloc (max_label * sizeof(int));
+    float* sub_areas_km2 = (float*) malloc (max_label * sizeof(float));
     //printf("Entering the main loops\n");
 
     // # Fill !..find bounding boxes and centroid for each objects
@@ -341,19 +372,25 @@ void max_areas(int *mask, int *areas, int max_label, int *shape) {
             for (j = 0; j<DimY; j++) {
                 if (i == 0 && j == 0) {
                     // Reset to 0
-                    for (ii = 0; ii <= max_label; ii++)
+                    for (ii = 0; ii <= max_label; ii++) {
                         sub_areas[ii] = 0;
+                        sub_areas_km2[ii] = 0.;
+                    }
                 }
                 idx = convert_indices(i,j,k, DimY, DimZ);
                 if (mask[idx] == 0)
                     continue;
+
                 // Increment
                 sub_areas[mask[idx]]++;
+                sub_areas_km2[mask[idx]] = sub_areas_km2[mask[idx]] + cell_lat[i];
+                NVox_km[mask[idx]] = NVox_km[mask[idx]] + cell_lat[i];
             }
-        //if (k % 1000 == 0)
-        //    printf("k = %ld\n", k);
+
         // Update
-        for (ii = 0; ii <= max_label; ii++)
+        for (ii = 0; ii <= max_label; ii++) {
             areas[ii] = fmax(areas[ii], sub_areas[ii]);
+            areas_km2[ii] = fmax(areas_km2[ii], sub_areas_km2[ii]);
+        }
     }
 }

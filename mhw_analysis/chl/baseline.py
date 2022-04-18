@@ -239,7 +239,7 @@ def chl_thresh(climate_db_file,
 
 if __name__ == '__main__':
     chl_thresh('testout.nc',chl_path=None,
-                     climatologyPeriod=(2011, 2011),
+                     climatologyPeriod=(1993, 1995),
                      cut_sky=False, 
                      data_in=None,
                      scale_file=None,

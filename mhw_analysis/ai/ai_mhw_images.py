@@ -19,6 +19,7 @@ import sys
 
 
 from mhw_analysis.cems import io as cems_io
+from mhw_analysis.ncep import io as ncep_io
 from oceanpy.sst import io as sst_io
 
 from datetime import timedelta
@@ -167,7 +168,20 @@ def get_mhw_tbl(mhw_file='../../Downloads/mhws_allsky_defaults.db'):
     return connection, mhw_tbl
 
 
-def load_z500_noaa(date, any_sst, path='../Z500', document='b.e11.B20TRC5CNBDRD.f09_g16.001.cam.h1.Z500.18500101-20051231-043.nc'):
+def load_cems_z500_noaa(date, any_sst, path='../Z500', document='b.e11.B20TRC5CNBDRD.f09_g16.001.cam.h1.Z500.18500101-20051231-043.nc'):
+    """
+    This is for CEMS
+
+    Args:
+        date:
+        any_sst:
+        path:
+        document:
+
+    Returns:
+
+    """
+
     # convert date to proper format
     ymd = date.year*10000 + date.month*100 + date.day
 
@@ -182,6 +196,29 @@ def load_z500_noaa(date, any_sst, path='../Z500', document='b.e11.B20TRC5CNBDRD.
 
     # get z500 regridded data
     z500_noaa = z500_cube.regrid(any_sst, iris.analysis.Linear())
+
+    return z500_noaa
+
+
+def load_ncep_z500_noaa(date, sst, full_z500_cube=None):
+    """
+    This is for CEMS
+
+    Args:
+        date:
+        any_sst:
+        path:
+        document:
+
+    Returns:
+
+    """
+    # get cube at dmy date
+    z500_cube = ncep_io.load_z500((date.day, date.month, date.year), cube=full_z500_cube)
+
+    # get z500 regridded data
+    import pdb; pdb.set_trace()
+    z500_noaa = z500_cube.regrid(sst, iris.analysis.Linear())
 
     return z500_noaa
 
