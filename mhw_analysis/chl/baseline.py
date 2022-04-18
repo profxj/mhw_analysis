@@ -90,13 +90,13 @@ def chl_thresh(climate_db_file,
     """
     # Path
     if chl_path is None:
-        chl_path =  os.path.join(os.getenv("DATA"),'chl_data')
+        chl_path =  os.path.join(os.getenv("CMEMS"),'CHL')
         chl_root = '*.nc'
 
     data_in=None
     if data_in is None:
         lat_coord, lon_coord, t, all_chl = chl_utils.load_chl(
-        chl_path, chl_root, climatologyPeriod)
+            chl_path, chl_root, climatologyPeriod)
     else:
         lat_coord, lon_coord, t, all_chl = data_in
 
@@ -104,6 +104,7 @@ def chl_thresh(climate_db_file,
 
     # Time -- especially DOY
     time_dict = climate.build_time_dict(t)
+    srt_t = np.argsort(t)
 
     # Scaling
     scls = np.zeros_like(t).astype(float)
@@ -228,7 +229,7 @@ def chl_thresh(climate_db_file,
         out_thresh[:, ilat, jlon] = thresh_climYear
 
         # Cubes
-        if (counter % 1000 == 0) or (counter == n_calc):
+        if (counter % 100000 == 0) or (counter == n_calc):
             print('count={} of {}.'.format(counter, n_calc))
             print("Saving...")
             climate.write_me(out_linear, out_seas, out_thresh, lat_coord, lon_coord, climate_db_file)
