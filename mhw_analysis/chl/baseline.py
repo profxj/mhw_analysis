@@ -239,8 +239,8 @@ def chl_thresh(climate_db_file,
     print("All done!!")
 
 if __name__ == '__main__':
-    chl_thresh('testout.nc',chl_path=None,
-                     climatologyPeriod=(1993, 1995),
+    chl_thresh('CHL_baseline_1993-2020.nc',chl_path=None,
+                     climatologyPeriod=(1993, 2020),
                      cut_sky=False, 
                      data_in=None,
                      scale_file=None,
@@ -249,3 +249,13 @@ if __name__ == '__main__':
                      interpolated=False,
                      detrend_local=None,
                      min_frac=0.9, n_calc=None, debug=False)
+    #chl_thresh('testout.nc',chl_path=None,
+    #                 climatologyPeriod=(1993, 1995),
+    #                 cut_sky=False, 
+    #                 data_in=None,
+    #                 scale_file=None,
+    #                 smoothPercentile = True,
+    #                 pctile=90.,
+    #                 interpolated=False,
+    #                 detrend_local=None,
+    #                 min_frac=0.9, n_calc=None, debug=False)
