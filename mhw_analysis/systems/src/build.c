@@ -91,7 +91,7 @@ void first_pass(char *cube, int *mask, int *shape, int *parent, int *category) {
 
     int pacific_lon0 = 1160; // Approximately 70W
     int pacific_lat0 = 360; // Approximately 0deg
-    int pacific_lon1a = 400; // Approximately 70W
+    int pacific_lon1a = 400; // Approximately 100E
     int pacific_lon1b = 1040; // Approximately 70W
     int pacific_lat1 = 624; // Approximately 0deg
 
