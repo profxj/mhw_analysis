@@ -153,7 +153,9 @@ def generate_mhw(mhwsys_file:str, sub=None,
 
     # Write systems as pandas in HDF
     tbl = utils.dict_to_pandas(obj_dictC, add_latlon=True,
-                               start_date=datetime.date(ymd_start[0], ymd_start[1], ymd_start[2]).toordinal())
+                               start_date=datetime.date(
+                                   ymd_start[0], ymd_start[1], 
+                                   ymd_start[2]).toordinal())
     tbl.to_csv(mhwsys_file)#, 'mhw_sys', mode='w')
     print("Wrote: {}".format(mhwsys_file))
 
@@ -324,8 +326,8 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 1:
         flg_main = 0
-        #flg_main += 2 ** 6  # Hobday MHWEs (1983-2012)
-        #flg_main += 2 ** 10  # 2019, de-trend
+        flg_main += 2 ** 6  # Hobday MHWEs (1983-2012)
+        flg_main += 2 ** 10  # 2019, de-trend
         flg_main += 2 ** 11  # 2019
     else:
         flg_main = sys.argv[1]

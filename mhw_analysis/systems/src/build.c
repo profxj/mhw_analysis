@@ -334,7 +334,7 @@ void final_pass(int ndet, int *mask, int *shape, float *xcen, float *ycen, float
 }
 
 // Calculate areas and NVox in physical units
-void calc_km(int *mask, int *areas, float *areas_km2, float *NVox_km, int max_label, int *shape, float cell_deg) {
+void calc_km(int *mask, int *areas, float *areas_km2, double *NVox_km, int max_label, int *shape, float cell_deg) {
 
     // cell_deg -- Cell size in deg. Used to convert to km
 
@@ -347,15 +347,15 @@ void calc_km(int *mask, int *areas, float *areas_km2, float *NVox_km, int max_la
     long idx;
 
     // Deal with km
-    float R_Earth = 6371.0;
-    float cell_km;
-    float lat;
+    double R_Earth = 6371.0;
+    double cell_km;
+    double lat;
 
     // cell size in km on Equator
     cell_km = cell_deg * 2 * PI * R_Earth / 360.;
 
     // Area of a cell at a given lat 
-    float* cell_lat = (float*) malloc (DimX * sizeof(float));
+    double* cell_lat = (double*) malloc (DimX * sizeof(double));
     for (i = 0; i<DimX; i++) {
         lat = -89.875 + i*cell_deg;
         cell_lat[i] = cell_km * cell_km * cos(PI * lat / 180.);

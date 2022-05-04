@@ -162,7 +162,7 @@ def final_pass(mask:np.ndarray, NVox:np.ndarray, ndet:int,
     # Objects
     obj_dict = dict(Id=np.zeros(ndet, dtype=np.int32),
                     NVox=np.zeros(ndet, dtype=np.int64),
-                    NVox_km=np.zeros(ndet, dtype=np.float32),
+                    NVox_km=np.zeros(ndet, dtype=np.float64),
                     category=np.zeros(ndet, dtype=np.int32), # Assoc=[0]*ndet,
                     mask_Id=np.zeros(ndet, dtype=np.int32),
                     max_area=np.zeros(ndet, dtype=np.int32),
@@ -192,7 +192,7 @@ calc_km_c.restype = None
 calc_km_c.argtypes = [np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                         np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
-                        np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+                        np.ctypeslib.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),
                         ctypes.c_int,
                         np.ctypeslib.ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),
                         ctypes.c_float,
@@ -214,7 +214,7 @@ def calc_km(mask:np.ndarray, obj_dict:dict, cell_deg=0.25):
     max_label = np.max(obj_dict['mask_Id'])
     areas = np.zeros(max_label+1, dtype=np.int32)
     areas_km2 = np.zeros(max_label+1, dtype=np.float32)
-    NVox_km = np.zeros(max_label+1, dtype=np.float32)
+    NVox_km = np.zeros(max_label+1, dtype=np.float64)
 
     # Run
     calc_km_c(mask, areas, areas_km2, NVox_km, max_label, 
