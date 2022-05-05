@@ -10,6 +10,9 @@ from mhw_analysis.systems import io as mhw_sys_io
 
 from IPython import embed
 
+mhw_sys_file=os.path.join(
+    os.getenv('MHW'), 'db', 'MHWS_2019.csv')
+
 # MHWS
 def mktab_mhws(outfile='tab_mhws.tex', sub=False):
 
@@ -17,10 +20,8 @@ def mktab_mhws(outfile='tab_mhws.tex', sub=False):
         outfile = 'tab_mhws_sub.tex'
 
     # Load
-    mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=mhw_sys_file)#, vary=vary)
-
-    # Read
-    df = pandas.read_csv('../Analysis/results_ocean_areas.csv')
+    mhw_sys = mhw_sys_io.load_systems(
+        mhw_sys_file=mhw_sys_file)
 
     # Open
     tbfil = open(outfile, 'w')
@@ -29,32 +30,41 @@ def mktab_mhws(outfile='tab_mhws.tex', sub=False):
     #tbfil.write('\\clearpage\n')
     tbfil.write('\\begin{table}[h]\n')
     tbfil.write('\\begin{center}\n')
-    tbfil.write('\\caption{Change point analysis}')
-    tbfil.write('\\label{tab:change}\n')
-    tbfil.write('\\begin{tabular}{ccccc}\n')
+    tbfil.write('\\caption{Marine Heat Wave Systems}')
+    tbfil.write('\\label{tab:mhws}\n')
+    tbfil.write('\\begin{tabular}{ccccccc}\n')
     tbfil.write('\\topline\n')
-    tbfil.write('Region & Slope & p-value & Changepoint	& p-value \\\\ \n')
+    tbfil.write('ID & Lat & Lon & Start & \\tdur & \\maxa & \\nvox \\\\ \n')
+    tbfil.write(' & (deg) & (deg) & & (days) & (\\aunit) & (days \\aunit)  \\\\ \n')
     #tbfil.write('(deg) & (deg) & ($\\arcsec$) & (mag) & classifier & & \\\\ \n')
     tbfil.write('\\midline\n')
     tbfil.write(' \n')
 
-    for ss in range(len(df)):
-        row = df.iloc[ss]
+    for ss in range(len(mhw_sys)):
+        if sub and ss > 30:
+            break
+        mhws = mhw_sys.iloc[ss]
 
-        # Region
-        sline = f'{row.Region}'
+        # ID
+        sline = f'{mhws.mask_Id}'
 
-        # Slope
-        sline += '& {:0.2f}'.format(row.Slope)
+        # Lat
+        sline += '& {:0.3f}'.format(mhws.lat)
 
-        # Slope p-value
-        sline += f'& {row["Slope p-value"]:0.2g}'
+        # Lon
+        sline += '& {:0.3f}'.format(mhws.lon)
 
-        # Change point
-        sline += f'& {row.Changepoint}'
+        # Start
+        sline += f'& {str(mhws.startdate)[0:10]}'
 
-        # Change point p-value
-        sline += f'& {row["Changepoint p-value"]:0.2g}'
+        # Duration
+        sline += f'& {mhws.duration.days}'
+
+        # Max Area
+        sline += f'& {mhws.max_area_km:0.3g}'
+
+        # NVox
+        sline += f'& {mhws.NVox_km:0.3g}'
 
         # Finish
         tbfil.write(sline + '\\\\ \n')
@@ -129,4 +139,5 @@ def mktab_change(outfile='tab_changepoint.tex'):
 # Command line execution
 if __name__ == '__main__':
 
-    mktab_change()
+    mktab_mhws(sub=True)
+    #mktab_change()
