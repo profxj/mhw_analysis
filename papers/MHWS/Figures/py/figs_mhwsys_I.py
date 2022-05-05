@@ -1647,7 +1647,8 @@ def fig_MHWS_histograms(outfile,
                             os.getenv('MHW'), 'db', 
                             'MHWS_2019.csv'),
                             show_insets=False,
-                        use_km=True):
+                        use_km=True,
+                        fix_ylim=None):
     # Load MHW Systems
     mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=mhw_sys_file)#, vary=vary)
     mhw_sys['duration'] = mhw_sys.zboxmax - mhw_sys.zboxmin + 1
@@ -1721,6 +1722,9 @@ def fig_MHWS_histograms(outfile,
         if ss <= 2:
             sns.histplot(mhw_sys, x=attr, bins=bins, log_scale=True, ax=ax,
                      color=clr)
+            # Fix?
+            if fix_ylim is not None:
+                ax.set_ylim(fix_ylim[0], fix_ylim[1])
         else:
             '''
             # Original -- Sum Nvox
@@ -2738,7 +2742,9 @@ def main(flg_fig):
     # MHWS Histograms
     if flg_fig & (2 ** 19):
         #fig_MHWS_histograms('fig_MHWS_histograms.png', use_km=False)
-        fig_MHWS_histograms('fig_MHWS_histograms_km.png')
+        fig_MHWS_histograms('fig_MHWS_histograms_km.png',
+                fix_ylim=(1., 5e5))
+        #fig_MHWS_histograms('fig_MHWS_histograms_km_orig.png')
         fig_MHWS_histograms('fig_MHWS_local_histograms_km.png',
             mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 
                             'MHWS_2019_local.csv'))
@@ -2809,7 +2815,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 16  # Intermediate gallery
         #flg_fig += 2 ** 17  # Extreme examples
         #flg_fig += 2 ** 18  # SST vs. T_thresh
-        #flg_fig += 2 ** 19  # Main Histogram figure
+        flg_fig += 2 ** 19  # Main Histogram figure
         #flg_fig += 2 ** 20  # Spatial in days
         #flg_fig += 2 ** 21  # Extreme evolution
         #flg_fig += 2 ** 22  # Comparing MHWE definitions/approaches (by year)

@@ -41,7 +41,7 @@ def mktab_mhws(outfile='tab_mhws.tex', sub=False):
     tbfil.write(' \n')
 
     for ss in range(len(mhw_sys)):
-        if sub and ss > 30:
+        if sub and ss > 25:
             break
         mhws = mhw_sys.iloc[ss]
 
