@@ -2809,7 +2809,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 16  # Intermediate gallery
         #flg_fig += 2 ** 17  # Extreme examples
         #flg_fig += 2 ** 18  # SST vs. T_thresh
-        #flg_fig += 2 ** 19  # Main Histogram figure
+        flg_fig += 2 ** 19  # Main Histogram figure (FIGURE 2)
         #flg_fig += 2 ** 20  # Spatial in days
         #flg_fig += 2 ** 21  # Extreme evolution
         #flg_fig += 2 ** 22  # Comparing MHWE definitions/approaches (by year)
