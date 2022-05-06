@@ -70,4 +70,8 @@ def chl_for_mhws_date(mask_Id:int, date:str,
 
 if __name__ == '__main__':
     # Test on the Blob!
-    chl, base, rc = chl_for_mhws_date(531, '2016-12-01')
+    chl, base, rc = chl_for_mhws_date(531, '2016-12-31')
+    embed(header='49 of analysis')
+    m=np.mean(rc)
+    print(m)
+
