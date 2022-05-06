@@ -61,7 +61,9 @@ def build_mhws_grid(outfile, mhw_sys_file=os.path.join(
     lon_max = isys.lon + fov/2.
 
     # T thresh
-    climate_file='/data/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/NOAA_OI_detrend_local_climate_1983-2019.nc'
+    #climate_file='/data/Projects/Oceanography/data/SST/NOAA-OI-SST-V2/NOAA_OI_detrend_local_climate_1983-2019.nc'
+    climate_file= os.path.join(os.getenv('NOAA_OI'), 
+                               'NOAA_OI_climate_1983-2019.nc')
     ncep_climate = xarray.open_dataset(climate_file)
 
     toffs = np.arange(isys.duration.days)
@@ -89,7 +91,7 @@ def build_mhws_grid(outfile, mhw_sys_file=os.path.join(
 
         # Threshold
         doy = grab_doy(off_date)
-        Tdoy = ncep_climate.threshT.sel(doy=doy, 
+        Tdoy = ncep_climate.threshT.sel(day=doy-1, 
                                         lon=slice(lon_min, lon_max), 
                                         lat=slice(lat_min, lat_max))
         Tdoy_img = Tdoy.data[:]
@@ -116,7 +118,11 @@ def build_mhws_grid(outfile, mhw_sys_file=os.path.join(
 
 # Command line execution
 if __name__ == '__main__':
-    build_mhws_grid('mhws_for_bruno_2019_1458524.h5', 
-                    mask_Id=1458524, # 2019
+    build_mhws_grid('mhws_for_bruno_2019_1474962.h5', 
+                    mask_Id=1474962, # 2019
                     vary=False,
                     find=False)
+    #build_mhws_grid('mhws_for_bruno_2019_1458524.h5', 
+    #                mask_Id=1458524, # 2019
+    #                vary=False,
+    #                find=False)

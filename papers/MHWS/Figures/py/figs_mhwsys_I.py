@@ -1166,7 +1166,8 @@ def fig_example_mhws(outfile, mhw_sys_file=os.path.join(
                         vary=False,
                      #mask_Id=1575120, 
                      make_mayavi=False,
-                     mask_Id=1458524): # 2019
+                     mask_Id=1474962): # 2019
+                     #mask_Id=1458524): # 2019
                      #mask_Id=544711, # 2019
                      #mask_Id=1475052): # 2019, local
     #1489500):
@@ -1179,11 +1180,12 @@ def fig_example_mhws(outfile, mhw_sys_file=os.path.join(
 
     # Find a sys
     if False:
-        gd_dur = mhw_sys.duration > 120.
+        gd_dur = mhw_sys.ndays > 120.
         gd_lat = (mhw_sys.lat > 0.) & (mhw_sys.lat < 50.)
         gd_lon = (mhw_sys.lon > 190.) & (mhw_sys.lon < 250.)
         all_gd = gd_dur & gd_lat & gd_lon
-        mhw_sys[all_gd]
+        print(mhw_sys[all_gd][['Id', 'mask_Id', 'lat', 'lon', 'ndays', 'startdate']])
+        embed(header='1187 of figs')
     idx = np.where(mhw_sys.mask_Id == mask_Id)[0][0]
     isys = mhw_sys.iloc[idx]
     sys_startdate = isys.datetime - datetime.timedelta(days=int(isys.zcen)-int(isys.zboxmin))
@@ -1206,7 +1208,8 @@ def fig_example_mhws(outfile, mhw_sys_file=os.path.join(
     gs = gridspec.GridSpec(3,2)
 
     #toffs = [140, 40, 10]  # days
-    toffs = [10, 40, 200]  # days
+    #toffs = [10, 40, 200]  # days
+    toffs = [5, 10, 50]  # days
 
     for ss, toff in enumerate(toffs):
         ax = plt.subplot(gs[ss,0])#, projection=proj)
@@ -2812,7 +2815,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 8  # Climate
         #flg_fig += 2 ** 9  # max area vs. NSpax
         #flg_fig += 2 ** 10  # Location location location
-        #flg_fig += 2 ** 11  # Example MHWS
+        flg_fig += 2 ** 11  # Example MHWS
         #flg_fig += 2 ** 12  # Nsys vs. year
         #flg_fig += 2 ** 13  # Spatial location of Systems
         #flg_fig += 2 ** 14  # Tthresh, T90, T95 vs DOY
@@ -2821,7 +2824,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 17  # Extreme examples
         #flg_fig += 2 ** 18  # SST vs. T_thresh
         #flg_fig += 2 ** 19  # Main Histogram figure
-        flg_fig += 2 ** 20  # Spatial in days
+        #flg_fig += 2 ** 20  # Spatial in days
         #flg_fig += 2 ** 21  # Extreme evolution
         #flg_fig += 2 ** 22  # Comparing MHWE definitions/approaches (by year)
         #flg_fig += 2 ** 23  # MHWE spatial
