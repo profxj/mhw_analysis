@@ -1,9 +1,13 @@
 import os
 import xarray
 import numpy as np
+
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 
 from datetime import datetime
+
+from mhw_analysis.systems import io as mhw_sys_io
 
 import pandas
 
@@ -41,7 +45,7 @@ def chl_for_mhws_date(mask_Id:int, date:str,
     bl=xarray.open_dataset(baseline_file)
 
     # Grab DOY
-    doy = (pd_datetime - datetime(pd_datetime.year, 1, 1)).days
+    doy = (pd_datetime - datetime(pd_datetime.year, 1, 1)).days + 1
     baseline = bl.seasonalT.sel(doy=[doy])
 
     # Read mask
@@ -64,14 +68,98 @@ def chl_for_mhws_date(mask_Id:int, date:str,
     # Remove NaNs
     good_rc = np.isfinite(rc)
     rc = rc[good_rc]
+    ac=(mhws_chl-mhws_base)[good_rc]
 
     # Return
-    return mhws_chl, mhws_base, rc
+    return mhws_chl, mhws_base, rc, ac
+
+def mhws_time_series_rc(mask_Id, tstep:int=50,
+                        mhw_sys_file:str=os.path.join(
+                            os.getenv('MHW'), 'db', 
+                            'MHWS_2019.csv'),
+                        plot=False):
+
+    # Grab the MHWS
+    mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=mhw_sys_file)#, vary=vary)
+    idx = np.where(mhw_sys.mask_Id == mask_Id)[0][0]
+    mhws = mhw_sys.iloc[idx]
+
+    # Loop on times
+    ioff = 1
+    itime = mhws.startdate + pandas.Timedelta(f'{ioff}days')
+    mean_rcs = []
+    mean_ac = []
+    n_rcs = []
+    offsets = []
+
+    while (itime < mhws.enddate):
+        str_date = f'{itime.year}-{itime.month}-{itime.day}'
+        chl, base, rc, ac = chl_for_mhws_date(mask_Id, str_date)
+        # More analysis
+        # Save
+        n_rcs.append(rc.size)
+        mean_rcs.append(np.mean(rc))
+        mean_ac.append(np.mean(ac))
+        offsets.append(ioff)
+
+        # Offset in time
+        ioff += tstep
+        itime = mhws.startdate + pandas.Timedelta(f'{ioff}days')
+        print(itime)
+
+    # Plot
+    if plot:
+        plt.clf()
+        gs = gridspec.GridSpec(3,1)
+
+        # Mean rc
+        ax_mean = plt.subplot(gs[0])
+        ax_mean.plot(offsets, mean_rcs)
+        #
+        ax_mean.axhline(0., color='k', ls='--')
+        ax_mean.set_ylabel('Mean rc')
+
+        # Mean ac
+        ax_meana = plt.subplot(gs[1])
+        ax_meana.plot(offsets, mean_ac)
+        #
+        #ax_meana.axhline(0., color='k', ls='--')
+        ax_meana.set_ylabel('Mean ac')
+
+        # Number
+        ax_n = plt.subplot(gs[-1])
+        ax_n.plot(offsets, n_rcs, color='g')
+        ax_n.set_xlabel('Offset from start (days)')
+        ax_n.set_ylabel('Number of cells')
+        plt.show()
+
+    embed(header='136 of analysis')
+
+
+def mhws_histogram():
+    pass
+
 
 if __name__ == '__main__':
-    # Test on the Blob!
-    chl, base, rc = chl_for_mhws_date(531, '2016-12-31')
+
+    ## ############ 
+    # Test time series 
+    ## ############ 
+
+    # #1
+    #mhws_time_series_rc(58877, plot=True)
+
+    # #3
+    mhws_time_series_rc(36016, plot=True)
+
+    # Blob
+    #mhws_time_series_rc(531, plot=True)
+
+    '''
+    # Test rc on the Blob!
+    chl, base, rc, ac = chl_for_mhws_date(531, '2016-12-31')
     embed(header='49 of analysis')
     m=np.mean(rc)
     print(m)
+    '''
 

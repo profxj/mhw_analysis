@@ -1253,7 +1253,7 @@ def fig_example_mhws(outfile, mhw_sys_file=os.path.join(
 
         # View
         #ax.set_xlabel('Year')
-        #ax.set_ylabel(r'Median $\Delta$SST (K)')
+        #ax.set_ylabel(r'Median $\melta$SST (K)')
     #ax_tot.set_yscale('log')
     #ax_tot.set_ylim(10., 1e5)
     #ax_tot.minorticks_on()
