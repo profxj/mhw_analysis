@@ -13,6 +13,7 @@ import pandas
 
 from IPython import embed
 from dateutil.relativedelta import relativedelta
+import scipy.stats
 
 
 def chl_for_mhws_date(mask_Id:int, date:str,
@@ -197,6 +198,17 @@ def mhws_time_series_rc(mask_Id, tstep:int=50,
     print(z2_score_ac)
     print(z1_score_rc)
     print(z1_score_ac)
+
+    z2_rc_p_value = scipy.stats.norm.sf(abs(z2_score_rc))*2
+    z2_ac_p_value = scipy.stats.norm.sf(abs(z2_score_ac))*2
+    z1_rc_p_value = scipy.stats.norm.sf(abs(z1_score_rc))*2
+    z1_ac_p_value = scipy.stats.norm.sf(abs(z1_score_ac))*2
+
+    print(z2_rc_p_value)
+    print(z2_ac_p_value)
+    print(z1_rc_p_value)
+    print(z1_ac_p_value)
+
 
     # Plot control
     if plot:
