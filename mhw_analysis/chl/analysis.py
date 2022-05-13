@@ -14,7 +14,7 @@ import pandas
 from IPython import embed
 from dateutil.relativedelta import relativedelta
 import scipy.stats
-
+from statsmodels.stats.weightstats import ztest as ztest
 
 def chl_for_mhws_date(mask_Id:int, date:str,
                          cut_mask_tuple:tuple=(-80.2, 90),year_offset=0):
@@ -163,11 +163,7 @@ def mhws_time_series_rc(mask_Id, tstep:int=50,
         rc_std.append(np.std(rc))
         ac_std.append(np.std(ac))
         
-        #Analysis
-        #z_score_rc=((np.array(mean_rcs)-np.array(mean_rcs_control))/(np.sqrt(((np.array(np.square(rc_std)))/np.array(n_rcs))+((np.array(np.square(rc_std_control)))/np.array(n_rcs_control)))))
-        #z_score_ac=((np.array(mean_ac)-np.array(mean_ac_control))/(np.sqrt(((np.array(np.square(ac_std)))/np.array(n_acs))+((np.array(np.square(ac_std_control)))/np.array(n_acs_control)))))
-        #print(z_score_rc)
-        #print(z_score_ac)
+    
         # Offset in time
         ioff += tstep
         itime = mhws.startdate + pandas.Timedelta(f'{ioff}days')
@@ -180,7 +176,7 @@ def mhws_time_series_rc(mask_Id, tstep:int=50,
     final_acc_n=np.size(mean_ac_control)
     final_rcc_std=np.std(mean_rcs_control)
     final_acc_std=np.std(mean_ac_control)
-
+    
     final_rc_mean=np.mean(mean_rcs)
     final_ac_mean=np.mean(mean_ac)
     final_rc_n=np.size(mean_rcs)
@@ -188,27 +184,38 @@ def mhws_time_series_rc(mask_Id, tstep:int=50,
     final_rc_std=np.std(mean_rcs)
     final_ac_std=np.std(mean_ac)
    
+    #sp_rc=(np.sqrt((((final_rc_n-1)*np.square(final_rc_std))+((final_rcc_n-1)*np.square(final_rcc_std)))/((final_rc_n+final_rcc_n)/2)))
+    #sp_ac=(np.sqrt((((final_ac_n-1)*np.square(final_ac_std))+((final_acc_n-1)*np.square(final_acc_std)))/((final_ac_n+final_acc_n)/2)))
 
+    #if n is greater than 30
     z2_score_rc=((final_rc_mean-final_rcc_mean)/((np.sqrt((np.square(final_rc_std))/final_rc_n))+((np.square(final_rcc_std))/final_rcc_n)))
     z2_score_ac=((final_ac_mean-final_acc_mean)/((np.sqrt((np.square(final_ac_std))/final_ac_n))+((np.square(final_acc_std))/final_acc_n)))
-    z1_score_rc=((final_rc_mean-final_rcc_mean)/(np.sqrt((np.square(final_rc_std))/final_rc_n)))
-    z1_score_ac=((final_ac_mean-final_acc_mean)/(np.sqrt((np.square(final_ac_std))/final_ac_n)))
+    
 
     print(z2_score_rc)
     print(z2_score_ac)
-    print(z1_score_rc)
-    print(z1_score_ac)
+  
 
     z2_rc_p_value = scipy.stats.norm.sf(abs(z2_score_rc))*2
     z2_ac_p_value = scipy.stats.norm.sf(abs(z2_score_ac))*2
-    z1_rc_p_value = scipy.stats.norm.sf(abs(z1_score_rc))*2
-    z1_ac_p_value = scipy.stats.norm.sf(abs(z1_score_ac))*2
+   
 
     print(z2_rc_p_value)
     print(z2_ac_p_value)
-    print(z1_rc_p_value)
-    print(z1_ac_p_value)
+   
 
+    #if n is equal to or less than 30
+    #t2_score_rc=((final_rc_mean-final_rcc_mean)/((np.sqrt((np.square(sp_rc))/final_rc_n))+((np.square(sp_rc))/final_rcc_n)))
+    #t2_score_ac=((final_ac_mean-final_acc_mean)/((np.sqrt((np.square(sp_ac))/final_ac_n))+((np.square(sp_ac))/final_acc_n)))
+    
+    #print(t2_score_rc)
+    #print(t2_score_ac)
+
+    #t2_rc_p_value = scipy.stats.norm.sf(abs(t2_score_rc))*2
+    #t2_ac_p_value = scipy.stats.norm.sf(abs(t2_score_ac))*2
+
+    #print(t2_rc_p_value)
+    #print(t2_ac_p_value)
 
     # Plot control
     if plot:
@@ -285,7 +292,7 @@ if __name__ == '__main__':
     #mhws_time_series_rc(58877, plot=True)
 
     # #3
-    mhws_time_series_rc(531, plot=True)
+    mhws_time_series_rc(1358488, plot=True)
    
     
 
