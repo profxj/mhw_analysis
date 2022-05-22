@@ -17,14 +17,16 @@ import defs
 def count_days_by_year(mhw_sys_file, mask_file,
                        outfile='extreme_days_by_year.nc',
                        use_km=True,
-                       mhw_type='extreme', debug=False):
+                       mhw_type=defs.classc, debug=False):
     # Load systems
     mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=mhw_sys_file)#, vary=vary)
 
     if use_km:
         type_dict = defs.type_dict_km
+        NVox = mhw_sys.NVox_km
     else:
         type_dict = defs.type_dict
+        NVox = mhw_sys.NVox
 
     # Prep
     if debug:
@@ -45,14 +47,15 @@ def count_days_by_year(mhw_sys_file, mask_file,
     print("Cut down systems..")
     sys_flag = np.zeros(mhw_sys.mask_Id.max()+1, dtype=int)
     NVox_mxn = type_dict[mhw_type]
-    cut = (mhw_sys.NVox >= NVox_mxn[0]) & (mhw_sys.NVox <= NVox_mxn[1])
+    cut = (NVox >= NVox_mxn[0]) & (NVox <= NVox_mxn[1])
     cut_sys = mhw_sys[cut]
     sys_flag[cut_sys.mask_Id] = 1
 
     # Run it
     print("Counting the days...")
     days_by_year = analysisc.days_in_systems_by_year(
-                    mask.data, sys_flag.astype(np.int32),
+                    mask.data, 
+                    sys_flag.astype(np.int32),
                     rel_year.astype(np.int32))
     
     # Write
@@ -90,22 +93,23 @@ def main(flg_main):
 
     # 2019
     if flg_main & (2 ** 2):
-        outfile='extreme_km_dy_by_yr_2019.nc'
         mhw_sys_file=os.path.join(os.getenv('MHW'), 
                                   'db', 'MHWS_2019.csv')
         mask_file=os.path.join(os.getenv('MHW'), 
                                'db', 'MHWS_2019_mask.nc')
+        # Severe
+        outfile=f'{defs.classc}_km_dy_by_yr_2019.nc'
         count_days_by_year(mhw_sys_file, mask_file, 
                            outfile=outfile, use_km=True)
 
-        outfile='normal_km_dy_by_yr_2019.nc'
+        outfile=f'{defs.classb}_km_dy_by_yr_2019.nc'
         count_days_by_year(mhw_sys_file, mask_file, 
                            outfile=outfile, 
-                           mhw_type='normal', use_km=True)
-        outfile='random_km_dy_by_yr_2019.nc'
+                           mhw_type=defs.classb, use_km=True)
+        outfile=f'{defs.classa}_km_dy_by_yr_2019.nc'
         count_days_by_year(mhw_sys_file, mask_file, 
                            outfile=outfile, 
-                           mhw_type='random', use_km=True)
+                           mhw_type=defs.classa, use_km=True)
 
 # Command line execution
 if __name__ == '__main__':

@@ -401,6 +401,7 @@ def fig_NSys_by_year(outfile, mhw_sys_file=None, lbl=None, vary=False):
 
 def fig_Nvox_by_year(outfile, normalize=True, save=True,
             sys_file='MHWS_2019.csv', 
+            legend_loc='upper left',
             label = '1983-2019 Climatology',
                      use_km=True):
     """
@@ -505,7 +506,7 @@ def fig_Nvox_by_year(outfile, normalize=True, save=True,
     # Font
     set_fontsize(ax_tot, 17.)
 
-    legend = plt.legend(loc='upper left', scatterpoints=1, borderpad=0.3,
+    legend = plt.legend(loc=legend_loc, scatterpoints=1, borderpad=0.3,
                     handletextpad=0.3, fontsize='x-large', numpoints=1)
     
     # Save?
@@ -780,8 +781,8 @@ def fig_maxarea_hist(outfile, mhw_sys_file=None, vary=True):
     print('Wrote {:s}'.format(outfile))
 
 
-def fig_dur_vs_NVox(outfile, mhw_sys_file=None, vary=True,
-                    xcorner=False, seab=False):
+def fig_dur_vs_NVox(outfile, mhw_sys_file=None, vary=False,
+                    xcorner=False, seab=False, use_km=True):
     """
 
     Args:
@@ -796,14 +797,20 @@ def fig_dur_vs_NVox(outfile, mhw_sys_file=None, vary=True,
 
     # A few famous ones
     pacific_blob = dict(lon=360.-145, lat=48., lbl='Pacific Blob', marker='o',
-                        date=datetime.date(2014,1,15), mask_Id=32106)
+                        date=datetime.date(2014,1,15), 
+                        mask_Id=None)
     NW_atlantic = dict(lon=360.-70, lat=40., lbl='Northwest Atlantic', marker='*',
-                        date=datetime.date(2011,12,15), mask_Id=723727)
-    NAustralia = dict(lon=140., lat=-15., lbl='North Australia', marker='x',
-                       date=datetime.date(2016,2,1), mask_Id=93602)
-    famous = [pacific_blob, NW_atlantic, NAustralia]
+                        date=datetime.date(2011,12,15), 
+                        mask_Id=None)
+    WAustralia = dict(lon=112., lat=-30., lbl='Western Australia', marker='x',
+                       date=datetime.date(2011,5,20), 
+                       mask_Id=None)
+    famous = [pacific_blob, NW_atlantic, WAustralia]
 
     # Load MHW Systems
+    mask_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019_mask.nc')
+    if mhw_sys_file is None:
+        mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019.csv')
     mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=mhw_sys_file, vary=vary)
     mhw_sys['duration'] = mhw_sys.zboxmax - mhw_sys.zboxmin + 1
 
@@ -814,10 +821,20 @@ def fig_dur_vs_NVox(outfile, mhw_sys_file=None, vary=True,
     #bad_sys = (mhw_sys.mask_Id == 32106)
 
     # Find the famous ones
+    print ("Finding the famous ones")
     iloc_famous = []
     for ifamous in famous:
         xlat = int((ifamous['lat'] + 89.875) / 0.25)
         ylon = int((ifamous['lon'] + 0.125) / 0.25)
+        mask = mhw_sys_io.load_mask_from_dates(
+            (ifamous['date'].year, ifamous['date'].month, ifamous['date'].day),
+            (ifamous['date'].year, ifamous['date'].month, ifamous['date'].day+1),
+            mhw_mask_file=mask_file)
+        # Grab the ID
+        mhw_ID = mask.data[...,0][xlat,ylon]
+        if mhw_ID == 0:
+            embed(header='835 of figs')
+        '''
         zt = ifamous['date'].toordinal() - datetime.date(1982,1,1).toordinal()
         #
         gd_lat = (mhw_sys.xboxmin <= xlat) & (xlat <= mhw_sys.xboxmax)
@@ -828,19 +845,20 @@ def fig_dur_vs_NVox(outfile, mhw_sys_file=None, vary=True,
         else:
             gd_mask = np.ones(gd_lat.size, dtype=bool)
         all_gd = gd_lon & gd_lat & gd_t & gd_mask #& np.logical_not(bad_sys)
-        #
-        if np.sum(all_gd) > 1:
-            print("Multiple for {}".format(ifamous))
-            embed(header='667')
-        elif np.sum(all_gd) == 0:
-            print("None for {}".format(ifamous))
-
-        iloc_famous.append(np.where(all_gd)[0][0])
+        '''
+        iloc = np.where(mhw_sys.mask_Id == mhw_ID)[0][0]
+        iloc_famous.append(iloc)
 
     # Bins
-    bins_NVox = 1. + np.arange(32)*0.25
-    if np.log10(np.max(mhw_sys.NVox.values)+1) > bins_NVox[-1]:
-        bins_NVox[-1] = np.log10(np.max(mhw_sys.NVox.values)+1)  # Extend to incluce the last one
+    if use_km:
+        NVox = mhw_sys.NVox_km
+        bins_NVox = 1. + np.arange(35)*0.3
+    else:
+        NVox = mhw_sys.NVox
+        bins_NVox = 1. + np.arange(32)*0.25
+    # Fuss with max
+    if np.log10(np.max(NVox.values)+1) > bins_NVox[-1]:
+        bins_NVox[-1] = np.log10(np.max(NVox.values)+1)  # Extend to incluce the last one
     bins_dur = np.linspace(0.5, 4.0, 35)
     #if np.max(mhw_sys.duration.values) > bins_dur[-1]:
     #    bins_dur[-1] = np.log10(np.max(mhw_sys.duration.values)+1)
@@ -854,7 +872,7 @@ def fig_dur_vs_NVox(outfile, mhw_sys_file=None, vary=True,
 
     if xcorner:
         # 2D hist
-        hist2d(np.log10(mhw_sys.NVox.values), np.log10(mhw_sys.duration.values),
+        hist2d(np.log10(NVox.values), np.log10(mhw_sys.duration.values),
                bins=[bins_NVox, bins_dur], ax=ax_tot, color='b')
     elif seab:
         sns.histplot(data=mhw_sys, x='duration', y='NVox',
@@ -862,9 +880,10 @@ def fig_dur_vs_NVox(outfile, mhw_sys_file=None, vary=True,
                      cbar=True, pthresh=.05, pmax=.9)
     else:
         counts, xedges, yedges = np.histogram2d(np.log10(mhw_sys.duration.values),
-            np.log10(mhw_sys.NVox.values), bins=(bins_dur, bins_NVox))
+            np.log10(NVox.values), bins=(bins_dur, bins_NVox))
         cm = plt.get_cmap('Blues')
-        mplt = ax_tot.pcolormesh(xedges,yedges,np.log10(counts.transpose()), cmap=cm)
+        mplt = ax_tot.pcolormesh(xedges,yedges,
+                                 np.log10(counts.transpose()), cmap=cm)
         cb = plt.colorbar(mplt, fraction=0.030, pad=0.04)
         cb.ax.tick_params(labelsize=13.)
         cb.set_label(r'log10 Counts', fontsize=20.)
@@ -872,7 +891,13 @@ def fig_dur_vs_NVox(outfile, mhw_sys_file=None, vary=True,
     # Add famous ones
     for kk, iloc in enumerate(iloc_famous):
         imhw_sys = mhw_sys.iloc[iloc]
-        ax_tot.plot(np.log10([imhw_sys.duration]), np.log10([imhw_sys.NVox]), color='r',
+        if use_km:
+            iNVox = imhw_sys.NVox_km
+        else:
+            iNVox = imhw_sys.NVox
+        ax_tot.plot(np.log10([imhw_sys.duration]), 
+                    np.log10([iNVox]), 
+                    color='r',
                        label=famous[kk]['lbl'], marker=famous[kk]['marker'],
                     linestyle='None')
 
@@ -2725,7 +2750,7 @@ def main(flg_fig):
         fig_Nvox_by_year('fig_Nvox_by_year_local_km.png',
             sys_file='MHWS_2019_local.csv',
             label = '1983-2019 Detrended',
-                         use_km=True)
+            legend_loc='upper right', use_km=True)
 
     # Gallery of intermediate events
     if flg_fig & (2 ** 16):
@@ -2757,7 +2782,8 @@ def main(flg_fig):
         #fig_MHWS_histograms('fig_MHWS_histograms_km_orig.png')
         fig_MHWS_histograms('fig_MHWS_local_histograms_km.png',
             mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 
-                            'MHWS_2019_local.csv'))
+                            'MHWS_2019_local.csv'), 
+            fix_ylim=(1., 5e5))
 
     # Days in a given system vs. location
     if flg_fig & (2 ** 20):
@@ -2813,7 +2839,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 3  # NVox histograms
         #flg_fig += 2 ** 4  # Duration histograms
         #flg_fig += 2 ** 5  # max area histograms
-        #flg_fig += 2 ** 6  # duration vs. NVox
+        #flg_fig += 2 ** 6  # duration vs. NVox -- Fig 7
         #flg_fig += 2 ** 7  # MHW Events (time) -- THIS CAN BE VERY SLOW
         #flg_fig += 2 ** 8  # Climate
         #flg_fig += 2 ** 9  # max area vs. NSpax
@@ -2822,16 +2848,16 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 12  # Nsys vs. year
         #flg_fig += 2 ** 13  # Spatial location of Systems
         #flg_fig += 2 ** 14  # Tthresh, T90, T95 vs DOY
-        #flg_fig += 2 ** 15  # Nvox vs. year by method -- Figure 4
+        flg_fig += 2 ** 15  # Nvox vs. year by method -- Figure 4
         #flg_fig += 2 ** 16  # Intermediate gallery
         #flg_fig += 2 ** 17  # Extreme examples
         #flg_fig += 2 ** 18  # SST vs. T_thresh
-        #flg_fig += 2 ** 19  # Main Histogram figure
+        #flg_fig += 2 ** 19  # Main Histogram figure -- Figure 2
         #flg_fig += 2 ** 20  # Spatial in days
         #flg_fig += 2 ** 21  # Extreme evolution
         #flg_fig += 2 ** 22  # Comparing MHWE definitions/approaches (by year)
         #flg_fig += 2 ** 23  # MHWE spatial
-        flg_fig += 2 ** 24  # de-trend global view -- Fig 6
+        #flg_fig += 2 ** 24  # de-trend global view -- Fig 6
         #flg_fig += 2 ** 25  # Cumulative NVox
     else:
         flg_fig = sys.argv[1]
