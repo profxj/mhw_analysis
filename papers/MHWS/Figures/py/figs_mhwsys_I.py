@@ -461,8 +461,8 @@ def fig_Nvox_by_year(outfile, normalize=True, save=True,
         norm=1.
 
     #embed(header='3432 of figs_mhwsys')
-    fig = plt.figure(figsize=(8,12))
-    gs = gridspec.GridSpec(2,1)
+    fig = plt.figure(figsize=(8,6))
+    gs = gridspec.GridSpec(1,1)
     #fig = plt.figure(figsize=(12, 8))
     #gs = gridspec.GridSpec(2,2)
 
@@ -470,7 +470,8 @@ def fig_Nvox_by_year(outfile, normalize=True, save=True,
     mhw_sys = mhw_sys_io.load_systems(
         mhw_sys_file=os.path.join(mhw_path, sys_file))
     # Grab Nvox by year
-    pd_nvox = analy_utils.Nvox_by_year(mhw_sys, use_km=use_km)
+    pd_nvox = analy_utils.Nvox_by_year(mhw_sys, 
+                                       use_km=use_km)
 
     # Total NSpax
     ax_tot = plt.subplot(gs[0])
@@ -484,14 +485,15 @@ def fig_Nvox_by_year(outfile, normalize=True, save=True,
     #ax_tot.scatter(pd_nvox.index, pd_nvox.extreme, color='r', label='Extreme')
 
     if normalize:
-        ax_tot.set_ylabel(r'Normalized $N_{\rm vox}$ per year')
+        #ax_tot.set_ylabel(r'Normalized $N_{\rm vox}$ per year')
+        ax_tot.set_ylabel(r'$f_{\rm MHW}$')
     else:
         ax_tot.set_ylabel(r'$N_{\rm vox}$ per year')
     #ax_tot.set_yscale('log')
     ax_tot.set_xlabel('Year')
     #ax_tot.set_ylim(5e5, 5e7)
     if use_km:
-        ax_tot.set_ylim(0, 0.1)
+        ax_tot.set_ylim(0, 0.14)
     else:
         ax_tot.set_ylim(0, 3.5e7/norm)
     ax_tot.xaxis.set_major_locator(plt.MultipleLocator(5.))
@@ -503,7 +505,7 @@ def fig_Nvox_by_year(outfile, normalize=True, save=True,
     # Font
     set_fontsize(ax_tot, 17.)
 
-    legend = plt.legend(loc='upper right', scatterpoints=1, borderpad=0.3,
+    legend = plt.legend(loc='upper left', scatterpoints=1, borderpad=0.3,
                     handletextpad=0.3, fontsize='x-large', numpoints=1)
     
     # Save?
@@ -2717,7 +2719,8 @@ def main(flg_fig):
                                                'fig_Nvox_by_year_km.png']):
             if not use:
                 continue                                   
-            fig_Nvox_by_year(outfile, use_km=use)
+            fig_Nvox_by_year(outfile, use_km=use,
+                             label=None)
         # Local
         fig_Nvox_by_year('fig_Nvox_by_year_local_km.png',
             sys_file='MHWS_2019_local.csv',
@@ -2815,11 +2818,11 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 8  # Climate
         #flg_fig += 2 ** 9  # max area vs. NSpax
         #flg_fig += 2 ** 10  # Location location location
-        flg_fig += 2 ** 11  # Example MHWS
+        #flg_fig += 2 ** 11  # Example MHWS
         #flg_fig += 2 ** 12  # Nsys vs. year
         #flg_fig += 2 ** 13  # Spatial location of Systems
         #flg_fig += 2 ** 14  # Tthresh, T90, T95 vs DOY
-        #flg_fig += 2 ** 15  # Nvox vs. year by method
+        #flg_fig += 2 ** 15  # Nvox vs. year by method -- Figure 4
         #flg_fig += 2 ** 16  # Intermediate gallery
         #flg_fig += 2 ** 17  # Extreme examples
         #flg_fig += 2 ** 18  # SST vs. T_thresh
@@ -2828,7 +2831,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 21  # Extreme evolution
         #flg_fig += 2 ** 22  # Comparing MHWE definitions/approaches (by year)
         #flg_fig += 2 ** 23  # MHWE spatial
-        #flg_fig += 2 ** 24  # de-trend global view
+        flg_fig += 2 ** 24  # de-trend global view -- Fig 6
         #flg_fig += 2 ** 25  # Cumulative NVox
     else:
         flg_fig = sys.argv[1]
