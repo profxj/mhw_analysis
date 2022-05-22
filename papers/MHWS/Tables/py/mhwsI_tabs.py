@@ -113,7 +113,8 @@ def mktab_change(outfile='tab_changepoint.tex'):
         sline += f'& {row["Slope p-value"]:0.2g}'
 
         # Change point
-        sline += f'& {row.Changepoint}'
+        year = 1982 + row.Changepoint
+        sline += f'& {year}'
 
         # Change point p-value
         sline += f'& {row["Changepoint p-value"]:0.2g}'
@@ -139,5 +140,5 @@ def mktab_change(outfile='tab_changepoint.tex'):
 # Command line execution
 if __name__ == '__main__':
 
-    mktab_mhws(sub=True)
-    #mktab_change()
+    #mktab_mhws(sub=True)
+    mktab_change()

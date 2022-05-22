@@ -91,15 +91,20 @@ def main(flg_main):
     # 2019
     if flg_main & (2 ** 2):
         outfile='extreme_km_dy_by_yr_2019.nc'
-        mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019.csv')
-        mask_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019_mask.nc')
-        count_days_by_year(mhw_sys_file, mask_file, outfile=outfile, use_km=True)
+        mhw_sys_file=os.path.join(os.getenv('MHW'), 
+                                  'db', 'MHWS_2019.csv')
+        mask_file=os.path.join(os.getenv('MHW'), 
+                               'db', 'MHWS_2019_mask.nc')
+        count_days_by_year(mhw_sys_file, mask_file, 
+                           outfile=outfile, use_km=True)
 
         outfile='normal_km_dy_by_yr_2019.nc'
-        count_days_by_year(mhw_sys_file, mask_file, outfile=outfile, 
+        count_days_by_year(mhw_sys_file, mask_file, 
+                           outfile=outfile, 
                            mhw_type='normal', use_km=True)
         outfile='random_km_dy_by_yr_2019.nc'
-        count_days_by_year(mhw_sys_file, mask_file, outfile=outfile, 
+        count_days_by_year(mhw_sys_file, mask_file, 
+                           outfile=outfile, 
                            mhw_type='random', use_km=True)
 
 # Command line execution
