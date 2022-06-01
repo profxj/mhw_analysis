@@ -2,6 +2,7 @@
 import sys, os
 import numpy as np
 import datetime
+import pandas
 
 import xarray
 
@@ -71,6 +72,99 @@ def count_days_by_year(mhw_sys_file, mask_file,
     ds.to_netcdf(outfile, engine='h5netcdf')
     print("Wrote: {}".format(outfile))
 
+def test_matlab():
+    #c_file = os.path.join(os.getenv('MHW'), 'db', 'extreme_dy_by_yr_defaults.nc')
+    c_file = os.path.join(os.getenv('MHW'), 'db', 'extreme_dy_by_yr_defaults.nc')
+    c_ds = xarray.open_dataset(c_file)
+    voxels = c_ds.ndays.data[:]
+    lat = c_ds.lat.data[:]
+    lon = c_ds.lon.data[:]
+    lat_grid = np.outer(lat, np.ones(lon.size))
+    lon_grid = np.outer(np.ones(lat.size), lon)
+    # NWP
+    NWP_vox=voxels[361:624, 401:720, :]  # Permuted
+    #NWP_vox=voxels[401:720,361:624, :]
+    NWP_lon=lon_grid[401:720,361:624]
+    NWP_lat=lat_grid[401:720,361:624]
+
+    NWP_mean = np.nanmean(NWP_vox, axis=(0,1))
+    embed(header='88 of analy_sys')
+
+def ocean_area_trends(c_file:str, outfile:str):
+    # Load up
+    c_file = os.path.join(os.getenv('MHW'), 'db', c_file)
+    c_ds = xarray.open_dataset(c_file)
+    voxels = c_ds.ndays.data[:]
+    lat = c_ds.lat.data[:]
+    lon = c_ds.lon.data[:]
+    lat_grid = np.outer(lat, np.ones(lon.size))
+    lon_grid = np.outer(np.ones(lat.size), lon)
+
+    # Table
+    df = pandas.DataFrame()
+
+    # NWP
+    #NWP_vox=voxels[401:720,361:624, :]
+    NWP_vox=voxels[361:624, 401:720, :]  # Permuted
+    #NWP_lon=lon_grid[401:720,361:624]
+    #NWP_lat=lat_grid[401:720,361:624]
+    df['NWP'] = np.nanmean(NWP_vox, axis=(0,1))
+
+    # SP 
+    #SP_vox=voxels[721:1172,121:360, :]
+    SP_vox=voxels[121:360, 721:1172, :] # Permuted
+    df['SP'] = np.nanmean(SP_vox, axis=(0,1))
+
+    # AUS
+    #AUS_vox=voxels(:,401:720,121:360);
+    AUS_vox=voxels[121:360, 401:720, :] # Permued
+    df['AUS'] = np.nanmean(AUS_vox, axis=(0,1))
+
+    # IND
+    #IND_vox=voxels(:,81:400,121:480);
+    IND_vox=voxels[121:480, 81:400, :] # Permuted
+    df['IND'] = np.nanmean(IND_vox, axis=(0,1))
+
+    # SWA
+    #SWA_vox=voxels(:,1161:1368,121:360);
+    SWA_vox=voxels[121:360, 1161:1368, :]  #  Permuted
+    df['SWA'] = np.nanmean(SWA_vox, axis=(0,1))
+
+    # SEA
+    #SEA_vox1=voxels(:,1369:1440,121:361);
+    SEA_vox1=voxels[121:361, 1369:1440, :] # permuted
+    #SEA_vox2=voxels(:,1:80,121:361);
+    SEA_vox2=voxels[121:361, 1:80, :] # permuted
+    df['SEA'] = (np.nanmean(SEA_vox1, axis=(0,1))  + 
+                 np.nanmean(SEA_vox2, axis=(0,1))) / 2.
+
+    # NEA
+    #NEA_vox1=voxels(:,1:164,361:632);
+    NEA_vox1=voxels[361:632, 1:164, :] # permuted
+    #NEA_vox2=voxels(:,1281:1440,361:632);
+    NEA_vox2=voxels[361:632, 1281:1440, :] # permuted
+    df['NEA'] = (np.nanmean(NEA_vox1, axis=(0,1))  + 
+                 np.nanmean(NEA_vox2, axis=(0,1))) / 2.
+
+    # ARC
+    #ARC_vox=voxels(:,:,625:720);
+    ARC_vox=voxels[625:720, :, :] # Permuted
+    df['ARC'] = np.nanmean(ARC_vox, axis=(0,1))
+
+    # ACC
+    #ACC_vox=voxels(:,:,1:120);
+    ACC_vox=voxels[1:120, :, :] # Permuted
+    df['ACC'] = np.nanmean(ACC_vox, axis=(0,1))
+
+    # NWA
+    #NWA_vox=voxels(:,1049:1280,361:625);
+    #NWA_vox=voxels[361:625, 1049:1280, :] # Permuted
+    #df['NWA'] = np.nanmean(NWA_vox, axis=(0,1))
+
+    embed(header='117 of analy')
+
+
+
 def main(flg_main):
     if flg_main == 'all':
         flg_main = np.sum(np.array([2 ** ii for ii in range(25)]))
@@ -111,13 +205,25 @@ def main(flg_main):
                            outfile=outfile, 
                            mhw_type=defs.classa, use_km=True)
 
+    # Test trend
+    if flg_main & (2 ** 3):
+        test_matlab()
+
+    # Trend by ocean area
+    if flg_main & (2 ** 4):
+        ocean_area_trends('extreme_dy_by_yr_defaults.nc',
+                          'severe_ocean_areas_2019.csv')
+
+
 # Command line execution
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         flg_main = 0
         #flg_main += 2 ** 0  # Defaults
         #flg_main += 2 ** 1  # Days by year, 2019 detrend local
-        flg_main += 2 ** 2  # Days by year, 2019 
+        #flg_main += 2 ** 2  # Days by year, 2019 
+        #flg_main += 2 ** 3  # Trend
+        flg_main += 2 ** 4  # Ocean area analysis
     else:
         flg_main = sys.argv[1]
 
