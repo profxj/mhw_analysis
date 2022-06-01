@@ -3,6 +3,7 @@ import sys, os
 import numpy as np
 import datetime
 import pandas
+from scipy.io import loadmat
 
 import xarray
 
@@ -105,63 +106,84 @@ def ocean_area_trends(c_file:str, outfile:str):
 
     # NWP
     #NWP_vox=voxels[401:720,361:624, :]
-    NWP_vox=voxels[361:624, 401:720, :]  # Permuted
+    NWP_vox=voxels[360:624, 400:720, :]  # Permuted
     #NWP_lon=lon_grid[401:720,361:624]
     #NWP_lat=lat_grid[401:720,361:624]
     df['NWP'] = np.nanmean(NWP_vox, axis=(0,1))
 
     # SP 
     #SP_vox=voxels[721:1172,121:360, :]
-    SP_vox=voxels[121:360, 721:1172, :] # Permuted
+    SP_vox=voxels[120:360, 720:1172, :] # Permuted
     df['SP'] = np.nanmean(SP_vox, axis=(0,1))
 
     # AUS
     #AUS_vox=voxels(:,401:720,121:360);
-    AUS_vox=voxels[121:360, 401:720, :] # Permued
+    AUS_vox=voxels[120:360, 400:720, :] # Permued
     df['AUS'] = np.nanmean(AUS_vox, axis=(0,1))
 
     # IND
     #IND_vox=voxels(:,81:400,121:480);
-    IND_vox=voxels[121:480, 81:400, :] # Permuted
+    IND_vox=voxels[120:480, 80:400, :] # Permuted
     df['IND'] = np.nanmean(IND_vox, axis=(0,1))
 
     # SWA
     #SWA_vox=voxels(:,1161:1368,121:360);
-    SWA_vox=voxels[121:360, 1161:1368, :]  #  Permuted
+    SWA_vox=voxels[120:360, 1160:1368, :]  #  Permuted
     df['SWA'] = np.nanmean(SWA_vox, axis=(0,1))
 
     # SEA
     #SEA_vox1=voxels(:,1369:1440,121:361);
-    SEA_vox1=voxels[121:361, 1369:1440, :] # permuted
+    SEA_vox1=voxels[120:361, 1368:1440, :] # permuted
     #SEA_vox2=voxels(:,1:80,121:361);
-    SEA_vox2=voxels[121:361, 1:80, :] # permuted
+    SEA_vox2=voxels[120:361, 0:80, :] # permuted
     df['SEA'] = (np.nanmean(SEA_vox1, axis=(0,1))  + 
                  np.nanmean(SEA_vox2, axis=(0,1))) / 2.
 
     # NEA
     #NEA_vox1=voxels(:,1:164,361:632);
-    NEA_vox1=voxels[361:632, 1:164, :] # permuted
+    NEA_vox1=voxels[360:632, 0:164, :] # permuted
     #NEA_vox2=voxels(:,1281:1440,361:632);
-    NEA_vox2=voxels[361:632, 1281:1440, :] # permuted
+    NEA_vox2=voxels[360:632, 1280:1440, :] # permuted
     df['NEA'] = (np.nanmean(NEA_vox1, axis=(0,1))  + 
                  np.nanmean(NEA_vox2, axis=(0,1))) / 2.
 
     # ARC
     #ARC_vox=voxels(:,:,625:720);
-    ARC_vox=voxels[625:720, :, :] # Permuted
+    ARC_vox=voxels[624:720, :, :] # Permuted
     df['ARC'] = np.nanmean(ARC_vox, axis=(0,1))
 
     # ACC
     #ACC_vox=voxels(:,:,1:120);
-    ACC_vox=voxels[1:120, :, :] # Permuted
+    ACC_vox=voxels[0:120, :, :] # Permuted
     df['ACC'] = np.nanmean(ACC_vox, axis=(0,1))
 
+    # NEP
+    #NEP_vox=voxels(:,721:1128,361:624);
+    NEP_vox=voxels[360:624, 720:1128, :] # Permute
+    # Mask
+    NEP_mask = loadmat('NEP_mask.mat')['NEP_mask']
+    NEP_mask = NEP_mask.T
+    full_NEP_mask = np.zeros((NEP_mask.shape[0], NEP_mask.shape[1], 
+                              NEP_vox.shape[2]))
+    for kk in range(NEP_vox.shape[2]):
+        full_NEP_mask[:,:,kk] = NEP_mask
+    df['NEP'] = np.nanmean(NEP_vox * full_NEP_mask, axis=(0,1))
+    
     # NWA
     #NWA_vox=voxels(:,1049:1280,361:625);
-    #NWA_vox=voxels[361:625, 1049:1280, :] # Permuted
-    #df['NWA'] = np.nanmean(NWA_vox, axis=(0,1))
+    NWA_vox=voxels[360:625, 1048:1280, :] # Permuted
+    # Mask
+    NWA_mask = loadmat('NWA_mask.mat')['NWA_mask']
+    NWA_mask = np.swapaxes(NWA_mask, 0, 1)
+    #NWA_mask = np.flip(NWA_mask, 1)
+    full_NWA_mask = np.zeros((NWA_mask.shape[0], NWA_mask.shape[1], 
+                              NWA_vox.shape[2]))
+    for kk in range(NWA_vox.shape[2]):
+        full_NWA_mask[:,:,kk] = NWA_mask
+    df['NWA'] = np.nanmean(NWA_vox * full_NWA_mask, axis=(0,1))
 
-    embed(header='117 of analy')
+    # Write
+    df.to_csv(outfile)
 
 
 
@@ -212,7 +234,7 @@ def main(flg_main):
     # Trend by ocean area
     if flg_main & (2 ** 4):
         ocean_area_trends('extreme_dy_by_yr_defaults.nc',
-                          'severe_ocean_areas_2019.csv')
+                          'severe_ocean_areas_orig.csv')
 
 
 # Command line execution
