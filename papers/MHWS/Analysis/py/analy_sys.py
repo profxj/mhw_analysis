@@ -168,6 +168,7 @@ def ocean_area_trends(c_file:str, outfile:str):
     for kk in range(NEP_vox.shape[2]):
         full_NEP_mask[:,:,kk] = NEP_mask
     df['NEP'] = np.nanmean(NEP_vox * full_NEP_mask, axis=(0,1))
+    embed(header='171 of analy_sys')
     
     # NWA
     #NWA_vox=voxels(:,1049:1280,361:625);
@@ -184,6 +185,7 @@ def ocean_area_trends(c_file:str, outfile:str):
 
     # Write
     df.to_csv(outfile)
+    print(f'Wrote: {outfile}')
 
 
 
@@ -233,8 +235,19 @@ def main(flg_main):
 
     # Trend by ocean area
     if flg_main & (2 ** 4):
-        ocean_area_trends('extreme_dy_by_yr_defaults.nc',
-                          'severe_ocean_areas_orig.csv')
+        # Original
+        #ocean_area_trends('extreme_dy_by_yr_defaults.nc',
+        #                  'severe_ocean_areas_orig.csv')
+
+        # Severe
+        ocean_area_trends('severe_km_dy_by_yr_2019.nc',
+                          'severe_ocean_areas_2019.csv')
+        # Moderate
+        ocean_area_trends('moderate_km_dy_by_yr_2019.nc',
+                          'moderate_ocean_areas_2019.csv')
+        # Minor 
+        ocean_area_trends('minor_km_dy_by_yr_2019.nc',
+                          'minor_ocean_areas_2019.csv')
 
 
 # Command line execution

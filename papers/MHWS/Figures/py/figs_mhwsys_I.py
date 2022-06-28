@@ -3,7 +3,7 @@ import os, sys
 import numpy as np
 from pkg_resources import resource_filename
 
-from datetime import date
+from datetime import date, datetime
 
 import matplotlib as mpl
 import matplotlib.gridspec as gridspec
@@ -1946,6 +1946,96 @@ def count_systems(list_of_Ids, mask, spat_systems):
     # Return
     return spat_systems
 
+def fig_changepoint(outfile, mask=None, debug=False,
+                        mhw_sys=None, save_spat_root=None, clobber=False,
+                       ivmax=None, days=False, use_km=True):
+    """
+    Change Point results
+
+    Args:
+        outfile (str):
+
+    Returns:
+        tuple: mask, mhw_sys
+    """
+    time_series_file = '../Analysis/severe_ocean_areas_2019.csv'
+    change_time = pandas.read_csv(time_series_file)
+    years = 1982 + np.arange(len(change_time))
+    dates = [datetime.datetime(year,1,1) for year in years]
+
+    fig = plt.figure(figsize=(12, 8))
+    plt.clf()
+    gs = gridspec.GridSpec(4,4)
+
+    # Change point figures
+    regions = ['AUS', 'IND']
+    clrs = plt.cm.rainbow(np.linspace(0, 1, 12))
+    rows = [0,1,2,3] + [3,3] + [3,2,1,0] + [0,0]
+    cols = [0]*4 + [1,2,3] + [3,3] + [3,2,1]
+
+    for ss, region in enumerate(regions):
+        clr, region, row, col = clrs[ss], regions[ss], 3-rows[ss], cols[ss]
+        ax = plt.subplot(gs[row, col])
+
+        ax.plot(dates, change_time[region], color=clr)
+
+
+    '''
+        proj = ccrs.PlateCarree(central_longitude=-180.0)
+        ax= plt.subplot(gs[ss], projection=proj)
+
+        # Pacific events
+        # Draw the contour with 25 levels.
+        if days:
+            cbar_lbl = 'Number'# of Days'
+        else:
+            cbar_lbl = 'Number of MHWS'
+        #cm = plt.get_cmap('YlOrRd')
+        cm = plt.get_cmap(cmap)
+        p = spat_systems.plot(cmap=cm, transform=ccrs.PlateCarree(),
+                            vmax=vmax, 
+                            subplot_kws={'projection': proj},
+                            cbar_kwargs={'label': cbar_lbl,
+                                        'fraction': 0.020, 'pad': 0.04})
+        ax = p.axes
+
+        #cplt = iris.plot.contourf(cube_slice, 10, cmap=cm)  # , vmin=0, vmax=20)#, 5)
+        #cb = plt.colorbar(cplt, fraction=0.020, pad=0.04)
+        #cb.set_label('Average Annual Number of MHW Events')
+        #cb.set_label('Number of MHW Events with t>1 month')
+
+        # Gridlines
+        # https://stackoverflow.com/questions/49956355/adding-gridlines-using-cartopy
+        gl = ax.gridlines(crs=ccrs.PlateCarree(), linewidth=2, color='black', alpha=0.5,
+                        linestyle='--', draw_labels=True)
+        gl.top_labels = False
+        gl.left_labels = True
+        gl.right_labels = False
+        gl.xlines = True
+        gl.xformatter = LONGITUDE_FORMATTER
+        gl.yformatter = LATITUDE_FORMATTER
+        gl.xlabel_style = {'color': 'black', 'weight': 'bold'}
+        gl.ylabel_style = {'color': 'black', 'weight': 'bold'}
+        #gl.xlocator = mticker.FixedLocator([-180., -160, -140, -120, -60, -20.])
+        gl.xlocator = mticker.FixedLocator([-240., -180., -120, -60, 0, 60, 120.])
+        #gl.ylocator = mticker.FixedLocator([0., 15., 30., 45, 60.])
+
+        # Add coastlines to the map created by contourf.
+        ax.coastlines()
+
+        # Turn off Title
+        plt.title('')
+    '''
+
+    # Layout and save
+    plt.tight_layout(pad=0.5, h_pad=0.5, w_pad=0.5)
+    plt.savefig(outfile, dpi=300)
+    plt.close()
+    print('Wrote {:s}'.format(outfile))
+
+    return mask, mhw_sys
+
+
 
 def fig_spatial_systems(outfile, mask=None, debug=False,
                         mhw_sys=None, save_spat_root=None, clobber=False,
@@ -2827,6 +2917,10 @@ def main(flg_fig):
     if flg_fig & (2 ** 25):
         fig_cumulative_NVox('fig_cumulative_NVox_km.png', use_km=True)
 
+    # Change point
+    if flg_fig & (2 ** 26):
+        fig_changepoint('fig_change_point_severe.png')
+
 
 # Command line execution
 if __name__ == '__main__':
@@ -2848,17 +2942,18 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 12  # Nsys vs. year
         #flg_fig += 2 ** 13  # Spatial location of Systems
         #flg_fig += 2 ** 14  # Tthresh, T90, T95 vs DOY
-        flg_fig += 2 ** 15  # Nvox vs. year by method -- Figure 4
+        #flg_fig += 2 ** 15  # Nvox vs. year by method -- Figure 4
         #flg_fig += 2 ** 16  # Intermediate gallery
         #flg_fig += 2 ** 17  # Extreme examples
         #flg_fig += 2 ** 18  # SST vs. T_thresh
         #flg_fig += 2 ** 19  # Main Histogram figure -- Figure 2
-        #flg_fig += 2 ** 20  # Spatial in days
+        #flg_fig += 2 ** 20  # Spatial in days -- Figure 3
         #flg_fig += 2 ** 21  # Extreme evolution
         #flg_fig += 2 ** 22  # Comparing MHWE definitions/approaches (by year)
         #flg_fig += 2 ** 23  # MHWE spatial
         #flg_fig += 2 ** 24  # de-trend global view -- Fig 6
         #flg_fig += 2 ** 25  # Cumulative NVox
+        flg_fig += 2 ** 26  # Change Point (Figure 5)
     else:
         flg_fig = sys.argv[1]
 
