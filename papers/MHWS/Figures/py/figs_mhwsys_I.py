@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt, use
 import matplotlib.ticker as mticker
 import matplotlib.image as mpimg
 import matplotlib.patches as mpatches
+import matplotlib.dates as mdates
 
 mpl.rcParams['font.family'] = 'splttixgeneral'
 
@@ -1962,7 +1963,7 @@ def fig_changepoint(outfile, mask=None, debug=False,
     mask_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019_mask.nc')
     ds = xarray.open_dataset(mask_file)
 
-    time_series_file = '../Analysis/severe_ocean_areas_2019.csv'
+    time_series_file = '../Analysis/ChangePoint/severe_ocean_areas_2019.csv'
     change_time = pandas.read_csv(time_series_file)
     years = 1982 + np.arange(len(change_time))
     dates = [datetime.datetime(year,1,1) for year in years]
@@ -1995,6 +1996,9 @@ def fig_changepoint(outfile, mask=None, debug=False,
         ax_change.text(0.05, 0.8, region, color='black',
             transform=ax_change.transAxes, ha='left', 
             fontsize=17.)
+        #ax_change.xaxis.set_major_locator(plt.MultipleLocator(2.))
+        ax_change.xaxis.set_major_locator(mdates.YearLocator(10))
+        ax_change.minorticks_on()
 
     # Central plot
     proj_lon = -180.
