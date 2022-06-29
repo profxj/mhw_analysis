@@ -23,6 +23,7 @@ regions['AUS'] = dict(lat=(120,360), lon=(400,720))
 regions['IND'] = dict(lat=(120,480), lon=(80,400))
 regions['ARC'] = dict(lat=(624,720), lon=(0,1440))
 regions['NEA'] = dict(lat=(360,632), lon=(1280,164)) # Wrapping
+regions['NEP'] = dict(lat=(360,624), lon=(720,1128)) 
 regions['NWA'] = dict(lat=(360,625), lon=(1048,1280)) 
 regions['SEA'] = dict(lat=(120,361), lon=(1368,80)) # Wrapping
 regions['SWA'] = dict(lat=(120,360), lon=(1160,1368)) 
