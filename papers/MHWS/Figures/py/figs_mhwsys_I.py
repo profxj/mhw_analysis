@@ -1964,7 +1964,10 @@ def fig_changepoint(outfile, mask=None, debug=False,
     ds = xarray.open_dataset(mask_file)
 
     time_series_file = '../Analysis/ChangePoint/severe_ocean_areas_2019.csv'
+    results_file = '../Analysis/ChangePoint/results_severe_ocean_areas.csv'
     change_time = pandas.read_csv(time_series_file)
+    change_results = pandas.read_csv(results_file)
+
     years = 1982 + np.arange(len(change_time))
     dates = [datetime.datetime(year,1,1) for year in years]
 
@@ -1973,8 +1976,8 @@ def fig_changepoint(outfile, mask=None, debug=False,
     gs = gridspec.GridSpec(4,4)
 
     # Change point figures
-    regions = ['AUS', 'IND', 'NWP', 'ARC', 'NEP', 'NEA', 'All',
-               'NWA', 'SEA', 'SWA', 'SP', 'ACC']
+    regions = ['AUS', 'IND', 'NWP', 'ARC', 'NEP', 'NWA', 'All',
+               'NEA', 'SEA', 'SWA', 'SP', 'ACC']
     #cm = plt.get_cmap('Set3') # A bit too light
     #cm = plt.get_cmap('rainbow')
     cm = plt.get_cmap('Paired')
@@ -1992,13 +1995,20 @@ def fig_changepoint(outfile, mask=None, debug=False,
 
         ax_change.plot(dates, change_time[region], color=clr)
 
+        # Change point
+        cp_year = years[int(change_results.loc[region].Changepoint)]
+        cp_date = datetime.datetime(cp_year,1,1)
+        ax_change.axvline(cp_date, color=clr, ls='--')
+
         # Label
         ax_change.text(0.05, 0.8, region, color='black',
             transform=ax_change.transAxes, ha='left', 
             fontsize=17.)
-        #ax_change.xaxis.set_major_locator(plt.MultipleLocator(2.))
+
+        # Axes
         ax_change.xaxis.set_major_locator(mdates.YearLocator(10))
         ax_change.minorticks_on()
+
 
     # Central plot
     proj_lon = -180.
