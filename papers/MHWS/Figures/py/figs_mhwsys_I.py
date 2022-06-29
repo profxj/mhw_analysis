@@ -1974,7 +1974,12 @@ def fig_changepoint(outfile, mask=None, debug=False,
     # Change point figures
     regions = ['AUS', 'IND', 'NWP', 'ARC', 'NEP', 'NEA', 'All',
                'NWA', 'SEA', 'SWA', 'SP', 'ACC']
-    clrs = plt.cm.rainbow(np.linspace(0, 1, 12))
+    #cm = plt.get_cmap('Set3') # A bit too light
+    #cm = plt.get_cmap('rainbow')
+    cm = plt.get_cmap('Paired')
+    clrs = cm(np.linspace(0, 1, 12)).tolist()
+    # Swap out SP
+    clrs[-2] = 'gray'
     rows = [0,1,2,3] + [3,3] + [3,2,1,0] + [0,0]
     cols = [0]*4 + [1,2,3] + [3,3] + [3,2,1]
 
@@ -1986,6 +1991,11 @@ def fig_changepoint(outfile, mask=None, debug=False,
 
         ax_change.plot(dates, change_time[region], color=clr)
 
+        # Label
+        ax_change.text(0.05, 0.8, region, color='black',
+            transform=ax_change.transAxes, ha='left', 
+            fontsize=17.)
+
     # Central plot
     proj_lon = -180.
     proj = ccrs.PlateCarree(central_longitude=proj_lon)
@@ -1994,7 +2004,7 @@ def fig_changepoint(outfile, mask=None, debug=False,
 
     # Color me!
     for ss, region in enumerate(regions):
-        if region in ['NEP', 'All']:
+        if region in ['All']:
             continue
         # coords
         lat = ds.lat[analy_sys.regions[region]['lat'][0]:analy_sys.regions[region]['lat'][1]]
@@ -2013,7 +2023,7 @@ def fig_changepoint(outfile, mask=None, debug=False,
             width=width,
             height=height,
             facecolor=clrs[ss],
-            alpha=0.2,
+            alpha=0.5,
             transform=proj))
 
 
