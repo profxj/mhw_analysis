@@ -16,6 +16,30 @@ from IPython import embed
 sys.path.append(os.path.abspath("../Analysis/py"))
 import defs
 
+# Regions
+regions = {}
+regions['NWP'] = dict(lat=(360,624), lon=(400,720))
+regions['AUS'] = dict(lat=(120,360), lon=(400,720))
+regions['IND'] = dict(lat=(120,480), lon=(80,400))
+regions['ARC'] = dict(lat=(624,720), lon=(0,1440))
+regions['NEA'] = dict(lat=(360,632), lon=(1280,164)) # Wrapping
+regions['NWA'] = dict(lat=(360,625), lon=(1048,1280)) 
+regions['SEA'] = dict(lat=(120,361), lon=(1368,80)) # Wrapping
+regions['SWA'] = dict(lat=(120,360), lon=(1160,1368)) 
+regions['SP'] = dict(lat=(120,360), lon=(720,1172)) 
+regions['ACC'] = dict(lat=(0,120), lon=(0,1440)) 
+
+def vox_region(region, voxels):
+    if regions[region]['lon'][0] < regions[region]['lon'][1]:
+        return voxels[regions[region]['lat'][0]:regions[region]['lat'][1],
+            regions[region]['lon'][0]:regions[region]['lon'][1],:]
+    else:
+        vox1 =  voxels[regions[region]['lat'][0]:regions[region]['lat'][1],
+            regions[region]['lon'][0]:]
+        vox2 =  voxels[regions[region]['lat'][0]:regions[region]['lat'][1],
+            0:regions[region]['lon'][1]]
+        return vox1, vox2
+
 def count_days_by_year(mhw_sys_file, mask_file,
                        outfile='extreme_days_by_year.nc',
                        use_km=True,
@@ -106,9 +130,8 @@ def ocean_area_trends(c_file:str, outfile:str):
 
     # NWP
     #NWP_vox=voxels[401:720,361:624, :]
-    NWP_vox=voxels[360:624, 400:720, :]  # Permuted
-    #NWP_lon=lon_grid[401:720,361:624]
-    #NWP_lat=lat_grid[401:720,361:624]
+    #NWP_vox=voxels[360:624, 400:720, :]  # Permuted
+    NWP_vox= vox_region('NWP', voxels)
     df['NWP'] = np.nanmean(NWP_vox, axis=(0,1))
 
     # SP 
