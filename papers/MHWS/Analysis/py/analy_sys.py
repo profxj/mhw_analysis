@@ -32,14 +32,32 @@ regions['ACC'] = dict(lat=(0,120), lon=(0,1440))
 
 def vox_region(region, voxels):
     if regions[region]['lon'][0] < regions[region]['lon'][1]:
-        return voxels[regions[region]['lat'][0]:regions[region]['lat'][1],
-            regions[region]['lon'][0]:regions[region]['lon'][1],:]
+        return [voxels[regions[region]['lat'][0]:regions[region]['lat'][1],
+            regions[region]['lon'][0]:regions[region]['lon'][1],:]]
     else:
         vox1 =  voxels[regions[region]['lat'][0]:regions[region]['lat'][1],
             regions[region]['lon'][0]:]
         vox2 =  voxels[regions[region]['lat'][0]:regions[region]['lat'][1],
             0:regions[region]['lon'][1]]
-        return vox1, vox2
+        return [vox1, vox2]
+
+def process(voxels, region, df, nvox_dict):
+    vox_list = vox_region(region, voxels)
+    # Count em
+    nvoxs, means = [], []
+    for vox in vox_list:
+        nvox = np.sum(np.isfinite(vox))
+        mean_days = np.nanmean(vox, axis=(0,1))
+        #
+        nvoxs.append(nvox)
+        means.append(mean_days)
+    # Sum em
+    nvox_dict[region] = np.sum(nvoxs)
+    # Weighted mean
+    df[region] = np.array(means)*np.array(nvoxs) / np.sum(nvoxs)
+    return
+    
+
 
 def count_days_by_year(mhw_sys_file, mask_file,
                        outfile='extreme_days_by_year.nc',
@@ -128,16 +146,22 @@ def ocean_area_trends(c_file:str, outfile:str):
 
     # Table
     df = pandas.DataFrame()
+    nvox = {}
 
     # NWP
     #NWP_vox=voxels[401:720,361:624, :]
     #NWP_vox=voxels[360:624, 400:720, :]  # Permuted
+
     NWP_vox= vox_region('NWP', voxels)
     df['NWP'] = np.nanmean(NWP_vox, axis=(0,1))
 
+    process(voxels, 'NWP', df, nvox)
+
+
     # SP 
     #SP_vox=voxels[721:1172,121:360, :]
-    SP_vox=voxels[120:360, 720:1172, :] # Permuted
+    #SP_vox=voxels[120:360, 720:1172, :] # Permuted
+    SP_vox= vox_region('SP', voxels)
     df['SP'] = np.nanmean(SP_vox, axis=(0,1))
 
     # AUS
