@@ -41,20 +41,40 @@ def vox_region(region, voxels):
             0:regions[region]['lon'][1]]
         return [vox1, vox2]
 
-def process(voxels, region, df, nvox_dict):
+def process_vox(lat_grid, voxels, region, df, 
+                nvox_dict, lat_dict, masks_dict, 
+                debug=False):
     vox_list = vox_region(region, voxels)
     # Count em
-    nvoxs, means = [], []
+    nvoxs, means, mean_lats = [], [], []
     for vox in vox_list:
         nvox = np.sum(np.isfinite(vox))
-        mean_days = np.nanmean(vox, axis=(0,1))
+        if region in masks_dict.keys():
+            if debug:
+                embed(header='63 of analy')
+            # Transpose
+            mask = masks_dict[region].T
+            full_mask = np.zeros((mask.shape[0], mask.shape[1], vox.shape[2]))
+            for kk in range(vox.shape[2]):
+                full_mask[:,:,kk] = mask
+                mean_days = np.nanmean(vox * full_mask, axis=(0,1))
+        else:
+            mean_days = np.nanmean(vox, axis=(0,1))
+        # Lats
+        lats = lat_grid[regions[region]['lat'][0]:regions[region]['lat'][1],...]
+        mean_lat = np.nanmean(lats)
         #
         nvoxs.append(nvox)
         means.append(mean_days)
+        mean_lats.append(mean_lat)
     # Sum em
     nvox_dict[region] = np.sum(nvoxs)
-    # Weighted mean
-    df[region] = np.array(means)*np.array(nvoxs) / np.sum(nvoxs)
+    # Weighted mean for days
+    warrays = [item*nvox for item,nvox in zip(means, nvoxs)]
+    df[region] = np.sum(np.array(warrays), axis=0) / np.sum(nvoxs)
+    # Latitudes
+    warrays = [item*nvox for item,nvox in zip(mean_lats, nvoxs)]
+    lat_dict[region] = np.sum(np.array(warrays), axis=0) / np.sum(nvoxs)
     return
     
 
@@ -146,18 +166,40 @@ def ocean_area_trends(c_file:str, outfile:str):
 
     # Table
     df = pandas.DataFrame()
-    nvox = {}
+    nvox_dict = {}
+    lat_dict = {}
 
     # NWP
     #NWP_vox=voxels[401:720,361:624, :]
     #NWP_vox=voxels[360:624, 400:720, :]  # Permuted
 
-    NWP_vox= vox_region('NWP', voxels)
-    df['NWP'] = np.nanmean(NWP_vox, axis=(0,1))
+    #NWP_vox= vox_region('NWP', voxels)[0]
+    #df['NWP'] = np.nanmean(NWP_vox, axis=(0,1))
 
-    process(voxels, 'NWP', df, nvox)
+    #process_vox(lat_grid, voxels, 'NEA', df, nvox_dict, lat_dict)
 
+    # Masks
+    masks_dict = {}
+    masks_dict['NEP'] = loadmat('NEP_mask.mat')['NEP_mask']
+    masks_dict['NWA'] = loadmat('NWA_mask.mat')['NWA_mask']
 
+    #process_vox(lat_grid, voxels, 'NEP', df, nvox_dict, lat_dict, masks_dict, debug=True)
+
+    # Do em all!
+    for region in regions.keys():
+        process_vox(lat_grid, voxels, region, df, nvox_dict, lat_dict, masks_dict)
+        
+    # Add all
+    warrays, weights = [], []
+    for region in regions.keys():
+        weight = nvox_dict[region] * np.cos(lat_dict[region]*np.pi/180.)
+        warray = df[region].values * weight
+        weights.append(weight)
+        warrays.append(warray)
+
+    df['ALL'] = np.sum(np.array(warrays), axis=0) / np.sum(weights)
+
+    '''
     # SP 
     #SP_vox=voxels[721:1172,121:360, :]
     #SP_vox=voxels[120:360, 720:1172, :] # Permuted
@@ -230,6 +272,7 @@ def ocean_area_trends(c_file:str, outfile:str):
     for kk in range(NWA_vox.shape[2]):
         full_NWA_mask[:,:,kk] = NWA_mask
     df['NWA'] = np.nanmean(NWA_vox * full_NWA_mask, axis=(0,1))
+    '''
 
     # Write
     df.to_csv(outfile)
@@ -289,13 +332,13 @@ def main(flg_main):
 
         # Severe
         ocean_area_trends('severe_km_dy_by_yr_2019.nc',
-                          'severe_ocean_areas_2019.csv')
+                          'ChangePoint/severe_ocean_areas_2019.csv')
         # Moderate
-        ocean_area_trends('moderate_km_dy_by_yr_2019.nc',
-                          'moderate_ocean_areas_2019.csv')
+        #ocean_area_trends('moderate_km_dy_by_yr_2019.nc',
+        #                  'moderate_ocean_areas_2019.csv')
         # Minor 
-        ocean_area_trends('minor_km_dy_by_yr_2019.nc',
-                          'minor_ocean_areas_2019.csv')
+        #ocean_area_trends('minor_km_dy_by_yr_2019.nc',
+        #                  'minor_ocean_areas_2019.csv')
 
 
 # Command line execution
