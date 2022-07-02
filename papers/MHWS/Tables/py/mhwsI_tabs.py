@@ -13,6 +13,10 @@ from IPython import embed
 mhw_sys_file=os.path.join(
     os.getenv('MHW'), 'db', 'MHWS_2019.csv')
 
+# Local
+sys.path.append(os.path.abspath("../Analysis/py"))
+import defs, analy_utils, fitting, analy_sys
+
 # MHWS
 def mktab_mhws(outfile='tab_mhws.tex', sub=False):
 
@@ -148,6 +152,20 @@ def mktab_change(outfile='tab_changepoint.tex'):
     print('Wrote {:s}'.format(outfile))
 
 
+def mhws_percentile():
+    # Load
+    mhw_sys = mhw_sys_io.load_systems(
+        mhw_sys_file=mhw_sys_file)
+
+    ntot = len(mhw_sys)
+
+    for cat in [defs.classa, defs.classb, defs.classc]:
+        gd_mhws = (mhw_sys.NVox_km > defs.type_dict_km[cat][0]) & (
+            mhw_sys.NVox_km <= defs.type_dict_km[cat][1])
+        #
+        nsub = np.sum(gd_mhws)
+        print(f"We have {nsub} systems with category {cat}")
+        print(f"{nsub/ntot}%")
 
 #### ########################## #########################
 #### ########################## #########################
@@ -157,4 +175,5 @@ def mktab_change(outfile='tab_changepoint.tex'):
 if __name__ == '__main__':
 
     #mktab_mhws(sub=True)
-    mktab_change()
+    #mktab_change()
+    mhws_percentile()
