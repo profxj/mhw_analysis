@@ -81,8 +81,10 @@ def mktab_mhws(outfile='tab_mhws.tex', sub=False):
 # Changepoint
 def mktab_change(outfile='tab_changepoint.tex'):
 
+    # Results files
     # Read
-    df = pandas.read_csv('../Analysis/results_ocean_areas.csv')
+    rpath = '../Analysis/ChangePoint'
+    categories = ['severe', 'moderate', 'minor']
 
     # Open
     tbfil = open(outfile, 'w')
@@ -100,27 +102,41 @@ def mktab_change(outfile='tab_changepoint.tex'):
     tbfil.write('\\midline\n')
     tbfil.write(' \n')
 
-    for ss in range(len(df)):
-        row = df.iloc[ss]
+    for kk, cat in enumerate(categories):
+        # Read
+        rfile = os.path.join(rpath, f'results_{cat}_ocean_areas.csv')
+        df = pandas.read_csv(rfile)
 
-        # Region
-        sline = f'{row.Region}'
+        # Indices
+        indices = list(df.index)
+        indices.sort()
 
-        # Slope
-        sline += '& {:0.2f}'.format(row.Slope)
+        tbfil.write('\\multicolumn{5}{c}{'+f'{cat}'+'}\\\\ \n')
 
-        # Slope p-value
-        sline += f'& {row["Slope p-value"]:0.2g}'
+        #if kk > 0:
+        #    tbfil.write('\\midline\n')
 
-        # Change point
-        year = 1982 + row.Changepoint
-        sline += f'& {year}'
+        for index in indices:
+            row = df.loc[index]
 
-        # Change point p-value
-        sline += f'& {row["Changepoint p-value"]:0.2g}'
+            # Region
+            sline = index 
 
-        # Finish
-        tbfil.write(sline + '\\\\ \n')
+            # Slope
+            sline += '& {:0.2f}'.format(row.Slope)
+
+            # Slope p-value
+            sline += f'& {row["Slope p-value"]:0.2g}'
+
+            # Change point
+            year = 1982 + row.Changepoint
+            sline += f'& {year}'
+
+            # Change point p-value
+            sline += f'& {row["Changepoint p-value"]:0.2g}'
+
+            # Finish
+            tbfil.write(sline + '\\\\ \n')
 
     # End end
     tbfil.write('\\botline \n')
