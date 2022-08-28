@@ -3,7 +3,7 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: Prochaska
     given-names: J. Xavier
-    orcid: https://orcid.org/0000-0003-4925-7248
+    orcid: https://orcid.org/0000-0002-7738-6875
 title: "Marine Heat Wave System Analysis"
 version: 1.0.0
 doi: 10.5281/zenodo.7029722
