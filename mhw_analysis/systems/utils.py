@@ -20,6 +20,7 @@ def dict_to_pandas(sys_dict, add_latlon=False, start_date=None):
     Parameters
     ----------
     sys_dict : dict
+        Contains all of the MHWS measurements
     add_latlon : bool, optional
         If True, load an NOAA OI and add lat, lon values to Table for convenience
     start_date : int, optional
@@ -43,16 +44,14 @@ def dict_to_pandas(sys_dict, add_latlon=False, start_date=None):
     # Lon/Lat
     if add_latlon:
         # Could hard code this
-        noaa = sst_io.load_noaa((1, 1, 2003))
-        lat_coord = noaa.coord('latitude')
-        lon_coord = noaa.coord('longitude')
-        f_lat = interp1d(np.arange(lat_coord.points.size), lat_coord.points)
-        f_lon = interp1d(np.arange(lon_coord.points.size), lon_coord.points)
+        lat_coord, lon_coord = sst_utils.noaa_oi_coords()
+        f_lat = interp1d(np.arange(lat_coord.size), lat_coord)
+        f_lon = interp1d(np.arange(lon_coord.size), lon_coord)
         # Evaluate
         warnings.warn("Fix the lat kludge!")
-        mhw_sys['lat'] = f_lat(np.minimum(mhw_sys['xcen'].values, lat_coord.points.size-1))
+        mhw_sys['lat'] = f_lat(np.minimum(mhw_sys['xcen'].values, lat_coord.size-1))
         try:
-            mhw_sys['lon'] = f_lon(np.minimum(mhw_sys['ycen'].values, lon_coord.points.size-1))
+            mhw_sys['lon'] = f_lon(np.minimum(mhw_sys['ycen'].values, lon_coord.size-1))
         except:
             embed(header='55 of utils')
 
@@ -61,15 +60,6 @@ def dict_to_pandas(sys_dict, add_latlon=False, start_date=None):
     # Return
     return mhw_sys
 
-'''
-def tmp_max_area(mask):
-    obj_id = np.unique(mask[mask > 0])
-    areas = np.zeros_like(obj_id)
-    for kk, id in enumerate(obj_id):
-        idx = np.where(mask == id)
-        areas[kk] = Counter(idx[2]).most_common(1)[0][1]
-    return areas
-'''
 
 @njit(parallel=True)
 def max_area(mask, obj_id, areas):
@@ -83,15 +73,15 @@ def max_area(mask, obj_id, areas):
         areas[kk] = counts
 
 
-def prep_labels(mask, parent, NSpax, MinNSpax=0, verbose=False):
+def prep_labels(mask, parent, NVox, MinNVox=0, verbose=False):
     """
 
     Parameters
     ----------
     mask
     parent
-    NSpax
-    MinNSpax
+    NVox
+    MinNVox
     verbose
 
     Returns
@@ -107,14 +97,14 @@ def prep_labels(mask, parent, NSpax, MinNSpax=0, verbose=False):
     LabelToId = np.zeros(nlabels+1, dtype=np.int32) -1
     IdToLabel = np.zeros(nobj, dtype=np.int32)
 
-    #!----- DETECTION (using NSpax) -------------
+    #!----- DETECTION (using NVox) -------------
     # !..build auxiliary arrays and count detections
     ndet=0
     for i in range(1,nlabels+1):
         if parent[i] == 0:
             this_label = i
-            this_NSpax = NSpax[this_label] # 0-indexing
-            if this_NSpax > MinNSpax:
+            this_NVox = NVox[this_label] # 0-indexing
+            if this_NVox > MinNVox:
                 IdToLabel[ndet] = this_label
                 LabelToId[this_label] = ndet
                 ndet = ndet + 1  # ! update ndet

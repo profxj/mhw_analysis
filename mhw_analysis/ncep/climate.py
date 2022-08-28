@@ -1,22 +1,15 @@
-""" Biuld climate"""
+""" Build climate for NCEP data"""
 
 import os
-import glob
-from pkg_resources import resource_filename
 
 import numpy as np
-from scipy import signal
 
-from datetime import date
-import datetime
-
-import pandas
-import iris
+#import iris
+import xarray
 
 from mhw import climate as mhw_climate
 from mhw import utils as mhw_utils
 from mhw import mhw_numba
-
 
 from IPython import embed
 
@@ -34,8 +27,8 @@ def ncep_seas_thresh(climate_db_file,
     ----------
     climate_db_file : str
         output filename.  Should have extension .nc
-    climatologyPeriod
-    cut_sky
+    climatologyPeriod : tuple
+    cut_sky : bool
     all_sst
     min_frac
     n_calc
@@ -53,17 +46,21 @@ def ncep_seas_thresh(climate_db_file,
 
     # Grab the cube
     ifile = os.path.join(ncep_path, 'NCEP-DOE_Z500.nc')
-    cube = iris.load(ifile)[0]
+    ds = xarray.load_dataset(ifile)
 
     # Load the Cubes into memory
-    _ = cube.data[:]
+    _ = ds.Z500.data
 
     # Coords
-    lat_coord = cube.coord('latitude')
-    lon_coord = cube.coord('longitude')
+    #lat_coord = cube.coord('latitude')
+    #lon_coord = cube.coord('longitude')
+    lat_coord = ds.lat
+    lon_coord = ds.lon
 
     # Time
-    t = cube.coord('time').points  #mhw_utils.grab_t(all_sst)
+    #t = cube.coord('time').points  #mhw_utils.grab_t(all_sst)
+    datetimes = ds.time.values.astype('datetime64[s]').tolist()
+    t = np.array([datetime.toordinal() for datetime in datetimes])
     time_dict = mhw_climate.build_time_dict(t)
 
     # Scaling
@@ -137,7 +134,7 @@ def ncep_seas_thresh(climate_db_file,
         counter += 1
 
         # Grab SST values
-        Z500 = cube.data[:,ilat, jlon] # mhw_utils.grab_T(all_sst, ilat, jlon)
+        Z500 = ds.Z500.data[:,ilat, jlon] # mhw_utils.grab_T(all_sst, ilat, jlon)
         #frac = np.sum(np.invert(SST.mask))/t.size
         #if SST.mask is np.bool_(False) or frac > min_frac:
         #    pass
@@ -166,20 +163,15 @@ def ncep_seas_thresh(climate_db_file,
         if (counter % 100000 == 0) or (counter == n_calc):
             print('count={} of {}.'.format(counter, n_calc))
             print("Saving...")
-            cubes = iris.cube.CubeList()
-            time_coord = iris.coords.DimCoord(np.arange(lenClimYear), units='day', var_name='day')
-            cube_seas = iris.cube.Cube(out_seas, units='m', var_name='seasonalZ500',
-                                       dim_coords_and_dims=[(time_coord, 0),
-                                                            (lat_coord, 1),
-                                                            (lon_coord, 2)])
-            cube_thresh = iris.cube.Cube(out_thresh, units='m', var_name='threshZ500',
-                                         dim_coords_and_dims=[(time_coord, 0),
-                                                              (lat_coord, 1),
-                                                              (lon_coord, 2)])
-            cubes.append(cube_seas)
-            cubes.append(cube_thresh)
+            time_coord = xarray.IndexVariable('doy', np.arange(366, dtype=int) + 1)
+            da_seasonal = xarray.DataArray(out_seas, coords=[time_coord, lat_coord, lon_coord])
+            da_thresh = xarray.DataArray(out_thresh, coords=[time_coord, lat_coord, lon_coord])
+            # Data set
+            climate_ds = xarray.Dataset({"seasonalZ500": da_seasonal,
+                                         "threshZ500": da_thresh})
             # Write
-            iris.save(cubes, climate_db_file, zlib=True)
+            climate_ds.to_netcdf(climate_db_file)#, encoding=encoding)
+            #iris.save(cubes, climate_db_file, zlib=True)
             print("Wrote: {}".format(climate_db_file))
 
     print("All done!!")

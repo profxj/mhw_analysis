@@ -6,6 +6,25 @@ __pycache__/
 # C extensions
 *.so
 
+# Data files
+*.npy
+*.nc
+*.h5
+
+# IDE
+.idea/
+
+# Test files
+tst*.npy
+tst*.nc
+tst*.csv
+tst*.hdf
+tst*.npz
+test*.hdf
+test*.nc
+test*.npy
+temp*.npy
+
 # Distribution / packaging
 .Python
 build/
