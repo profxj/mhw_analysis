@@ -109,7 +109,7 @@ def mktab_change(outfile='tab_changepoint.tex'):
     for kk, cat in enumerate(categories):
         # Read
         rfile = os.path.join(rpath, f'results_{cat}_ocean_areas.csv')
-        df = pandas.read_csv(rfile)
+        df = pandas.read_csv(rfile, index_col=0)
 
         # Indices
         indices = list(df.index)
@@ -127,7 +127,10 @@ def mktab_change(outfile='tab_changepoint.tex'):
             sline = index 
 
             # Slope
-            sline += '& {:0.2f}'.format(row.Slope)
+            try:
+                sline += '& {:0.2f}'.format(row.Slope)
+            except:
+                embed(header='133 of tabs')
 
             # Slope p-value
             sline += f'& {row["Slope p-value"]:0.2g}'
@@ -175,5 +178,5 @@ def mhws_percentile():
 if __name__ == '__main__':
 
     #mktab_mhws(sub=True)
-    #mktab_change()
-    mhws_percentile()
+    mktab_change()
+    #mhws_percentile()

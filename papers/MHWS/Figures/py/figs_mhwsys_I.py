@@ -1219,6 +1219,7 @@ def fig_example_mhws(outfile, mhw_sys_file=os.path.join(
     isys = mhw_sys.iloc[idx]
     sys_startdate = isys.datetime - datetime.timedelta(days=int(isys.zcen)-int(isys.zboxmin))
 
+    print(f"Cutout at: lat={isys.lat}, lon={isys.lon}")
 
     # Grab the mask
     mask_da = mhw_sys_io.load_mask_from_system(isys, vary=vary,
@@ -1966,7 +1967,7 @@ def fig_changepoint(outfile, mask=None, debug=False,
     time_series_file = '../Analysis/ChangePoint/severe_ocean_areas_2019.csv'
     results_file = '../Analysis/ChangePoint/results_severe_ocean_areas.csv'
     change_time = pandas.read_csv(time_series_file)
-    change_results = pandas.read_csv(results_file)
+    change_results = pandas.read_csv(results_file, index_col=0)
 
     years = 1982 + np.arange(len(change_time))
     dates = [datetime.datetime(year,1,1) for year in years]
@@ -1976,20 +1977,23 @@ def fig_changepoint(outfile, mask=None, debug=False,
     gs = gridspec.GridSpec(4,4)
 
     # Change point figures
-    regions = ['AUS', 'IND', 'NWP', 'ARC', 'NEP', 'NWA', 'All',
+    regions = ['AUS', 'IND', 'NWP', 'ARC', 'NEP', 'NWA', 'ALL',
                'NEA', 'SEA', 'SWA', 'SP', 'ACC']
     #cm = plt.get_cmap('Set3') # A bit too light
     #cm = plt.get_cmap('rainbow')
     cm = plt.get_cmap('Paired')
     clrs = cm(np.linspace(0, 1, 12)).tolist()
-    # Swap out SP
+    # Swap out SP and ALL
     clrs[-2] = 'gray'
+    aidx = regions.index('ALL')
+    clrs[aidx] = 'k'
+    #
     rows = [0,1,2,3] + [3,3] + [3,2,1,0] + [0,0]
     cols = [0]*4 + [1,2,3] + [3,3] + [3,2,1]
 
     for ss, region in enumerate(regions):
-        if region in ['All']:
-            continue
+        #if region in ['All']:
+        #    continue
         clr, region, row, col = clrs[ss], regions[ss], 3-rows[ss], cols[ss]
         ax_change = plt.subplot(gs[row, col])
 
@@ -2018,7 +2022,7 @@ def fig_changepoint(outfile, mask=None, debug=False,
 
     # Color me!
     for ss, region in enumerate(regions):
-        if region in ['All']:
+        if region in ['ALL']:
             continue
         # coords
         lat = ds.lat[analy_sys.regions[region]['lat'][0]:analy_sys.regions[region]['lat'][1]]
@@ -2977,7 +2981,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 8  # Climate
         #flg_fig += 2 ** 9  # max area vs. NSpax
         #flg_fig += 2 ** 10  # Location location location
-        #flg_fig += 2 ** 11  # Example MHWS
+        #flg_fig += 2 ** 11  # Example MHWS -- Figure 1
         #flg_fig += 2 ** 12  # Nsys vs. year
         #flg_fig += 2 ** 13  # Spatial location of Systems
         #flg_fig += 2 ** 14  # Tthresh, T90, T95 vs DOY
@@ -2992,7 +2996,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 23  # MHWE spatial
         #flg_fig += 2 ** 24  # de-trend global view -- Fig 6
         #flg_fig += 2 ** 25  # Cumulative NVox
-        flg_fig += 2 ** 26  # Change Point (Figure 5)
+        flg_fig += 2 ** 26  # Change Point -- Figure 5
     else:
         flg_fig = sys.argv[1]
 
