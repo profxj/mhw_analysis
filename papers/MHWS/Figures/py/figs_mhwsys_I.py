@@ -1218,8 +1218,11 @@ def fig_example_mhws(outfile, mhw_sys_file=os.path.join(
     idx = np.where(mhw_sys.mask_Id == mask_Id)[0][0]
     isys = mhw_sys.iloc[idx]
     sys_startdate = isys.datetime - datetime.timedelta(days=int(isys.zcen)-int(isys.zboxmin))
+    sys_enddate = isys.datetime + datetime.timedelta(days=int(isys.zboxmax)-int(isys.zcen))
 
     print(f"Cutout at: lat={isys.lat}, lon={isys.lon}")
+    print(f"The start date is {sys_startdate}")
+    print(f"The end date is {sys_enddate}")
 
     # Grab the mask
     mask_da = mhw_sys_io.load_mask_from_system(isys, vary=vary,
@@ -1710,7 +1713,7 @@ def fig_MHWS_histograms(outfile,
     plt.clf()
     gs = gridspec.GridSpec(2,2)
 
-    for ss in range(4):
+    for ss, albl in zip(range(4), ['a', 'b', 'c', 'd']):
         # Bins
         ylabel = 'Number of MHWSs'
         if ss >= 2:
@@ -1793,6 +1796,18 @@ def fig_MHWS_histograms(outfile,
         #    idx = mhw_sys.category == cat
         #bincentres = [(bins[i] + bins[i + 1]) / 2. for i in range(len(bins) - 1)]
         #plt.step(bincentres, H, where='mid', color=clr, label='Cat={}'.format(cat))
+
+        if ss in [0,2]:
+            xtxt = 0.9
+        else:
+            xtxt = 0.1
+        ax.text(xtxt, 0.95, f'({albl})', 
+                transform=ax.transAxes, va='top', 
+                ha='center', fontsize=15)
+
+        # Labels
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
 
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
@@ -2005,7 +2020,11 @@ def fig_changepoint(outfile, mask=None, debug=False,
         ax_change.axvline(cp_date, color=clr, ls='--')
 
         # Label
-        ax_change.text(0.05, 0.8, region, color='black',
+        if region == 'ACC':
+            lregion = 'ANT'
+        else:
+            lregion = region
+        ax_change.text(0.05, 0.8, lregion, color='black',
             transform=ax_change.transAxes, ha='left', 
             fontsize=17.)
 
@@ -2913,10 +2932,10 @@ def main(flg_fig):
         fig_MHWS_histograms('fig_MHWS_histograms_km.png',
                 fix_ylim=(1., 5e5))
         #fig_MHWS_histograms('fig_MHWS_histograms_km_orig.png')
-        fig_MHWS_histograms('fig_MHWS_local_histograms_km.png',
-            mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 
-                            'MHWS_2019_local.csv'), 
-            fix_ylim=(1., 5e5))
+        #fig_MHWS_histograms('fig_MHWS_local_histograms_km.png',
+        #    mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 
+        #                    'MHWS_2019_local.csv'), 
+        #    fix_ylim=(1., 5e5))
 
     # Days in a given system vs. location
     if flg_fig & (2 ** 20):
