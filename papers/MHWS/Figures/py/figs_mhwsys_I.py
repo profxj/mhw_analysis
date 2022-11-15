@@ -2977,7 +2977,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 8  # Climate
         #flg_fig += 2 ** 9  # max area vs. NSpax
         #flg_fig += 2 ** 10  # Location location location
-        #flg_fig += 2 ** 11  # Example MHWS
+        #flg_fig += 2 ** 11  # Example MHWS -- Figure 1
         #flg_fig += 2 ** 12  # Nsys vs. year
         #flg_fig += 2 ** 13  # Spatial location of Systems
         #flg_fig += 2 ** 14  # Tthresh, T90, T95 vs DOY
