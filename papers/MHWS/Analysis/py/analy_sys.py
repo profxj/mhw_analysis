@@ -278,6 +278,90 @@ def ocean_area_trends(c_file:str, outfile:str):
     df.to_csv(outfile)
     print(f'Wrote: {outfile}')
 
+def calc_misc_year_metrics():
+    # Do the stats
+    years = 1983 + np.arange(37)
+
+    # Load MHWE
+    MHW_path = os.getenv('MHW')
+    MHWE_file = 'mhw_events_allsky_2019.parquet'
+    mhwe_file = os.path.join(MHW_path, 'db', MHWE_file)
+    print('Loading MHWE')
+    mhwe = pandas.read_parquet(mhwe_file)
+    print('Done')
+    # Need to build the end date
+    #  data is the same time_start
+    #  Just add days
+
+    # #############
+    # MHWS 
+    mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019.csv')
+    mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=mhw_sys_file, 
+                                      vary=False)
+    # Convert to days
+    tdur_days = mhw_sys.duration.values / np.timedelta64(1, 'D')
+    mhw_sys['duration'] = tdur_days
+    mhw_sys['avg_area'] = mhw_sys.NVox_km.values / tdur_days
+
+    # Stats
+    mean_avg_area = []
+    median_avg_area = []
+    mean_wgt_avg_area = []
+    mean_t_duration = []
+    mean_wgt_t_duration = []
+    median_t_duration = []
+    MHWS_nstart = []
+    MHWE_nstart = []
+    for jj, year in enumerate(years):
+
+        # Identify those in the year
+        day1 = np.datetime64(datetime.datetime(year,1,1))
+        day1n = np.datetime64(datetime.datetime(year+1,1,1))
+        day_beg = np.maximum(mhw_sys.startdate, day1)
+        day_end = np.minimum(mhw_sys.enddate,
+                             np.datetime64(datetime.datetime(year+1,1,1)))  # Should subtract a day
+        ndays = day_end-day_beg
+        in_year = ndays > datetime.timedelta(days=0)
+        days = ndays / np.timedelta64(1, 'D')
+
+        # Average areas
+        mean_avg_area.append(np.mean(mhw_sys.avg_area[in_year]))
+        median_avg_area.append(np.median(mhw_sys.avg_area[in_year]))
+        # Weighted average areas
+        mean_wgt_avg_area.append(np.sum(mhw_sys.avg_area[in_year]*days[in_year]) /
+                                 np.sum(days[in_year]))
+
+        # Durations
+        mean_t_duration.append(np.mean(mhw_sys.duration[in_year]))
+        median_t_duration.append(np.median(mhw_sys.duration[in_year]))
+        # Weighted average duration
+        mean_wgt_t_duration.append(np.sum(mhw_sys.duration[in_year]*days[in_year]) /
+                                 np.sum(days[in_year]))
+
+        # Starts
+        start = (mhw_sys.startdate >= day1) & in_year
+        MHWS_nstart.append(np.sum(start))
+
+        # MHWE
+        mhwe_start = (mhwe.date >= day1) & (mhwe.date < day1n)
+        MHWE_nstart.append(np.sum(mhwe_start))
+
+
+    # Write
+    df = pandas.DataFrame()
+    df['years'] = years
+    df['mean_avg_area'] = mean_avg_area
+    df['mean_wgt_avg_area'] = mean_wgt_avg_area
+    df['median_avg_area'] = median_avg_area
+    df['mean_t_duration'] = mean_t_duration
+    df['mean_wgt_t_duration'] = mean_wgt_t_duration
+    df['median_t_duration'] = median_t_duration
+    df['MHWS_nstart'] = MHWS_nstart
+    df['MHWE_nstart'] = MHWE_nstart
+
+    outfile = 'mhw_stats_by_year_2019.csv'
+    df.to_csv(outfile)
+    print(f'Wrote: {outfile}')
 
 
 def main(flg_main):
@@ -340,6 +424,9 @@ def main(flg_main):
         #ocean_area_trends('minor_km_dy_by_yr_2019.nc',
         #                  'minor_ocean_areas_2019.csv')
 
+    # Misc year metrics
+    if flg_main & (2 ** 5):
+        calc_misc_year_metrics()
 
 # Command line execution
 if __name__ == '__main__':
@@ -349,7 +436,8 @@ if __name__ == '__main__':
         #flg_main += 2 ** 1  # Days by year, 2019 detrend local
         #flg_main += 2 ** 2  # Days by year, 2019 
         #flg_main += 2 ** 3  # Trend
-        flg_main += 2 ** 4  # Ocean area analysis
+        #flg_main += 2 ** 4  # Ocean area analysis
+        flg_main += 2 ** 5  # Misc year metrics
     else:
         flg_main = sys.argv[1]
 
