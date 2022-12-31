@@ -2930,7 +2930,7 @@ def main(flg_fig):
     if flg_fig & (2 ** 19):
         #fig_MHWS_histograms('fig_MHWS_histograms.png', use_km=False)
         fig_MHWS_histograms('fig_MHWS_histograms_km.png',
-                fix_ylim=(1., 5e5))
+                fix_ylim=(0.6, 5e5))
         #fig_MHWS_histograms('fig_MHWS_histograms_km_orig.png')
         #fig_MHWS_histograms('fig_MHWS_local_histograms_km.png',
         #    mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 
