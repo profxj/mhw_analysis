@@ -219,6 +219,46 @@ def fig_average_area(outfile='fig_average_area.png',
     print(f"10th percentile of average area for t>1year: {p10_t1year}")
 
 
+def fig_avgA_by_year(outfile='fig_avgA_by_year.png',
+              mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 
+                            'MHWS_2019.csv'),
+              vary=False):
+    """
+    """
+    # Load stats
+    mhw_stats = pandas.read_csv('../Analysis/mhw_stats_by_year_2019.csv')
+
+    # Figure
+    fig = plt.figure(figsize=(12, 8))
+    plt.clf()
+    ax = plt.gca()
+
+    ax.plot(mhw_stats.year, mhw_stats.mean_wgt_avg_area, 'k-')
+
+    # Axes
+    ax.set_xlabel('Year')
+    ax.set_ylabel(r'$<\bar A>$ (km$^2$)')
+    #ax.set_xscale('log')
+    #ax.set_yscale('log')
+    #ax.set_ylim(1e4, 2e5)
+    ax.set_ylim(25000., 150000.)
+
+    set_fontsize(ax, 21.)
+
+    # Layout and save
+    plt.tight_layout(pad=0.2,h_pad=0.,w_pad=0.1)
+    plt.savefig(outfile, dpi=300)
+    plt.close()
+    print('Wrote {:s}'.format(outfile))
+
+    # Stats
+    early = mhw_stats[mhw_stats.year < 1993]
+    late = mhw_stats[mhw_stats.year > 2010]
+    print(f"Mean of early years: {np.mean(early.mean_wgt_avg_area.values)}")
+    print(f"Mean of late years: {np.mean(late.mean_wgt_avg_area.values)}")
+
+
+
 def set_mplrc():
     mpl.rcParams['mathtext.default'] = 'it'
     mpl.rcParams['font.size'] = 12
@@ -261,6 +301,10 @@ def main(flg_fig):
     # Average area
     if flg_fig & (2 ** 2):
         fig_average_area()
+
+    # Average area by year
+    if flg_fig & (2 ** 3):
+        fig_avgA_by_year()
 
 
 # Command line execution

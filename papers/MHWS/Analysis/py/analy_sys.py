@@ -364,6 +364,84 @@ def calc_misc_year_metrics():
     df.to_csv(outfile)
     print(f'Wrote: {outfile}')
 
+def calc_area(lat):
+    R_Earth = 6371.0
+    cell_km = 0.25 * 2 * np.pi * R_Earth / 360.
+
+    # 
+    cell_lat = cell_km * cell_km * np.cos(np.pi * lat / 180.);
+
+    return cell_lat
+
+def calc_prediction():
+    """
+    """
+    # #############
+    # MHWS 
+    mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019.csv')
+    mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=mhw_sys_file, 
+                                      vary=False)
+
+    # Mask
+    day_earlier = (2019,5,1)
+    day_predict = (2019,6,1)
+    dt_earlier = np.datetime64(datetime.datetime(
+        day_earlier[0], day_earlier[1], day_earlier[2]))
+    dt_predict = np.datetime64(datetime.datetime(
+        day_predict[0], day_predict[1], day_predict[2]))
+
+    mask_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019_mask.nc')
+    mask_da = mhw_sys_io.load_mask_from_dates(day_earlier, day_predict, 
+                                           mhw_mask_file=mask_file) 
+
+    mask_predict = mask_da.sel(time=dt_predict).data[:]
+    active = np.where(mask_predict > 0)
+    a_lat = mask_da.lat[active[0]]
+
+    cell_area = calc_area(a_lat.data)
+    area_predict = np.sum(cell_area)
+    print(f"Predicted area: {area_predict} km^2")
+
+    # Now query MHWS
+    mask_earlier = mask_da.sel(time=dt_earlier).data[:]
+    mask_good_earlier = np.zeros_like(mask_earlier)
+    mask_modsev_earlier = np.zeros_like(mask_earlier)
+    mask_sev_earlier = np.zeros_like(mask_earlier)
+    for iMHWS in np.unique(mask_predict)[1:]:  # Skip the first one which is 0
+        in_earlier = np.where(mask_earlier == iMHWS)
+        mask_good_earlier[in_earlier] = iMHWS
+        # Check severity
+        idx = np.where(mhw_sys.mask_Id == iMHWS)[0][0]
+        if mhw_sys.iloc[idx].NVox_km > defs.type_dict_km[defs.classb][0]:
+            mask_modsev_earlier[in_earlier] = iMHWS
+        if mhw_sys.iloc[idx].NVox_km > defs.type_dict_km[defs.classc][0]:
+            mask_sev_earlier[in_earlier] = iMHWS
+
+
+    # % 1 month earlier
+    active_earlier = np.where(mask_good_earlier > 0)
+    a_lat = mask_da.lat[active_earlier[0]]
+    cell_area = calc_area(a_lat.data)
+    area_earlier = np.sum(cell_area)
+
+    # % 1 month earlier and moderate/severe
+    active_earlier = np.where(mask_modsev_earlier > 0)
+    a_lat = mask_da.lat[active_earlier[0]]
+    cell_area = calc_area(a_lat.data)
+    area_modsev_earlier = np.sum(cell_area)
+
+    # % 1 month earlier and severe
+    active_earlier = np.where(mask_sev_earlier > 0)
+    a_lat = mask_da.lat[active_earlier[0]]
+    cell_area = calc_area(a_lat.data)
+    area_sev_earlier = np.sum(cell_area)
+
+
+    print(f"Of the MHWS that are active on {day_predict}, {area_earlier/area_predict} were active on {day_earlier}")
+    print(f"And {area_modsev_earlier/area_earlier} were moderate or severe")
+    print(f"And {area_sev_earlier/area_earlier} were severe")
+
+    embed(header='377 of anly sys')
 
 def main(flg_main):
     if flg_main == 'all':
@@ -429,6 +507,11 @@ def main(flg_main):
     if flg_main & (2 ** 5):
         calc_misc_year_metrics()
 
+    # Prediction
+    if flg_main & (2 ** 6):
+        calc_prediction()
+
+
 # Command line execution
 if __name__ == '__main__':
     if len(sys.argv) == 1:
@@ -438,7 +521,8 @@ if __name__ == '__main__':
         #flg_main += 2 ** 2  # Days by year, 2019 
         #flg_main += 2 ** 3  # Trend
         #flg_main += 2 ** 4  # Ocean area analysis
-        flg_main += 2 ** 5  # Misc year metrics
+        #flg_main += 2 ** 5  # Misc year metrics
+        flg_main += 2 ** 6  # MHWS prediction
     else:
         flg_main = sys.argv[1]
 
