@@ -350,7 +350,7 @@ def calc_misc_year_metrics():
 
     # Write
     df = pandas.DataFrame()
-    df['years'] = years
+    df['year'] = years
     df['mean_avg_area'] = mean_avg_area
     df['mean_wgt_avg_area'] = mean_wgt_avg_area
     df['median_avg_area'] = median_avg_area
