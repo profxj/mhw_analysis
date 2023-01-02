@@ -288,6 +288,7 @@ def calc_misc_year_metrics():
     mhwe_file = os.path.join(MHW_path, 'db', MHWE_file)
     print('Loading MHWE')
     mhwe = pandas.read_parquet(mhwe_file)
+    print(f"There are {len(mhwe)} MHWEs")
     print('Done')
     # Need to build the end date
     #  data is the same time_start

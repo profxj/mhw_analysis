@@ -109,7 +109,7 @@ def fig_t_histograms(outfile='fig_t_histograms.png',
     mhw_sys['duration'] = tdur_days
 
     # Figure
-    fig = plt.figure(figsize=(12, 8))
+    fig = plt.figure(figsize=(10, 8))
     plt.clf()
     ax = plt.gca()
 
@@ -120,18 +120,19 @@ def fig_t_histograms(outfile='fig_t_histograms.png',
 
     # MHWS
     sns.histplot(mhw_sys, x=attr, bins=bins, log_scale=True, ax=ax,
-                     color='g')
+                     color='g', label='MHWS')
     # MHWE
     sns.histplot(mhwe, x='duration', bins=bins, log_scale=True, ax=ax,
-                 color='blue')
+                 color='blue', label='MHWE')
 
     # Axes
-    ax.set_xlabel('t (days)')
+    ax.set_xlabel(r'$t_{\rm dur}$ (days)')
     ax.set_ylabel('Number')
     ax.set_yscale('log')
     ax.minorticks_on()
+    ax.legend(fontsize=21.)
 
-    set_fontsize(ax, 19.)
+    set_fontsize(ax, 21.)
 
     # Layout and save
     plt.tight_layout(pad=0.2,h_pad=0.,w_pad=0.1)
@@ -152,18 +153,42 @@ def fig_average_area(outfile='fig_average_area.png',
     mhw_sys['avg_area'] = mhw_sys.NVox_km.values / tdur_days
     #embed(header='153 of discuss')
 
+    # Remove the 4's
+    good = mhw_sys.avg_area.values > 4.
+    mhw_sys = mhw_sys[good].copy()
+
     # Figure
-    fig = plt.figure(figsize=(12, 8))
+    fig = plt.figure(figsize=(10, 8))
     plt.clf()
     ax = plt.gca()
 
+    nbins = 50
+    bins_dur = np.linspace(0.5, 4.0, nbins)
+    bins_aarea = np.linspace(0.5, 7.5, nbins)
 
+    counts, xedges, yedges = np.histogram2d(np.log10(mhw_sys.duration.values),
+        np.log10(mhw_sys.avg_area.values), bins=(bins_dur, bins_aarea))
+    cm = plt.get_cmap('autumn')
+    mplt = ax.pcolormesh(10**xedges,10**yedges,
+                                np.log10(counts.transpose()), cmap=cm)
+    cb = plt.colorbar(mplt, fraction=0.030, pad=0.04)
+    cb.ax.tick_params(labelsize=13.)
+    cb.set_label(r'log10 Counts', fontsize=20.)
+
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel(r'$t_{\rm dur}$ (days)')
+    ax.set_ylabel(r'$\bar A$ (km$^2$)')
+
+    '''
     jg = sns.jointplot(data=mhw_sys, x='duration', y='avg_area', kind='hex',
-                       bins='log', gridsize=250, xscale='log', yscale='log',
-                       cmap=plt.get_cmap('autumn'), mincnt=1,
-                       marginal_kws=dict(fill=False, color='black', 
-                                         bins=100)) 
+                       bins='log', gridsize=100, xscale='log', yscale='log',
+                       cmap=plt.get_cmap('autumn'), mincnt=1)
+                       #marginal_kws=dict(fill=False, color='black', 
+                       #                  bins=100)) 
     plt.colorbar()
+    jg.ax_marg_x.set_axis_off()
+    jg.ax_marg_y.set_axis_off()
     # Axes                                 
     #jg.ax_joint.set_xlabel(r'$\Delta T$')
     #jg.ax_joint.set_ylim(ymnx)
@@ -171,12 +196,27 @@ def fig_average_area(outfile='fig_average_area.png',
     #jg.fig.set_figheight(7.)
 
     set_fontsize(jg.ax_joint, 16.)
+    '''
+
+    set_fontsize(ax,  16.)
 
     # Layout and save
     plt.tight_layout(pad=0.2,h_pad=0.,w_pad=0.1)
     plt.savefig(outfile, dpi=300)
     plt.close()
     print('Wrote {:s}'.format(outfile))
+
+    # Stats
+    # t=50-100
+    t50 = mhw_sys[(mhw_sys.duration > 50) & (mhw_sys.duration < 100)]
+    p10_t50 = np.percentile(t50.avg_area.values, 10)
+    mean_t50 = np.mean(t50.avg_area.values)
+    print(f"10th percentile of average area for t=50-100: {p10_t50}")
+    print(f"Mean of average area for t=50-100: {mean_t50}")
+
+    t1year = mhw_sys[(mhw_sys.duration > 365)]
+    p10_t1year = np.percentile(t1year.avg_area.values, 10)
+    print(f"10th percentile of average area for t>1year: {p10_t1year}")
 
 
 def set_mplrc():
@@ -230,7 +270,8 @@ if __name__ == '__main__':
         flg_fig = 0
         #flg_fig += 2 ** 0  # CDF of durations
         #flg_fig += 2 ** 1  # t histograms
-        flg_fig += 2 ** 2  # Average area
+        #flg_fig += 2 ** 2  # Average area
+        flg_fig += 2 ** 3  # <A> vs year
     else:
         flg_fig = sys.argv[1]
 
