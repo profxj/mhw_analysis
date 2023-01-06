@@ -198,7 +198,7 @@ def fig_average_area(outfile='fig_average_area.png',
     set_fontsize(jg.ax_joint, 16.)
     '''
 
-    set_fontsize(ax,  16.)
+    set_fontsize(ax,  19.)
 
     # Layout and save
     plt.tight_layout(pad=0.2,h_pad=0.,w_pad=0.1)
@@ -233,7 +233,7 @@ def fig_avgA_by_year(outfile='fig_avgA_by_year.png',
     plt.clf()
     ax = plt.gca()
 
-    ax.plot(mhw_stats.year, mhw_stats.mean_wgt_avg_area, 'k-')
+    ax.plot(mhw_stats.year, mhw_stats.mean_wgt_avg_area, 'k-', lw=2.5)
 
     # Axes
     ax.set_xlabel('Year')
@@ -314,7 +314,7 @@ if __name__ == '__main__':
         flg_fig = 0
         #flg_fig += 2 ** 0  # CDF of durations
         #flg_fig += 2 ** 1  # t histograms
-        #flg_fig += 2 ** 2  # Average area
+        #flg_fig += 2 ** 2  # Average area / tdur 2D histogram
         flg_fig += 2 ** 3  # <A> vs year
     else:
         flg_fig = sys.argv[1]
