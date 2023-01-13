@@ -39,6 +39,7 @@ from oceanpy.utils import catalog
 from mhw_analysis.systems import io as mhw_sys_io
 from mhw_analysis.systems import utils as mhw_sys_utils
 from mhw_analysis.systems import analysisc as mhw_analysisc
+from mhw_analysis.systems import defs
 
 #from ulmo import io as ulmo_io # for s3
 
@@ -49,7 +50,7 @@ noaa_path = os.getenv('NOAA_OI')
 
 # Local
 sys.path.append(os.path.abspath("../Analysis/py"))
-import defs, analy_utils, fitting, analy_sys
+import analy_utils, fitting, analy_sys
 
 
 def fig_mhw_events(outfile, mhw_events=None, events=None, duration=None,
@@ -1190,8 +1191,9 @@ def fig_location_NVox(ext, size, vary=True, nside=64, nmax=10):
     print('Wrote {:s}'.format(outfile))
 
 
-def fig_example_mhws(outfile, mhw_sys_file=os.path.join(
-                            os.getenv('MHW'), 'db', 'MHWS_2019.csv'),
+def fig_example_mhws(
+    outfile, 
+    mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 'MHWS_2019.csv'),
                         vary=False,
                      #mask_Id=1575120, 
                      make_mayavi=False,

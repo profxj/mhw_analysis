@@ -9,12 +9,12 @@ import xarray
 
 from mhw_analysis.systems import io as mhw_sys_io
 from mhw_analysis.systems import analysisc
+from mhw_analysis.systems import defs
 
 from IPython import embed 
 
 # Local
 sys.path.append(os.path.abspath("../Analysis/py"))
-import defs
 
 # Regions
 regions = {}
