@@ -52,6 +52,7 @@ noaa_path = os.getenv('NOAA_OI')
 sys.path.append(os.path.abspath("../Analysis/py"))
 import analy_utils, fitting, analy_sys
 
+v_lbl = r'$V_{\rm MHWS}$'
 
 def fig_mhw_events(outfile, mhw_events=None, events=None, duration=None,
                    events_file=None, show_pacific=False):
@@ -907,7 +908,8 @@ def fig_dur_vs_NVox(outfile, mhw_sys_file=None, vary=False,
     #ax_tot.set_yscale('log')
     if not seab:
         ax_tot.set_xlim(0.5, 4.0)
-        ax_tot.set_ylabel(r'$\log_{10} \, N_{\rm Vox} \; (vox)$')
+        #ax_tot.set_ylabel(r'$\log_{10} \, N_{\rm Vox} \; (vox)$')
+        ax_tot.set_ylabel(r'$\log_{10} \, V_{\rm MHWS} \; (\rm km^2 \, days)$')
         ax_tot.set_xlabel(r'$\log_{10} \, t_{\rm dur}$ (days)')
     #ax_tot.minorticks_on()
 
@@ -1681,12 +1683,13 @@ def fig_extreme_evolution(sys_file, mask_file, ordinal, outfile,
 
 
 def fig_MHWS_histograms(outfile, 
-                        mhw_sys_file=os.path.join(
-                            os.getenv('MHW'), 'db', 
-                            'MHWS_2019.csv'),
                             show_insets=False,
+                        mhw_sys_file=None,
                         use_km=True,
                         fix_ylim=None):
+    if mhw_sys_file is None:
+        mhw_sys_file=os.path.join(
+        os.getenv('MHW'), 'db', 'MHWS_2019.csv'),
     # Load MHW Systems
     mhw_sys = mhw_sys_io.load_systems(mhw_sys_file=mhw_sys_file)#, vary=vary)
     mhw_sys['duration'] = mhw_sys.zboxmax - mhw_sys.zboxmin + 1
@@ -1726,7 +1729,8 @@ def fig_MHWS_histograms(outfile,
             attr = vox_key
             if np.log10(np.max(mhw_sys[attr].values)+1) > bins[-1]:
                 bins[-1] = np.log10(np.max(mhw_sys[attr].values)+1) # Extend to incluce the last one
-            xlabel = r'$N_{\rm Vox}$'
+            #xlabel = r'$N_{\rm Vox}$'
+            xlabel = r'$V_{\rm MHWS}$'
             if use_km:
                 xlabel += r'$\; (\rm{days \, km^2})$'
             clr = 'b'
@@ -2931,13 +2935,13 @@ def main(flg_fig):
     # MHWS Histograms
     if flg_fig & (2 ** 19):
         #fig_MHWS_histograms('fig_MHWS_histograms.png', use_km=False)
-        fig_MHWS_histograms('fig_MHWS_histograms_km.png',
-                fix_ylim=(0.6, 5e5))
+        #fig_MHWS_histograms('fig_MHWS_histograms_km.png',
+        #        fix_ylim=(0.6, 5e5))
         #fig_MHWS_histograms('fig_MHWS_histograms_km_orig.png')
-        #fig_MHWS_histograms('fig_MHWS_local_histograms_km.png',
-        #    mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 
-        #                    'MHWS_2019_local.csv'), 
-        #    fix_ylim=(1., 5e5))
+        fig_MHWS_histograms('fig_MHWS_local_histograms_km.png',
+            mhw_sys_file=os.path.join(os.getenv('MHW'), 'db', 
+                            'MHWS_2019_local.csv'), 
+            fix_ylim=(1., 5e5))
 
     # Days in a given system vs. location
     if flg_fig & (2 ** 20):
@@ -2997,7 +3001,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 3  # NVox histograms
         #flg_fig += 2 ** 4  # Duration histograms
         #flg_fig += 2 ** 5  # max area histograms
-        #flg_fig += 2 ** 6  # duration vs. NVox -- Fig 7
+        flg_fig += 2 ** 6  # duration vs. NVox -- Fig 11
         #flg_fig += 2 ** 7  # MHW Events (time) -- THIS CAN BE VERY SLOW
         #flg_fig += 2 ** 8  # Climate
         #flg_fig += 2 ** 9  # max area vs. NSpax
@@ -3017,7 +3021,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 23  # MHWE spatial
         #flg_fig += 2 ** 24  # de-trend global view -- Fig 6
         #flg_fig += 2 ** 25  # Cumulative NVox
-        flg_fig += 2 ** 26  # Change Point -- Figure 5
+        #flg_fig += 2 ** 26  # Change Point -- Figure 5
     else:
         flg_fig = sys.argv[1]
 
