@@ -1271,7 +1271,10 @@ def fig_example_mhws(
         # https://rabernat.github.io/research_computing_2018/maps-with-cartopy.html
 
         #ax.imshow(sst_img*region, origin='lower')
-        ax.imshow(sst_img, origin='lower')
+        im = ax.imshow(sst_img, origin='lower')#, cmap='seismic')#, vmin=-1, vmax=3.)
+        cb = plt.colorbar(im, fraction=0.030, pad=0.04)
+        cb.set_label('SSTa (K)', fontsize=11.)
+
 
         # Outline
         #https://stackoverflow.com/questions/24539296/outline-a-region-in-a-graph
@@ -3006,7 +3009,7 @@ if __name__ == '__main__':
         #flg_fig += 2 ** 8  # Climate
         #flg_fig += 2 ** 9  # max area vs. NSpax
         #flg_fig += 2 ** 10  # Location location location
-        #flg_fig += 2 ** 11  # Example MHWS -- Figure 1
+        flg_fig += 2 ** 11  # Example MHWS -- Figure 1
         #flg_fig += 2 ** 12  # Nsys vs. year
         #flg_fig += 2 ** 13  # Spatial location of Systems
         #flg_fig += 2 ** 14  # Tthresh, T90, T95 vs DOY

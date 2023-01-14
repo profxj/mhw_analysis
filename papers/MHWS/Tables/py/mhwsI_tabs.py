@@ -210,6 +210,9 @@ def mktab_regions(outfile='tab_regions.tex'):
     tbfil.write('\\botline \n')
     tbfil.write('\\end{tabular}\n')
     tbfil.write('\\end{center}\n')
+    tbfil.write('The latitude and longitude ranges define the 11 regions considered in the change point analysis. \n')
+    tbfil.write('Acronyms are: Arctic (ARC), Northwest Pacific (NWP), Indian Ocean (IND), Australian seas (AUS), Northeast Pacific (NEP), Antarctic (ANT), Northwest Atlantic (NWA), South Pacific (SP), Northeast Atlantic (NEA), Southeast Atlantic (SEA), Southwest Atlantic (SWA). \n')
+    tbfil.write('For the NEP and NWA regions, we included custom masks to exclude the Gulf of Alaska and Pacific waters, respectively. \n') 
     tbfil.write('\\end{table}\n')
 
     tbfil.close()
