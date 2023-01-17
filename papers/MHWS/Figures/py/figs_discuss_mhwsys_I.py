@@ -49,7 +49,7 @@ noaa_path = os.getenv('NOAA_OI')
 
 # Local
 sys.path.append(os.path.abspath("../Analysis/py"))
-import defs, analy_utils, fitting, analy_sys
+import analy_utils, fitting, analy_sys
 
 
 def fig_t_cdf(outfile='fig_t_cdf.png', 
