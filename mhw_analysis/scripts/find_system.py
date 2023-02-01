@@ -71,6 +71,11 @@ def main(pargs):
     # Find the best
     uni_IDs, uni_cnts = np.unique(mhw_IDs, return_counts=True)
     non_zero = uni_IDs > 0
+
+    if not np.any(non_zero):
+        print("No MHW Systems found")
+        return
+    
     imx = np.argmax(uni_cnts[non_zero])
 
     ID = uni_IDs[non_zero][imx]
