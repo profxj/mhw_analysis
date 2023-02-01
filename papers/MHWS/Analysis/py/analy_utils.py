@@ -13,9 +13,10 @@ from datetime import date
 
 from IPython import embed
 
+from mhw_analysis.systems import defs
+
 # Local
 sys.path.append(os.path.abspath("../Analysis/py"))
-import defs
 
 def cut_by_type(mhw_sys):
     """
