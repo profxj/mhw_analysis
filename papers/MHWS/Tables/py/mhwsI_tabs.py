@@ -5,6 +5,7 @@ import numpy as np
 import os, sys
 
 import pandas
+import xarray
 
 from mhw_analysis.systems import io as mhw_sys_io
 
@@ -154,6 +155,69 @@ def mktab_change(outfile='tab_changepoint.tex'):
     tbfil.close()
     print('Wrote {:s}'.format(outfile))
 
+# Regions
+def mktab_regions(outfile='tab_regions.tex'):
+
+    # Open a random SST file
+    ds = xarray.open_dataset(os.path.join(os.getenv('NOAA_OI'), 'sst.day.mean.2019.nc'))
+    lats = ds.lat.values
+    lons = ds.lon.values
+
+
+
+    # Open
+    tbfil = open(outfile, 'w')
+
+    # Header
+    #tbfil.write('\\clearpage\n')
+    tbfil.write('\\begin{table}[h]\n')
+    tbfil.write('\\begin{center}\n')
+    tbfil.write('\\caption{Regions for analysis}')
+    tbfil.write('\\label{tab:regions}\n')
+    tbfil.write('\\begin{tabular}{ccc}\n')
+    tbfil.write('\\topline\n')
+    tbfil.write('Region & Latitudes & Longitudes \\\\ \n')
+    #tbfil.write('(deg) & (deg) & ($\\arcsec$) & (mag) & classifier & & \\\\ \n')
+    tbfil.write('\\midline\n')
+    tbfil.write(' \n')
+
+    for region in analy_sys.regions.keys():
+        
+        # Region
+        sline = region
+
+        # Latitudes
+        rlats = [lats[min(analy_sys.regions[region]['lat'][ii],719)] for ii in range(2)]
+        lbls = ['N' if rlats[ii] > 0 else 'S' for ii in range(2)]
+
+        sline += '&'
+        sline += f'{int(abs(rlats[0]))}{lbls[0]}'
+        sline += f'--{int(abs(rlats[1]))}{lbls[1]}'
+
+        # Longitudes
+        rlons = [lons[min(analy_sys.regions[region]['lon'][ii],1439)] for ii in range(2)]
+        rlons = [rlons[ii] if rlons[ii] < 180 else rlons[ii]-360 for ii in range(2)]
+        lbls = ['E' if rlons[ii] > 0 else 'W' for ii in range(2)]
+
+        sline += '&'
+        sline += f'{int(abs(rlons[0]))}{lbls[0]}'
+        sline += f'--{int(abs(rlons[1]))}{lbls[1]}'
+
+        # Finish
+        tbfil.write(sline + '\\\\ \n')
+
+    # End end
+    tbfil.write('\\botline \n')
+    tbfil.write('\\end{tabular}\n')
+    tbfil.write('\\end{center}\n')
+    tbfil.write('The latitude and longitude ranges define the 11 regions considered in the change point analysis. \n')
+    tbfil.write('Acronyms are: Arctic (ARC), Northwest Pacific (NWP), Indian Ocean (IND), Australian seas (AUS), Northeast Pacific (NEP), Antarctic (ANT), Northwest Atlantic (NWA), South Pacific (SP), Northeast Atlantic (NEA), Southeast Atlantic (SEA), Southwest Atlantic (SWA). \n')
+    tbfil.write('For the NEP and NWA regions, we included custom masks to exclude the Gulf of Alaska and Pacific waters, respectively. \n') 
+    tbfil.write('\\end{table}\n')
+
+    tbfil.close()
+    print('Wrote {:s}'.format(outfile))
+
 
 def mhws_percentile():
     # Load
@@ -178,5 +242,6 @@ def mhws_percentile():
 if __name__ == '__main__':
 
     #mktab_mhws(sub=True)
-    mktab_change()
+    #mktab_change()
     #mhws_percentile()
+    mktab_regions()

@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+#
+# See top-level LICENSE file for Copyright information
+#
+# -*- coding: utf-8 -*-
+
+"""
+This script describes a MHWS given date and location
+"""
+
+import mhw_analysis.scripts.find_system as find_system 
+
+if __name__ == '__main__':
+    args = find_system.parser()
+    find_system.main(args)
