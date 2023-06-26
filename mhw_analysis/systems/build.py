@@ -41,7 +41,13 @@ def test_c():
     ngood = np.sum(good)
     cube[good] = np.random.randint(4, size=ngood)+1
 
-    # C
+    # C    da = xarray.DataArray(maskC, coords=[lat_coord, lon_coord, times],
+                          dims=['lat', 'lon', 'time'])
+    ds = xarray.Dataset({'mask': da})
+    print("Saving mask..")
+    encoding = {'mask': dict(compression='gzip',
+                         chunksizes=(maskC.shape[0], maskC.shape[1], 1))}
+    ds.to_netcdf(mask_file, engine='h5netcdf', encoding=encoding)
     maskC, parentC, catC = buildc.first_pass(cube.astype(np.int8))
     NVoxC = buildc.second_pass(maskC, parentC, catC)
     IdToLabel, LabelToId, ndet = utils.prep_labels(maskC, parentC, NVoxC, MinNVox=0, verbose=True)

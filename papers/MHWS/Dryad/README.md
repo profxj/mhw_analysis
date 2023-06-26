@@ -30,6 +30,7 @@ We describe each in turn.
 ### MWH Event data
 
   * mhw_events_allsky_2019.db -- SQLite format 3 table of MHW Events
+    * test me
   * mhw_events_allsky_2019.parquet -- Pandas table of MHW Events
   * MHWevent_cube_2019.nc -- netCDF file describing the location of every MHW Event in space and time.  The coordinates are: `lat (deg), lon (deg), time (datetime64[ns])`
 
