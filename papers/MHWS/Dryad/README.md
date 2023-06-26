@@ -34,7 +34,9 @@ We describe each in turn.
     *   `time_end`             End time of MHW [datetime format]
     *   `time_peak`            Time of MHW peak [datetime format]
     *   `date`                 Start date of MHW [datetime format]
-    *   `ievent`               Running index for the events on the given date
+    *   `ievent`   'Id', 'NVox', 'NVox_km', 'category', 'mask_Id', 'max_area',
+       'max_area_km', 'xcen', 'xboxmin', 'xboxmax', 'ycen', 'yboxmin',
+       'yboxmax', 'zcen', 'zboxmin', 'zboxmax', 'date', 'lat', 'lon'            Running index for the events on the given date
     *   `index_start`          Start index of MHW
     *   `index_end`            End index of MHW
     *   `index_peak`           Index of MHW peak
@@ -70,6 +72,8 @@ We describe each in turn.
   * **MHWevent_cube_2019.nc** -- netCDF file describing the location of every MHW Event in space and time.  The coordinates are: `lat (deg), lon (deg), time (datetime64[ns])`
 
 ### MWHS data
+
+Tables and masks definiting the Marine Heat Wave Systems (MHWS):
 
   * **MHWS_xxx.csv** -- CSV table of the MHWS with columns:
     * `Id` Running ID value for the MHWS
