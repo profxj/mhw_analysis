@@ -71,7 +71,7 @@ We describe each in turn.
 
 ### MWHS data
 
-  * MHWS_xxx.csv -- CSV table of the MHWS with columns:
+  * *MHWS_xxx.csv* -- CSV table of the MHWS with columns:
     * `Id` Running ID value for the MHWS
     * `NVox` Number of voxels occupied by the MHWS [ndays * npixels]
     * `NVox_km` Volume of the voxels occupied by the MHWS [days * km*km] 
@@ -82,11 +82,11 @@ We describe each in turn.
     * `xcen` Weighted x-centroid in pixels of the MHWS in the NOAA OI array 
     * `xboxmin`, `xboxmax` are the min, max values of x in pixels in the NOAA OI array
     * `ycen` Weighted y-centroid in pixels of the MHWS in the NOAA OI array 
-    * `yboxmin', 'yboxmax` are the min, max values of y in pixels in the NOAA OI array
+    * `yboxmin`, `yboxmax` are the min, max values of y in pixels in the NOAA OI array
     * `zcen` Weighted time coordinate of the MHWS 
     * `zboxmin`, `zboxmax` are the limts on the time coordinates of the MHWS 
     * `date` date of the start of the MHWS
-    * `lat`, 'lon' are the corresponding coordinates xcen,ycen [deg]
+    * `lat`, `lon` are the corresponding coordinates xcen,ycen [deg]
   * MHWS_xxx_mask.nc -- netCDF file describing the location of every MHWS in space and time. 
        A value of 0 indicates no MHWS present at that location on that date.  Otherwise the 
        value provide corresponds to `mask_Id` from above 
