@@ -29,13 +29,42 @@ We describe each in turn.
 
 ### MWH Event data
 
-  * mhw_events_allsky_2019.db -- SQLite format 3 table of MHW Events
-    * test me
+  * mhw_events_allsky_2019.db -- SQLite format 3 table of MHW Events with columns:
+    *   'time_start'           Start time of MHW [datetime format]
+    *   'time_end'             End time of MHW [datetime format]
+    *   'time_peak'            Time of MHW peak [datetime format]
+    *   'date'                 Start date of MHW [datetime format]
+    *   'index_start'          Start index of MHW
+    *   'index_end'            End index of MHW
+    *   'index_peak'           Index of MHW peak
+    *   'duration'             Duration of MHW [days]
+    *   'duration_moderate'    Duration of MHW at moderate level [days]
+    *   'duration_strong'      Duration of MHW at strong level [days]
+    *   'duration_severe'      Duration of MHW at severe level [days]
+    *   'duration_extreme'     Duration of MHW at extreme level [days]
+    *   'intensity_max'        Maximum (peak) intensity [deg. C]
+    *   'intensity_mean'       Mean intensity [deg. C]
+    *   'intensity_var'        Intensity variability [deg. C]
+    *   'intensity_cumulative' Cumulative intensity [deg. C x days]
+    *   'rate_onset'           Onset rate of MHW [deg. C / days]
+    *   'rate_decline'         Decline rate of MHW [deg. C / days]
+    *   'intensity_max_relThresh', 'intensity_mean_relThresh', 'intensity_var_relThresh',
+        and 'intensity_cumulative_relThresh' are as above except relative to the
+        threshold (e.g., 90th percentile) rather than the seasonal climatology
+    *   'intensity_max_abs', 'intensity_mean_abs', 'intensity_var_abs', and
+        'intensity_cumulative_abs' are as above except as absolute magnitudes
+        rather than relative to the seasonal climatology or threshold
+    *   'category' is an integer category system (1, 2, 3, 4) based on the maximum intensity
+        in multiples of threshold exceedances, i.e., a value of 1 indicates the MHW
+        intensity (relative to the climatology) was >=1 times the value of the threshold (but
+        less than 2 times; relative to climatology, i.e., threshold - climatology).
+        Category types are defined as 1=strong, 2=moderate, 3=severe, 4=extreme. More details in
+        Hobday et al. (in prep., Oceanography). Also supplied are the duration of each of these
+        categories for each event.
+    *   'n_events'             A scalar integer (not a list) indicating the total number of detected MHW events
   * mhw_events_allsky_2019.parquet -- Pandas table of MHW Events
   * MHWevent_cube_2019.nc -- netCDF file describing the location of every MHW Event in space and time.  The coordinates are: `lat (deg), lon (deg), time (datetime64[ns])`
 
-See the [marineHeatWaves](https://github.com/ecjoliver/marineHeatWaves) repository
-for a description of the columns
 ### MWHS data
 
   * MHWS_xxx.csv -- CSV table of the MHWS
