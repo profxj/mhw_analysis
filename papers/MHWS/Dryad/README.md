@@ -29,7 +29,7 @@ We describe each in turn.
 
 ### MWH Event data
 
-  * mhw_events_allsky_2019.db -- SQLite format 3 table of MHW Events with columns:
+  * **mhw_events_allsky_2019.db** -- SQLite format 3 table of MHW Events with columns:
     *   `time_start`           Start time of MHW [datetime format]
     *   `time_end`             End time of MHW [datetime format]
     *   `time_peak`            Time of MHW peak [datetime format]
@@ -65,13 +65,13 @@ We describe each in turn.
         Hobday et al. (in prep., Oceanography). Also supplied are the duration of each of these
         categories for each event.
     *   `n_events`             A scalar integer (not a list) indicating the total number of detected MHW events
-  * mhw_events_allsky_2019.parquet -- Pandas table of MHW Events
+  * **mhw_events_allsky_2019.parquet** -- Pandas table of MHW Events
     *   Same columns as for the SQLite file
-  * MHWevent_cube_2019.nc -- netCDF file describing the location of every MHW Event in space and time.  The coordinates are: `lat (deg), lon (deg), time (datetime64[ns])`
+  * **MHWevent_cube_2019.nc** -- netCDF file describing the location of every MHW Event in space and time.  The coordinates are: `lat (deg), lon (deg), time (datetime64[ns])`
 
 ### MWHS data
 
-  * *MHWS_xxx.csv* -- CSV table of the MHWS with columns:
+  * **MHWS_xxx.csv** -- CSV table of the MHWS with columns:
     * `Id` Running ID value for the MHWS
     * `NVox` Number of voxels occupied by the MHWS [ndays * npixels]
     * `NVox_km` Volume of the voxels occupied by the MHWS [days * km*km] 
@@ -87,7 +87,7 @@ We describe each in turn.
     * `zboxmin`, `zboxmax` are the limts on the time coordinates of the MHWS 
     * `date` date of the start of the MHWS
     * `lat`, `lon` are the corresponding coordinates xcen,ycen [deg]
-  * MHWS_xxx_mask.nc -- netCDF file describing the location of every MHWS in space and time. 
+  * **MHWS_xxx_mask.nc** -- netCDF file describing the location of every MHWS in space and time. 
        A value of 0 indicates no MHWS present at that location on that date.  Otherwise the 
        value provide corresponds to `mask_Id` from above 
        The coordinates are: `lat (deg), lon (deg), time (datetime64[ns])`
@@ -103,10 +103,10 @@ There are 3 pairs of these data files with xxx depending on the climatology:
 Three netCDF files that describe the locations of MHWS categorized
 by their volume:
 
-  * minor_km_dy_by_yr_2019.nc -- This file gives the number of days `ndays` (int) of each year at a given location
+  * **minor_km_dy_by_yr_2019.nc** -- This file gives the number of days `ndays` (int) of each year at a given location
     that were in a minor MHWS.  The coordinates are: `lat (deg), lon (deg), year`
-  * moderate_km_dy_by_yr_2019.nc -- Same as minor, but for moderate MHWS
-  * severe_km_dy_by_yr_2019.nc -- Same as minor, but for severe MHWS
+  * **moderate_km_dy_by_yr_2019.nc** -- Same as minor, but for moderate MHWS
+  * **severe_km_dy_by_yr_2019.nc** -- Same as minor, but for severe MHWS
 
 ## Code/Software
 
